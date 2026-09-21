@@ -6,6 +6,8 @@ const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", 
 const MAX_TITLE = 40
 const RENDER_MS = 150
 const REASSERT_MS = 1000
+const RECONCILE_MS = 2000
+const FETCH_TIMEOUT_MS = 4000
 const DEBUG_LOG = "/tmp/opencode/terminal-title.log"
 const DEBUG = process.env.OPENCODE_TERMINAL_TITLE_DEBUG === "1"
 
@@ -14,6 +16,15 @@ function debug(line) {
   try {
     appendFileSync(DEBUG_LOG, `${new Date().toISOString()} ${line}\n`)
   } catch {}
+}
+
+function withTimeout(promise, ms) {
+  let timer
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms)
+    if (typeof timer.unref === "function") timer.unref()
+  })
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
 }
 
 const prompts = new Map()
@@ -26,6 +37,9 @@ const frames = new Map()
 const renderedAt = new Map()
 const limits = new Map()
 const todoLists = new Map()
+const todoRevision = new Map()
+const todoInflight = new Set()
+const usageInflight = new Set()
 
 let tty
 let limitsPromise
@@ -79,8 +93,27 @@ function pctFor(sessionID) {
 }
 
 function fillFor(pct) {
-  const index = Math.min(FILL.length - 1, Math.max(0, Math.floor(pct / 25)))
+  const clamped = Math.min(100, Math.max(0, pct))
+  const index = Math.round((clamped / 100) * (FILL.length - 1))
   return FILL[index]
+}
+
+function usageTotal(tokens) {
+  if (!tokens) return 0
+  return (
+    (tokens.input ?? 0) +
+    (tokens.output ?? 0) +
+    (tokens.reasoning ?? 0) +
+    (tokens.cache?.read ?? 0) +
+    (tokens.cache?.write ?? 0)
+  )
+}
+
+function rememberUsage(sessionID, info) {
+  const total = usageTotal(info?.tokens)
+  if (!sessionID || total <= 0) return false
+  used.set(sessionID, { used: total, providerID: info.providerID, modelID: info.modelID })
+  return true
 }
 
 function todoPctFor(sessionID) {
@@ -92,17 +125,17 @@ function todoPctFor(sessionID) {
 
 function compose(sessionID) {
   const state = states.get(sessionID) ?? "idle"
+  const todoPct = todoPctFor(sessionID)
   const ctxPct = pctFor(sessionID)
-  const progressPct = todoPctFor(sessionID) ?? ctxPct
-  let lead
-  if (state === "busy") {
-    lead = `${progressPct === undefined ? STATE.busy : fillFor(progressPct)}${SPINNER[frames.get(sessionID) ?? 0]}`
-  } else {
-    lead = STATE[state]
-  }
-  const badge = ctxPct === undefined ? "" : ` ${ctxPct}%`
+  const lead = state === "busy" ? SPINNER[frames.get(sessionID) ?? 0] : STATE[state]
+  const progress = todoPct === undefined ? undefined : fillFor(todoPct)
+  const context = ctxPct === undefined ? undefined : `(${ctxPct}%)`
   const text = label(sessionID)
-  return `${lead}${badge}${text ? ` | ${text}` : ""}`
+  const parts = [lead, "|"]
+  if (progress) parts.push(progress)
+  if (context) parts.push(context)
+  if (text) parts.push(text)
+  return parts.join(" ")
 }
 
 function render(sessionID, advance = false) {
@@ -150,22 +183,106 @@ async function loadLimits(getClient) {
   return limitsPromise
 }
 
+// The todo list is normally pushed via todo.updated, but events can be missed
+// or a fetch can race the event. Re-read on demand (session entry, periodic
+// reconcile) and drop a response that a newer todo.updated already superseded.
+async function refreshTodos(getClient, sessionID) {
+  if (!sessionID || todoInflight.has(sessionID)) return
+  todoInflight.add(sessionID)
+  const revision = todoRevision.get(sessionID) ?? 0
+  try {
+    const res = await withTimeout(getClient().session.todo({ path: { id: sessionID } }), FETCH_TIMEOUT_MS)
+    if ((todoRevision.get(sessionID) ?? 0) !== revision) return
+    const todos = res?.data ?? res?.todos
+    if (!Array.isArray(todos)) {
+      debug("todo fetch: unexpected response shape")
+      return
+    }
+    todoLists.set(sessionID, todos)
+    render(sessionID)
+  } catch (error) {
+    debug(`todo fetch failed: ${error.message}`)
+  } finally {
+    todoInflight.delete(sessionID)
+  }
+}
+
+// Token usage is only pushed via message.updated, so a resumed session has no
+// context percentage until the next reply. Read the tail of the history; keep
+// retrying on failure until some usage is known.
+async function refreshUsage(getClient, sessionID) {
+  if (!sessionID || usageInflight.has(sessionID) || used.has(sessionID)) return
+  usageInflight.add(sessionID)
+  try {
+    const res = await withTimeout(
+      getClient().session.messages({ path: { id: sessionID }, query: { limit: 10 } }),
+      FETCH_TIMEOUT_MS,
+    )
+    if (used.has(sessionID)) return
+    const messages = res?.data ?? res
+    if (!Array.isArray(messages)) {
+      debug("usage fetch: unexpected response shape")
+      return
+    }
+    const assistant = [...messages].reverse().find((entry) => entry?.info?.role === "assistant")
+    if (!assistant || !rememberUsage(sessionID, assistant.info)) return
+    render(sessionID)
+  } catch (error) {
+    debug(`usage fetch failed: ${error.message}`)
+  } finally {
+    usageInflight.delete(sessionID)
+  }
+}
+
+async function resumeLatest(getClient) {
+  try {
+    const res = await getClient().session.list()
+    const sessions = res?.data ?? res
+    if (!Array.isArray(sessions) || sessions.length === 0) return
+    const latest = [...sessions].sort((a, b) => (b?.time?.updated ?? 0) - (a?.time?.updated ?? 0))[0]
+    if (!latest?.id) return
+    activeSession = latest.id
+    if (latest.title) titles.set(latest.id, latest.title)
+    if (!states.has(latest.id)) states.set(latest.id, "idle")
+    await refreshTodos(getClient, latest.id)
+    await refreshUsage(getClient, latest.id)
+    render(latest.id)
+  } catch (error) {
+    debug(`resume failed: ${error.message}`)
+  }
+}
+
 debug("plugin loaded")
 
 export const TerminalTitlePlugin = async ({ client }) => {
   void loadLimits(() => client)
+  void resumeLatest(() => client)
 
   const timer = setInterval(() => {
     if (activeSession && states.has(activeSession)) setTerminalTitle(compose(activeSession))
   }, REASSERT_MS)
   if (typeof timer.unref === "function") timer.unref()
 
+  const reconcile = setInterval(() => {
+    if (!activeSession) return
+    void refreshTodos(() => client, activeSession)
+    void refreshUsage(() => client, activeSession)
+  }, RECONCILE_MS)
+  if (typeof reconcile.unref === "function") reconcile.unref()
+
   return {
-    dispose: async () => clearInterval(timer),
+    dispose: async () => {
+      clearInterval(timer)
+      clearInterval(reconcile)
+    },
     event: async ({ event }) => {
       const properties = event.properties ?? {}
       const sessionID = properties.sessionID ?? properties.part?.sessionID ?? properties.info?.sessionID
-      if (sessionID) activeSession = sessionID
+      if (sessionID && sessionID !== activeSession) {
+        activeSession = sessionID
+        void refreshTodos(() => client, sessionID)
+        void refreshUsage(() => client, sessionID)
+      }
       debug(`event ${event.type} session=${sessionID ?? "-"}`)
 
       switch (event.type) {
@@ -185,18 +302,8 @@ export const TerminalTitlePlugin = async ({ client }) => {
             if (partText.has(info.id)) prompts.set(info.sessionID ?? sessionID, partText.get(info.id))
             return
           }
-          if (info.role === "assistant" && info.tokens?.output > 0) {
-            const t = info.tokens
-            const total =
-              (t.input ?? 0) + (t.output ?? 0) + (t.reasoning ?? 0) + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
-            if (total > 0) {
-              used.set(info.sessionID ?? sessionID, {
-                used: total,
-                providerID: info.providerID,
-                modelID: info.modelID,
-              })
-              render(info.sessionID ?? sessionID)
-            }
+          if (info.role === "assistant" && rememberUsage(info.sessionID ?? sessionID, info)) {
+            render(info.sessionID ?? sessionID)
           }
           return
         }
@@ -215,6 +322,7 @@ export const TerminalTitlePlugin = async ({ client }) => {
 
         case "todo.updated":
           if (sessionID && Array.isArray(properties.todos)) {
+            todoRevision.set(sessionID, (todoRevision.get(sessionID) ?? 0) + 1)
             todoLists.set(sessionID, properties.todos)
             render(sessionID)
           }
