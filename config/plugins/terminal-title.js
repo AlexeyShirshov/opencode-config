@@ -1,4 +1,4 @@
-import { openSync, writeSync } from "node:fs"
+import { appendFileSync, openSync, writeSync } from "node:fs"
 
 const BRAND = "▣"
 const STATE = { busy: "⏳", question: "❓", permission: "🔔", idle: "✅" }
@@ -6,6 +6,16 @@ const FILL = ["○", "◔", "◑", "◕", "●"]
 const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const MAX_TITLE = 40
 const RENDER_MS = 150
+const REASSERT_MS = 1000
+const DEBUG_LOG = "/tmp/opencode/terminal-title.log"
+const DEBUG = process.env.OPENCODE_TERMINAL_TITLE_DEBUG === "1"
+
+function debug(line) {
+  if (!DEBUG) return
+  try {
+    appendFileSync(DEBUG_LOG, `${new Date().toISOString()} ${line}\n`)
+  } catch {}
+}
 
 const prompts = new Map()
 const titles = new Map()
@@ -19,14 +29,17 @@ const limits = new Map()
 
 let tty
 let limitsPromise
+let activeSession
 
 function setTerminalTitle(text) {
   const sequence = `\u001b]2;${text}\u0007`
   if (tty === undefined) {
     try {
       tty = openSync("/dev/tty", "w")
-    } catch {
+      debug("opened /dev/tty")
+    } catch (error) {
       tty = null
+      debug(`open /dev/tty failed: ${error.message}`)
     }
   }
   try {
@@ -34,12 +47,15 @@ function setTerminalTitle(text) {
       writeSync(tty, sequence)
       return
     }
-  } catch {
+  } catch (error) {
     tty = null
+    debug(`write /dev/tty failed: ${error.message}`)
   }
   try {
     process.stdout.write(sequence)
-  } catch {}
+  } catch (error) {
+    debug(`write stdout failed: ${error.message}`)
+  }
 }
 
 function label(sessionID) {
@@ -89,7 +105,9 @@ function render(sessionID, advance = false) {
     frames.set(sessionID, ((frames.get(sessionID) ?? 0) + 1) % SPINNER.length)
   }
   renderedAt.set(sessionID, now)
-  setTerminalTitle(compose(sessionID))
+  const title = compose(sessionID)
+  debug(`render ${sessionID} -> ${title}`)
+  setTerminalTitle(title)
 }
 
 function setState(sessionID, state) {
@@ -114,21 +132,33 @@ async function loadLimits(getClient) {
           if (!limits.has(modelID)) limits.set(modelID, context)
         }
       }
+      debug(`limits loaded: ${limits.size}`)
       for (const sessionID of states.keys()) render(sessionID)
-    } catch {}
+    } catch (error) {
+      debug(`limits failed: ${error.message}`)
+    }
     return limits
   })()
   return limitsPromise
 }
 
+debug("plugin loaded")
+
 export const TerminalTitlePlugin = async ({ client }) => {
-  const getClient = () => client
-  void loadLimits(getClient)
+  void loadLimits(() => client)
+
+  const timer = setInterval(() => {
+    if (activeSession && states.has(activeSession)) setTerminalTitle(compose(activeSession))
+  }, REASSERT_MS)
+  if (typeof timer.unref === "function") timer.unref()
 
   return {
+    dispose: async () => clearInterval(timer),
     event: async ({ event }) => {
       const properties = event.properties ?? {}
-      const sessionID = properties.sessionID
+      const sessionID = properties.sessionID ?? properties.part?.sessionID ?? properties.info?.sessionID
+      if (sessionID) activeSession = sessionID
+      debug(`event ${event.type} session=${sessionID ?? "-"}`)
 
       switch (event.type) {
         case "session.created":
