@@ -1,15 +1,23 @@
 import { openSync, writeSync } from "node:fs"
 
-const ICONS = { busy: "⏳", question: "❓", permission: "🔔", idle: "✅" }
+const STATE = { busy: "⏳", question: "❓", permission: "🔔", idle: "✅" }
+const FILL = ["○", "◔", "◑", "◕", "●"]
+const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 const MAX_TITLE = 40
+const RENDER_MS = 150
 
 const prompts = new Map()
 const titles = new Map()
 const roles = new Map()
 const partText = new Map()
-const icons = new Map()
+const states = new Map()
+const used = new Map()
+const frames = new Map()
+const renderedAt = new Map()
+const limits = new Map()
 
 let tty
+let limitsPromise
 
 function setTerminalTitle(text) {
   const sequence = `\u001b]2;${text}\u0007`
@@ -35,27 +43,87 @@ function setTerminalTitle(text) {
 
 function label(sessionID) {
   const source = prompts.get(sessionID) ?? titles.get(sessionID)
-  if (!source) return "OC"
+  if (!source) return ""
   const oneLine = source.replace(/\s+/g, " ").trim()
-  if (!oneLine) return "OC"
-  const clipped = oneLine.length > MAX_TITLE ? `${oneLine.slice(0, MAX_TITLE - 1)}…` : oneLine
-  return `OC | ${clipped}`
+  if (!oneLine) return ""
+  return oneLine.length > MAX_TITLE ? `${oneLine.slice(0, MAX_TITLE - 1)}…` : oneLine
 }
 
-function apply(icon, sessionID) {
+function limitFor(providerID, modelID) {
+  return limits.get(`${providerID}/${modelID}`) ?? limits.get(modelID)
+}
+
+function pctFor(sessionID) {
+  const entry = used.get(sessionID)
+  if (!entry) return undefined
+  const limit = limitFor(entry.providerID, entry.modelID)
+  if (!limit) return undefined
+  return Math.max(0, Math.round((entry.used / limit) * 100))
+}
+
+function fillFor(pct) {
+  const index = Math.min(FILL.length - 1, Math.max(0, Math.floor(pct / 25)))
+  return FILL[index]
+}
+
+function compose(sessionID) {
+  const state = states.get(sessionID) ?? "idle"
+  const pct = pctFor(sessionID)
+  let lead
+  if (state === "busy") {
+    lead = `${pct === undefined ? STATE.busy : fillFor(pct)}${SPINNER[frames.get(sessionID) ?? 0]}`
+  } else {
+    lead = STATE[state]
+  }
+  const badge = pct === undefined ? "" : ` ${pct}%`
+  const text = label(sessionID)
+  return `${lead}${badge} OC${text ? ` | ${text}` : ""}`
+}
+
+function render(sessionID, advance = false) {
+  if (!sessionID || !states.has(sessionID)) return
+  const now = Date.now()
+  if (advance) {
+    if (now - (renderedAt.get(sessionID) ?? 0) < RENDER_MS) return
+    frames.set(sessionID, ((frames.get(sessionID) ?? 0) + 1) % SPINNER.length)
+  }
+  renderedAt.set(sessionID, now)
+  setTerminalTitle(compose(sessionID))
+}
+
+function setState(sessionID, state) {
   if (!sessionID) return
-  icons.set(sessionID, icon)
-  setTerminalTitle(`${icon} ${label(sessionID)}`)
+  states.set(sessionID, state)
+  if (state === "busy") frames.set(sessionID, 0)
+  render(sessionID)
 }
 
-function setPrompt(sessionID, text) {
-  if (!sessionID || !text) return
-  prompts.set(sessionID, text)
-  const icon = icons.get(sessionID)
-  if (icon) apply(icon, sessionID)
+async function loadLimits(getClient) {
+  if (limitsPromise) return limitsPromise
+  limitsPromise = (async () => {
+    try {
+      const client = getClient()
+      const res = await client.config.providers()
+      const providers = res?.providers ?? res?.data?.providers ?? []
+      for (const provider of providers) {
+        for (const [modelID, model] of Object.entries(provider.models ?? {})) {
+          const context = model?.limit?.context
+          if (!context) continue
+          limits.set(`${provider.id}/${modelID}`, context)
+          if (!limits.has(modelID)) limits.set(modelID, context)
+        }
+      }
+      for (const sessionID of states.keys()) render(sessionID)
+    } catch {}
+    return limits
+  })()
+  return limitsPromise
 }
 
-export const TerminalTitlePlugin = async () => {
+export const TerminalTitlePlugin = async ({ client }) => {
+  const getClient = () => client
+  void loadLimits(getClient)
+
   return {
     event: async ({ event }) => {
       const properties = event.properties ?? {}
@@ -66,8 +134,7 @@ export const TerminalTitlePlugin = async () => {
         case "session.updated":
           if (sessionID && properties.info?.title) {
             titles.set(sessionID, properties.info.title)
-            const icon = icons.get(sessionID)
-            if (icon && !prompts.has(sessionID)) apply(icon, sessionID)
+            if (!prompts.has(sessionID) && states.has(sessionID)) render(sessionID)
           }
           return
 
@@ -75,43 +142,59 @@ export const TerminalTitlePlugin = async () => {
           const info = properties.info
           if (!info?.id) return
           roles.set(info.id, info.role)
-          if (info.role === "user" && partText.has(info.id)) {
-            setPrompt(info.sessionID ?? sessionID, partText.get(info.id))
+          if (info.role === "user") {
+            if (partText.has(info.id)) prompts.set(info.sessionID ?? sessionID, partText.get(info.id))
+            return
+          }
+          if (info.role === "assistant" && info.tokens?.output > 0) {
+            const t = info.tokens
+            const total =
+              (t.input ?? 0) + (t.output ?? 0) + (t.reasoning ?? 0) + (t.cache?.read ?? 0) + (t.cache?.write ?? 0)
+            if (total > 0) {
+              used.set(info.sessionID ?? sessionID, {
+                used: total,
+                providerID: info.providerID,
+                modelID: info.modelID,
+              })
+              render(info.sessionID ?? sessionID)
+            }
           }
           return
         }
 
         case "message.part.updated": {
           const part = properties.part
-          if (part?.type !== "text" || part.synthetic || part.ignored) return
-          partText.set(part.messageID, part.text)
-          if (roles.get(part.messageID) === "user") {
-            setPrompt(part.sessionID ?? sessionID, part.text)
+          if (!part) return
+          if (part.type === "text" && !part.synthetic && !part.ignored) {
+            partText.set(part.messageID, part.text)
+            if (roles.get(part.messageID) === "user") prompts.set(part.sessionID ?? sessionID, part.text)
           }
+          const target = part.sessionID ?? sessionID
+          if (states.get(target) === "busy") render(target, true)
           return
         }
 
         case "session.status":
-          if (properties.status?.type === "idle") apply(ICONS.idle, sessionID)
-          else if (properties.status?.type === "busy") apply(ICONS.busy, sessionID)
+          if (properties.status?.type === "idle") setState(sessionID, "idle")
+          else if (properties.status?.type === "busy") setState(sessionID, "busy")
           return
 
         case "session.idle":
-          apply(ICONS.idle, sessionID)
+          setState(sessionID, "idle")
           return
 
         case "question.asked":
-          apply(ICONS.question, sessionID)
+          setState(sessionID, "question")
           return
 
         case "permission.asked":
-          apply(ICONS.permission, sessionID)
+          setState(sessionID, "permission")
           return
 
         case "question.replied":
         case "question.rejected":
         case "permission.replied":
-          apply(ICONS.busy, sessionID)
+          setState(sessionID, "busy")
           return
       }
     },
