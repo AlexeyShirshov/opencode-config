@@ -1,5 +1,6 @@
 import { openSync, writeSync } from "node:fs"
 
+const BRAND = "▣"
 const STATE = { busy: "⏳", question: "❓", permission: "🔔", idle: "✅" }
 const FILL = ["○", "◔", "◑", "◕", "●"]
 const SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
@@ -77,7 +78,7 @@ function compose(sessionID) {
   }
   const badge = pct === undefined ? "" : ` ${pct}%`
   const text = label(sessionID)
-  return `${lead}${badge} OC${text ? ` | ${text}` : ""}`
+  return `${lead}${badge} ${BRAND}${text ? ` | ${text}` : ""}`
 }
 
 function render(sessionID, advance = false) {
