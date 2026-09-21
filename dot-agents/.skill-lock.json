@@ -1,0 +1,81 @@
+{
+  "version": 3,
+  "skills": {
+    "mcp-builder": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/mcp-builder/SKILL.md",
+      "skillFolderHash": "b866bcfb57b780c10b587c7b543e871a91661ce0",
+      "pluginName": "example-skills",
+      "installedAt": "2026-09-15T18:14:02.857Z",
+      "updatedAt": "2026-09-15T18:14:02.857Z"
+    },
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillPath": "skills/find-skills/SKILL.md",
+      "skillFolderHash": "76a98a285cb0434f3d39e1a873823556330e398b",
+      "installedAt": "2026-09-16T08:11:00.751Z",
+      "updatedAt": "2026-09-16T08:21:31.813Z"
+    },
+    "analyzing-dotnet-performance": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dotnet/skills.git",
+      "skillPath": "plugins/dotnet-diag/skills/analyzing-dotnet-performance/SKILL.md",
+      "skillFolderHash": "90d7cf1c18271925f17a1f395c77a036ebd63182",
+      "installedAt": "2026-09-16T13:50:48.900Z",
+      "updatedAt": "2026-09-16T13:50:48.900Z"
+    },
+    "dotnet-trace-collect": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dotnet/skills.git",
+      "skillPath": "plugins/dotnet-diag/skills/dotnet-trace-collect/SKILL.md",
+      "skillFolderHash": "b9e409a930132aa09de5f9daa79a147f0231d12e",
+      "installedAt": "2026-09-16T13:50:59.125Z",
+      "updatedAt": "2026-09-16T13:50:59.125Z"
+    },
+    "microbenchmarking": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dotnet/skills.git",
+      "skillPath": "plugins/dotnet-diag/skills/microbenchmarking/SKILL.md",
+      "skillFolderHash": "52f553126798944fa24155c70f715bff877175a6",
+      "installedAt": "2026-09-16T13:51:03.432Z",
+      "updatedAt": "2026-09-16T13:51:03.432Z"
+    },
+    "optimizing-ef-core-queries": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dotnet/skills.git",
+      "skillPath": "plugins/dotnet-data/skills/optimizing-ef-core-queries/SKILL.md",
+      "skillFolderHash": "383e204cd6d3fd44730dc1ef86c014f930270b89",
+      "installedAt": "2026-09-16T13:51:07.937Z",
+      "updatedAt": "2026-09-16T13:51:07.937Z"
+    },
+    "eval-performance": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dotnet/skills.git",
+      "skillPath": "plugins/dotnet-msbuild/skills/eval-performance/SKILL.md",
+      "skillFolderHash": "0088510afa16bafa2aa822fbb2b5ced928703a4c",
+      "installedAt": "2026-09-16T13:51:12.507Z",
+      "updatedAt": "2026-09-16T13:51:12.507Z"
+    },
+    "archify": {
+      "source": "tt-a1i/archify",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tt-a1i/archify.git",
+      "skillPath": "archify/SKILL.md",
+      "skillFolderHash": "ffb8258f653b66f5afb8340bf8eb61c7309830ff",
+      "installedAt": "2026-09-19T18:56:18.211Z",
+      "updatedAt": "2026-09-19T18:56:54.484Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  }
+}
