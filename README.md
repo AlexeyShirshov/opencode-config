@@ -14,7 +14,7 @@
 
 - `opencode.jsonc` — LSP (roslyn), permissions.
 - `tui.json` — attention (встроенный звук/уведомления выключены: в WSL нет рабочих PCM-устройств).
-- `plugins/` — `terminal-title.js` (заголовок вкладки Windows Terminal: иконка состояния `⏳/❓/🔔/✅`, процент контекста `○◔◑◕●`, спиннер активности, бренд `▣`; пишет OSC 2 в `/dev/tty` и переустанавливает заголовок раз в 1 сек, чтобы встроенный `OC | …` не перетирал; отладка — `OPENCODE_TERMINAL_TITLE_DEBUG=1` → `/tmp/opencode/terminal-title.log`), `windows-notify.js` (balloon + звук через `powershell.exe` на `question.asked`/`permission.asked`).
+- `plugins/` — `terminal-title.js` (заголовок вкладки Windows Terminal: иконка состояния `⏳/❓/🔔/✅`, процент контекста `○◔◑◕●`, спиннер активности; пишет OSC 2 в `/dev/tty` и переустанавливает заголовок раз в 1 сек, чтобы встроенный `OC | …` не перетирал; отладка — `OPENCODE_TERMINAL_TITLE_DEBUG=1` → `/tmp/opencode/terminal-title.log`), `windows-notify.js` (Windows Toast через WinRT + звук `<audio>` на `question.asked`/`permission.asked`; non-activating — не забирает фокус; запуск `powershell.exe -WindowStyle Hidden`).
 - `agents/` — кастомные субагенты (dotnet-*).
 - `profiles/` — `deepseek.jsonc`, `gp.jsonc` (модели, MCP-серверы, skills paths).
 - `skills-deepseek/` — скиллы профиля deepseek.
