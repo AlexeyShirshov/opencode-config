@@ -25,6 +25,7 @@ const used = new Map()
 const frames = new Map()
 const renderedAt = new Map()
 const limits = new Map()
+const todoLists = new Map()
 
 let tty
 let limitsPromise
@@ -82,16 +83,24 @@ function fillFor(pct) {
   return FILL[index]
 }
 
+function todoPctFor(sessionID) {
+  const todos = todoLists.get(sessionID)
+  if (!todos || todos.length === 0) return undefined
+  const done = todos.filter((todo) => todo.status === "completed").length
+  return Math.round((done / todos.length) * 100)
+}
+
 function compose(sessionID) {
   const state = states.get(sessionID) ?? "idle"
-  const pct = pctFor(sessionID)
+  const ctxPct = pctFor(sessionID)
+  const progressPct = todoPctFor(sessionID) ?? ctxPct
   let lead
   if (state === "busy") {
-    lead = `${pct === undefined ? STATE.busy : fillFor(pct)}${SPINNER[frames.get(sessionID) ?? 0]}`
+    lead = `${progressPct === undefined ? STATE.busy : fillFor(progressPct)}${SPINNER[frames.get(sessionID) ?? 0]}`
   } else {
     lead = STATE[state]
   }
-  const badge = pct === undefined ? "" : ` ${pct}%`
+  const badge = ctxPct === undefined ? "" : ` ${ctxPct}%`
   const text = label(sessionID)
   return `${lead}${badge}${text ? ` | ${text}` : ""}`
 }
@@ -203,6 +212,13 @@ export const TerminalTitlePlugin = async ({ client }) => {
           if (states.get(target) === "busy") render(target, true)
           return
         }
+
+        case "todo.updated":
+          if (sessionID && Array.isArray(properties.todos)) {
+            todoLists.set(sessionID, properties.todos)
+            render(sessionID)
+          }
+          return
 
         case "session.status":
           if (properties.status?.type === "idle") setState(sessionID, "idle")
