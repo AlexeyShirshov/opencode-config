@@ -9,6 +9,11 @@ node_modules/
 package-lock.json
 bun.lock
 
+# .NET build output (config/tools/roslyn-cli)
+bin/
+obj/
+nupkg/
+
 # runtime data
 *.db
 *.db-shm

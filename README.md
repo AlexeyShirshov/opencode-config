@@ -13,6 +13,7 @@
 `config/` содержит:
 
 - `opencode.jsonc` — LSP (roslyn), permissions.
+- `tools/` — глобальные custom tools: `roslyn.ts` (инструмент `roslyn` для семантики C#) и `roslyn-cli/` — исходник CLI на Roslyn (`Microsoft.CodeAnalysis` / `MSBuildWorkspace`), устанавливается как глобальный dotnet tool `roslynq`.
 - `tui.json` — attention (встроенный звук/уведомления выключены: в WSL нет рабочих PCM-устройств).
 - `plugins/` — `terminal-title.js` (заголовок вкладки Windows Terminal: иконка состояния `⏳/❓/🔔/✅`, процент контекста `○◔◑◕●`, спиннер активности; пишет OSC 2 в `/dev/tty` и переустанавливает заголовок раз в 1 сек, чтобы встроенный `OC | …` не перетирал; отладка — `OPENCODE_TERMINAL_TITLE_DEBUG=1` → `/tmp/opencode/terminal-title.log`), `windows-notify.js` (Windows Toast через WinRT + звук `<audio>` на `question.asked`/`permission.asked`; non-activating — не забирает фокус; запуск `powershell.exe -WindowStyle Hidden`).
 - `agents/` — кастомные субагенты (dotnet-*).
@@ -35,6 +36,10 @@ cp data/memory.json ~/.local/share/opencode/memory.json
 
 # зависимости плагинов
 cd ~/.config/opencode && npm install
+
+# инструмент roslyn (глобальный dotnet tool)
+cd ~/.config/opencode/tools/roslyn-cli && dotnet pack -c Release
+dotnet tool install --global --add-source ./nupkg opencode-roslyn
 ```
 
 ## Секреты (создать вручную, в репо не лежат)
@@ -48,4 +53,5 @@ cd ~/.config/opencode && npm install
 ## Зависимости
 
 - Windows Terminal (для заголовка вкладки), `powershell.exe` доступен из WSL.
+- `.NET 10 SDK` — для сборки и установки глобального тула `roslynq` (`config/tools/roslyn-cli`).
 - `~/.bun/bin/bun`, `~/.dotnet/tools/roslyn-language-server` — абсолютные пути в конфигах завязаны на эту машину.
