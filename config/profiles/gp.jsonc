@@ -9,14 +9,14 @@
   "provider": {
     "opencode-go": {
       "options": {
-        "headerTimeout": 20000,
-        "chunkTimeout": 30000
+        "headerTimeout": 60000,
+        "chunkTimeout": 180000
       }
     },
     "openrouter": {
       "options": {
-        "headerTimeout": 20000,
-        "chunkTimeout": 30000
+        "headerTimeout": 60000,
+        "chunkTimeout": 180000
       },
       "models": {
         "moonshotai/kimi-k2.6": {

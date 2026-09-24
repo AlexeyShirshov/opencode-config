@@ -10,8 +10,8 @@
     "deepseek": {
       "options": {
         "apiKey": "{env:DEEPSEEK_API_KEY}",
-        "headerTimeout": 20000,
-        "chunkTimeout": 30000
+        "headerTimeout": 60000,
+        "chunkTimeout": 180000
       }
     }
   },
