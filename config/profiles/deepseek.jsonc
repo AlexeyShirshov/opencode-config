@@ -8,7 +8,11 @@
   },
   "provider": {
     "deepseek": {
-      "options": { "apiKey": "{env:DEEPSEEK_API_KEY}" }
+      "options": {
+        "apiKey": "{env:DEEPSEEK_API_KEY}",
+        "headerTimeout": 20000,
+        "chunkTimeout": 30000
+      }
     }
   },
   "mcp": {

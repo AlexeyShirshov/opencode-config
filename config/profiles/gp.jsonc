@@ -7,7 +7,17 @@
     ]
   },
   "provider": {
+    "opencode-go": {
+      "options": {
+        "headerTimeout": 20000,
+        "chunkTimeout": 30000
+      }
+    },
     "openrouter": {
+      "options": {
+        "headerTimeout": 20000,
+        "chunkTimeout": 30000
+      },
       "models": {
         "moonshotai/kimi-k2.6": {
           "limit": { "context": 262144, "output": 8192 }
