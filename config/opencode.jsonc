@@ -14,7 +14,9 @@
   },
   "permission": {
     "external_directory": {
-      "/mnt/c/Users/user/source/**": "allow"
+      "/mnt/c/Users/user/source/**": "allow",
+      "/mnt/c/Users/user/Pictures/Screenshots/**": "allow",
+      "/tmp/**": "allow"
     }
   }
 }
