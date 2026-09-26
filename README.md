@@ -9,6 +9,7 @@
 | `config/` | `~/.config/opencode/` |
 | `dot-agents/skills/`, `dot-agents/.skill-lock.json` | `~/.agents/` |
 | `data/memory.json` | `~/.local/share/opencode/memory.json` |
+| `home/.bashrc`, `home/.bash_aliases` | `~/.bashrc`, `~/.bash_aliases` |
 
 `config/` содержит:
 
@@ -30,6 +31,9 @@ rsync -a --delete config/ ~/.config/opencode/ --exclude node_modules
 
 # скиллы агентов
 rsync -a dot-agents/ ~/.agents/
+
+# bash (aliases + completion)
+cp home/.bashrc home/.bash_aliases ~/
 
 # память MCP
 mkdir -p ~/.local/share/opencode
