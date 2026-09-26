@@ -131,6 +131,38 @@ filter-package() {
 # opencode profiles
 alias oc-ds='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/deepseek.jsonc opencode -c'
 alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode -c'
+
+# zen-cache-proxy: добавляет cache_control ttl="1h" к Opus-запросам к OpenCode Zen.
+# Иначе prompt-cache живёт 5 мин и перезаписывается ($5/M у Opus), пока оркестратор
+# ждёт субагентов. Порт должен совпадать с provider.opencode.options.baseURL в
+# profiles/oc-dev.jsonc.
+OC_ZEN_PROXY_PORT="${OC_ZEN_PROXY_PORT:-8787}"
+# NB: не используем /dev/tcp — в этой WSL он виснет на connect.
+_oc_zen_proxy_up() { curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:$OC_ZEN_PROXY_PORT/__health"; }
+_oc_zen_proxy_ensure() {
+  _oc_zen_proxy_up && return 0
+  local bun; bun="$(command -v bun || echo "$HOME/.bun/bin/bun")"
+  PORT="$OC_ZEN_PROXY_PORT" REWRITE=ttl nohup "$bun" "$HOME/.config/opencode/tools/zen-cache-proxy.mjs" \
+    >>"$HOME/.local/share/opencode/zen-cache-proxy.log" 2>&1 &
+  disown 2>/dev/null || true
+  local i
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    _oc_zen_proxy_up && return 0
+    sleep 0.1
+  done
+  echo "oc-dev: zen-cache-proxy не поднялся на :$OC_ZEN_PROXY_PORT (лог: ~/.local/share/opencode/zen-cache-proxy.log)" >&2
+}
+
+# без -c: каждый запуск — новый PDCA-сеанс в агент plan (Opus). Плюс -c на пустом
+# проекте (нет сессии) даёт "Unexpected server error" из-за placeholder sessionID "dummy".
+# Снимаем устаревший алиас oc-dev, если он остался в уже открытом шелле: иначе
+# при следующем source интерактивный bash разворачивает алиас в строке `oc-dev() {`
+# и падает с "syntax error near unexpected token `('".
+unalias oc-dev 2>/dev/null || true
+oc-dev() {
+  _oc_zen_proxy_ensure
+  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/oc-dev.jsonc" opencode "$@"
+}
 # isolated sandbox for experiments (own config + sessions DB)
 alias oc-sandbox='$HOME/sources/opencode-config-sandbox/bin/oc-sandbox'
 
