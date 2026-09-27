@@ -1,4 +1,4 @@
 ---
-description: Delete the current session and start fresh
+description: Archive the current session and start fresh
 ---
-Session cleared.
+Session archived.
