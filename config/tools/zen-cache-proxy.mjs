@@ -7,10 +7,10 @@
 // Прокси добавляет `ttl: "1h"` к каждому ephemeral-блоку, и вместо перезаписи
 // идёт дешёвое чтение кэша ($0.2/M).
 //
-// Плюс WARM: пока по /v1/messages нет новых запросов (например, оркестратор ждёт
-// субагента), прокси периодически переотправляет префикс последнего запроса с
-// max_tokens:1, чтобы запись кэша не вытеснялась. Это дешёвый cache_read вместо
-// полной перезаписи. Прогрев идёт мимо сессии — в её историю ничего не пишется.
+// WARM (опционально, по умолчанию ВЫКЛ): пока по /v1/messages нет новых запросов,
+// переотправлять префикс последнего запроса с max_tokens:1. Смысл был только при
+// 5-мин TTL; при ttl=1h/retention кэш не протухает, а прогрев лишь жжёт cache_read
+// (замер: ~$0.0163/пинг, ~$0.29/ч, часами после закрытия сессий). Включается явно: WARM=1.
 //
 // Запуск (обычно поднимается автоматически из алиаса oc-ds):
 //   PORT=8787 REWRITE=ttl bun zen-cache-proxy.mjs
@@ -29,12 +29,13 @@
 //                                             (default 24h)
 //   LOG         1 — дампить тела запросов в CAPTURE_DIR (по умолчанию выключено)
 //   CAPTURE_DIR каталог дампа/лога            (default /tmp/opencode/zen-capture)
-//   WARM        0 — выключить прогрев кэша    (default 1 = включён)
+//   WARM        1 — включить прогрев кэша     (default 0 = выключен)
 //   WARM_AFTER_MS  простой, после которого шлётся прогрев (default 180000 = 3 мин)
 //   WARM_TIMEOUT_MS таймаут прогревающего запроса          (default 60000)
 //
-// WARM для /v1/responses включается только при RETENTION=off (fallback): при
-// работающем retention прогрев не нужен и только жёг бы cache_read каждые 3 мин.
+// WARM выключен по умолчанию: с cache_control ttl=1h (Anthropic) и
+// prompt_cache_retention=24h (Responses) кэш и так переживает паузы, а прогрев
+// лишь жёг cache_read каждые ~3 мин — в т.ч. часами по уже закрытым сессиям.
 //
 // Ключи не хранятся: заголовки авторизации клиента (x-api-key / Authorization)
 // проксируются как есть. Порт слушает только 127.0.0.1.
@@ -47,7 +48,7 @@ const RETENTION = process.env.RETENTION ?? "24h"; // "" | "none" — выклю�
 const RETENTION_ON = RETENTION !== "" && RETENTION !== "none";
 const LOG = process.env.LOG === "1";
 const CAPTURE_DIR = process.env.CAPTURE_DIR || "/tmp/opencode/zen-capture";
-const WARM = process.env.WARM !== "0";
+const WARM = process.env.WARM === "1";
 const WARM_AFTER_MS = Number(process.env.WARM_AFTER_MS || 180000);
 const WARM_TIMEOUT_MS = Number(process.env.WARM_TIMEOUT_MS || 60000);
 
