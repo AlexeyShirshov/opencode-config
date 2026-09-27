@@ -178,8 +178,9 @@ Transition gates:
    After 3 iterations without passing — first escalate to `escalate`, then, if it
    did not help, STOP and ask the user, rather than a 4th attempt. **In autonomous mode**
    (§Autonomous mode) no question is asked: after `escalate` — STOP with the recorded status.
-4. **ACT → EXIT** — only if a lesson has been recorded (memory MCP), docs/AGENTS.md/tests have
-   been updated and verified, and the **cycle status file is written**, and in the normal mode the
+4. **ACT → EXIT** — only if docs/AGENTS.md/tests have
+   been updated and verified, and the **cycle status file is written** (or, when the flow closes,
+   deleted — §Status file → "Lifetime"), and in the normal mode the
    **message for the next session has also been printed** (§ACT; in autonomous mode it is not
    printed — there is no message for the user, §Autonomous mode). Closing the cycle
    (ACT → EXIT), call `todowrite` (`A:` → `completed`). You cannot close the
@@ -234,6 +235,9 @@ the deviation and return to the contract**, rather than "I'll finish and fix it 
 - I am writing/changing the status file during DO or CHECK (it lives only at the start of DO and in ACT).
 - I closed the flow (no further cycle of this task) but left its status file in the tree —
   §Status file → "Lifetime" says delete it in ACT.
+- I am writing a lesson into the memory MCP every cycle, or narrating project facts there — it is
+  for 0–2 **transferable** lessons, and durable artifacts already own the project facts
+  (§ACT step 1).
 - I did not call `todowrite` on a phase transition or left `in_progress` on a finished phase.
 - I am loading code, large files, logs, MCP output into my context — instead of a pointer/summary.
 - "Tests later", "docs later", "I'll add the test strategy as I go" — in DO everything runs
@@ -304,7 +308,9 @@ the context.**
 1. **Stop** — do not continue the current action.
 2. **Status file** — read `docs/specs/status/<task>-<N>.md`: goal, criteria, decisions
    (perf/reconnaissance/unit mode), `D:` tasks, Done/Verified.
-3. **Memory and overlay** — lessons from the memory MCP + project instructions/`AGENTS.md` (load
+3. **Memory and overlay** — **transferable** lessons from the memory MCP (search by this task's
+   topic/stack; the graph may hold legacy noise — the status file and docs win over it)
+   + project instructions/`AGENTS.md` (load
    by pointer, not in full).
 4. **Rules** — re-read the gates, §Red flags and the current phase todo list.
 5. **Five questions** — where am I (task/phase/cycle)? where to (the next `D:`/`P:`)? what is the goal and
@@ -399,7 +405,8 @@ reports/statuses; to check, use "set/not set".
   a separate Task with a narrow question. It returns a conclusion and does not edit code; the implementation
   of the recommendations is then performed by `coder`. The tier is expensive — call it only where cheap
   subagents cannot give an answer.
-- **ACT** — `general` collects the data, lessons go to the memory MCP, you record the standard yourself;
+- **ACT** — `general` collects the data, **transferable** lessons go to the memory MCP
+  (optional, §ACT step 1: 0–2, no duplication of durable artifacts), you record the standard yourself;
   then the cycle status file and the message for the next session (§ACT).
 
 ### Parallel DO streams (code + tests + docs)
@@ -955,7 +962,13 @@ ACT is mandatory (gate 4) and in the normal mode ends with **two artifacts**: th
 message is addressed to; the status file remains, and the work continues in the same session.
 Order:
 
-1. **Lesson → memory MCP**: what worked/did not work and how it was verified.
+1. **Transferable lesson → memory MCP** — **optional, 0–2 per cycle, a no-op is a normal outcome.**
+   Only what is reusable **beyond this repo/task**, has no natural home in the durable artifacts, and
+   would be lost to a session in a **different** project: tool/CLI gotchas, environment facts,
+   agent/model behavior, process patterns. A *conclusion*, not a narrative. Project facts belong to
+   steps 2–3 — **do not duplicate** what docs/AGENTS.md/tests/registries/issues already record.
+   Search the graph first and **update/extend the existing entity** (mark superseded observations)
+   instead of adding a near-duplicate. Nothing transferable — **skip**.
 2. **Docs/AGENTS.md/tests** updated (`coder`; for DocFX — `docfx-specialist`),
    verified by the CHECK doc lens; project registries — per the project rules.
 3. **Stable rules** (what must always apply) — into the project
