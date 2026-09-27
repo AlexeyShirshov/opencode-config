@@ -232,6 +232,8 @@ the deviation and return to the contract**, rather than "I'll finish and fix it 
 - I silently skipped a mandatory PLAN decision: test strategy, docs plan, perf measurement,
   reconnaissance, unit mode.
 - I am writing/changing the status file during DO or CHECK (it lives only at the start of DO and in ACT).
+- I closed the flow (no further cycle of this task) but left its status file in the tree —
+  §Status file → "Lifetime" says delete it in ACT.
 - I did not call `todowrite` on a phase transition or left `in_progress` on a finished phase.
 - I am loading code, large files, logs, MCP output into my context — instead of a pointer/summary.
 - "Tests later", "docs later", "I'll add the test strategy as I go" — in DO everything runs
@@ -948,7 +950,7 @@ problem: each fix reveals new coupling or a defect elsewhere.
 ## ACT: closing the cycle, status and handoff
 
 ACT is mandatory (gate 4) and in the normal mode ends with **two artifacts**: the cycle status file
-and a ready message for the next session. **In autonomous mode
+(kept only while the flow continues — see §Status file → "Lifetime") and a ready message for the next session. **In autonomous mode
 (§Autonomous mode) there is no second artifact** — there is still no user the
 message is addressed to; the status file remains, and the work continues in the same session.
 Order:
@@ -960,7 +962,12 @@ Order:
    PDCA overlay/AGENTS.md. **Do not write the cycle state there**: instructions are loaded
    into every session.
 4. **Cycle status file** (§Status file).
-5. **Commit advice + message for the next session** (§Message) — the block
+5. **Status-file lifetime** (§Status file → "Lifetime"). Look at your own **`Next plan`**: if the
+   flow is **complete** (no further cycle of this task is needed — the next goal is a separate
+   task/flow) — **delete the status file** in this ACT (`coder` runs `rm`; the §ACT exception also
+   lets `build` do it directly). If a further cycle of this task is planned — **keep** it: it is
+   the next session's handoff.
+6. **Commit advice + message for the next session** (§Message) — the block
    last, nothing after it. **In autonomous mode this block is not printed**
    (§Autonomous mode).
 
@@ -977,7 +984,7 @@ set its own directory). The name **must** contain both the task and the cycle nu
 
 Examples: `docs/specs/status/raw-sql-3.md`, `docs/specs/status/oc-dev-cache-1.md`.
 
-The file lives **at two moments** and does not change in between:
+The file lives **at two moments** and does not change in between (and is **deleted** in ACT when the flow closes — see "Lifetime"):
 
 1. **Creation — on the `go` go-ahead, as the first step of DO (via `coder`)**: the cycle goal,
    acceptance criteria, test strategy, docs plan, **perf-measurement decision**,
@@ -987,6 +994,21 @@ The file lives **at two moments** and does not change in between:
 In the parallel-worktree mode the status file is created **for each unit right away** (DO step 1),
 **inside its worktree**; the name — by the unit slug (`<unit>-<N>.md`), so the files do not
 conflict on merge.
+
+**Lifetime — a handoff artifact, not a document.** The file is kept only while the flow is
+**active**, i.e. while a further cycle of the same task is planned; it is not a permanent record
+(durable output lives in the docs/AGENTS.md, the memory MCP and the project registries). In ACT,
+after `Next plan` is written, resolve the file the same way:
+
+- a further cycle of **this** task is planned → **keep** it (it is the next session's handoff);
+- the flow is **complete** — nothing further for this task, and the next goal is a separate
+  task/flow → **delete** it in this ACT (`rm`; `coder`, or `build` directly). A single-cycle flow
+  (nothing will supersede the file) therefore ends with the file gone, not lingering.
+- a **superseded** status (an earlier cycle of the same task, once the next cycle starts) is
+  deleted too.
+
+Never leave a status file behind for a finished flow: it is not a doc, and an orphaned file
+misleads the next session and shows up in commits.
 
 Content — a brief handoff, not a report:
 
@@ -1022,7 +1044,8 @@ The record in PLAN is made by `coder` (`planner` has no file permissions); `buil
 
 ### Message for the next session
 
-Right after writing the status, `build` **must** close the response in this order
+Right after the status file is finalized — and, when the flow is complete, deleted
+(§Status file → "Lifetime") — `build` **must** close the response in this order
 (**in autonomous mode the block is not printed** — §Autonomous mode):
 
 **1. Commit advice** (verbatim, if the work on the task is fully finished):
@@ -1048,6 +1071,8 @@ Continue PDCA from PLAN.
 
 Requirements: one line per meaning; repo-relative paths; no code or diffs —
 only pointers and the goal. Several closed cycles — a reference to the specific status.
+If the status file was deleted at ACT (the flow is complete — §Status file → "Lifetime"),
+replace the `Status:` line with `Status: — (flow closed; status file deleted)`.
 
 ## Project checklists (priority)
 
