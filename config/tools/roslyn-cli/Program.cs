@@ -103,7 +103,10 @@ static async Task<Socket?> ConnectAsync(string slnPath)
     if (File.Exists(sock) && TryConnect(sock) is { } existing)
         return existing;
 
-    SpawnDaemon(slnPath);
+    // If another daemon already holds the lock (still loading the solution, so its
+    // socket isn't up yet), don't spawn a duplicate -- just wait for it below.
+    if (!DaemonOwned(sock))
+        SpawnDaemon(slnPath);
 
     var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(120);
     while (DateTime.UtcNow < deadline)
@@ -181,12 +184,45 @@ static string SocketPath(string slnPath)
     return Path.Combine(Path.GetTempPath(), "opencode", $"roslynq-{hash}.sock");
 }
 
+static string LockPath(string sock) => sock + ".lock";
+
+// True when some daemon currently holds the per-solution lock. Uses the OS advisory
+// lock (released automatically if the owner dies), so a stale lock file is harmless.
+static bool DaemonOwned(string sock)
+{
+    try
+    {
+        using var _ = new FileStream(LockPath(sock), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        return false;
+    }
+    catch (IOException)
+    {
+        return true;
+    }
+}
+
 // ---------------------------------------------------------------- daemon
 
 static async Task<int> ServeAsync(string slnPath)
 {
     var sock = SocketPath(slnPath);
     Directory.CreateDirectory(Path.GetDirectoryName(sock)!);
+
+    // Exactly one daemon per solution: the first process to take this exclusive lock
+    // wins; later ones exit instead of racing to unlink/re-bind the socket and leaving
+    // orphaned daemons that each keep a full solution loaded.
+    FileStream guard;
+    try
+    {
+        guard = new FileStream(LockPath(sock), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+    }
+    catch (IOException)
+    {
+        Console.Error.WriteLine("roslynq daemon already running for this solution");
+        return 0;
+    }
+
+    using var _guard = guard;
     RedirectLog(sock);
 
     QueryEngine engine;
