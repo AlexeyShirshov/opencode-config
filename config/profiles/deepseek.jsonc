@@ -1,12 +1,42 @@
 {
   "$schema": "https://opencode.ai/config.json",
+
+  // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
+  // на DeepSeek Flash; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
+  // Triage CHECK `check` на GPT-6 Sol, «руки»/сбор — DeepSeek, `escalate` и
+  // `security-auditor` — Opus). Субагенты целиком живут в общих `agents/*.md`.
   "model": "deepseek/deepseek-flash",
+
+  // Дешёвая модель для служебных задач (генерация заголовков/резюме).
+  "small_model": "deepseek/deepseek-flash",
+
+  // Обычный режим: стартуем в `build` (полные инструменты) — просто выполняем задачу.
+  // Цикл PDCA не навязан: opencode сам показывает агенту список скиллов (name+description)
+  // в system prompt, и `pdca-dotnet` грузится только когда пользователь просит
+  // «по циклу»/«через PDCA». Отдельный instructions-файл не нужен.
+  "default_agent": "build",
+
+  // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
+  // всем профилям) — в paths указывать не нужно, только профильные наборы.
   "skills": {
     "paths": [
       "/home/alex/.config/opencode/skills-deepseek"
     ]
   },
+
   "provider": {
+    "opencode": {
+      "options": {
+        // Рассуждающие модели (Opus 5.5 / GPT-6 Sol) долго «молчат» — запас больше.
+        "headerTimeout": 60000,
+        "chunkTimeout": 300000,
+        // Локальный zen-cache-proxy добавляет cache_control.ttl="1h" (иначе 5 мин):
+        // оркестратор не теряет prompt-cache, пока ждёт субагентов → нет дорогих
+        // перезаписей контекста. Поднимается из алиаса oc-ds;
+        // см. tools/zen-cache-proxy.mjs.
+        "baseURL": "http://127.0.0.1:8787/v1"
+      }
+    },
     "deepseek": {
       "options": {
         "apiKey": "{env:DEEPSEEK_API_KEY}",
@@ -15,6 +45,7 @@
       }
     }
   },
+
   "mcp": {
     "memory": {
       "type": "local",

@@ -56,7 +56,7 @@ Quality gates (use when applicable)
 - crap-analysis: after tests added/changed in complex code
 
 Specialist agents
-- dotnet-concurrency-specialist, dotnet-performance-analyst, dotnet-benchmark-designer, akka-net-specialist, docfx-specialist
+- dotnet-csharp-concurrency-specialist, dotnet-performance-analyst, dotnet-benchmark-designer, akka-net-specialist, docfx-specialist
 ```
 
 ## Compressed Snippet Template (Vercel-style)
@@ -74,7 +74,7 @@ Use this when you want maximum density (small context footprint):
 |testing:{testcontainers-integration-tests,playwright-blazor-testing,snapshot-testing}
 |aspire:{aspire-service-defaults,aspire-integration-testing}
 |quality-gates:{dotnet-slopwatch(after:substantial new/refactor/LLM code),crap-analysis(after:tests added/changed in complex code)}
-|agents:{dotnet-concurrency-specialist,dotnet-performance-analyst,dotnet-benchmark-designer,akka-net-specialist,docfx-specialist}
+|agents:{dotnet-csharp-concurrency-specialist,dotnet-performance-analyst,dotnet-benchmark-designer,akka-net-specialist,docfx-specialist}
 ```
 
 ### Regenerating the README block

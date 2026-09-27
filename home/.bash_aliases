@@ -128,14 +128,14 @@ filter-package() {
     dotnet package search "$query" --take 20
 }
 
-# opencode profiles
-alias oc-ds='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/deepseek.jsonc opencode -c'
+# opencode profiles (oc-ds определяется ниже как функция — поднимает zen-cache-proxy)
 alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode -c'
 
-# zen-cache-proxy: добавляет cache_control ttl="1h" к Opus-запросам к OpenCode Zen.
-# Иначе prompt-cache живёт 5 мин и перезаписывается ($5/M у Opus), пока оркестратор
-# ждёт субагентов. Порт должен совпадать с provider.opencode.options.baseURL в
-# profiles/oc-dev.jsonc.
+# zen-cache-proxy: добавляет cache_control ttl="1h" к Anthropic-запросам (escalate,
+# security-auditor) к OpenCode Zen. Иначе prompt-cache живёт 5 мин и перезаписывается
+# ($5/M у Opus). GPT-6 Sol идёт через /v1/responses с нативным кэшем 24h — прокси к
+# нему неприменим. Порт должен совпадать с provider.opencode.options.baseURL в
+# profiles/deepseek.jsonc (oc-ds).
 OC_ZEN_PROXY_PORT="${OC_ZEN_PROXY_PORT:-8787}"
 # NB: не используем /dev/tcp — в этой WSL он виснет на connect.
 _oc_zen_proxy_up() { curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:$OC_ZEN_PROXY_PORT/__health"; }
@@ -150,21 +150,26 @@ _oc_zen_proxy_ensure() {
     _oc_zen_proxy_up && return 0
     sleep 0.1
   done
-  echo "oc-dev: zen-cache-proxy не поднялся на :$OC_ZEN_PROXY_PORT (лог: ~/.local/share/opencode/zen-cache-proxy.log)" >&2
+  echo "zen-cache-proxy не поднялся на :$OC_ZEN_PROXY_PORT (лог: ~/.local/share/opencode/zen-cache-proxy.log)" >&2
 }
 
-# без -c: каждый запуск — новый PDCA-сеанс в агент plan (Opus). Плюс -c на пустом
-# проекте (нет сессии) даёт "Unexpected server error" из-за placeholder sessionID "dummy".
-# Снимаем устаревший алиас oc-dev, если он остался в уже открытом шелле: иначе
-# при следующем source интерактивный bash разворачивает алиас в строке `oc-dev() {`
+# oc-ds — основной профиль (обычная работа + PDCA-скилл); поднимает zen-cache-proxy
+# (нужен для Opus/Sol). У oc-ds -c (продолжить последнюю сессию); на пустом проекте -c
+# даёт "Unexpected server error" из placeholder sessionID "dummy"; новый сеанс —
+# `OPENCODE_CONFIG=$HOME/.config/opencode/profiles/deepseek.jsonc opencode` без -c.
+# Снимаем устаревшие алиасы, если остались в открытом шелле: иначе
+# при следующем source интерактивный bash разворачивает алиас в строке `oc-ds() {`
 # и падает с "syntax error near unexpected token `('".
-unalias oc-dev 2>/dev/null || true
-oc-dev() {
+unalias oc-ds 2>/dev/null || true
+oc-ds() {
   _oc_zen_proxy_ensure
-  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/oc-dev.jsonc" opencode "$@"
+  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" opencode -c "$@"
 }
 # isolated sandbox for experiments (own config + sessions DB)
 alias oc-sandbox='$HOME/sources/opencode-config-sandbox/bin/oc-sandbox'
+
+# pdca-fleet: N независимых PDCA-циклов — ворктри + N сессий opencode (скрипт, не скилл)
+alias oc-fleet='$HOME/.config/opencode/tools/pdca-fleet.sh'
 
 # Branch-name completion for git-switch / gcd (same as `git switch`)
 if ! declare -F __git_complete >/dev/null 2>&1; then

@@ -7,15 +7,34 @@
 // Прокси добавляет `ttl: "1h"` к каждому ephemeral-блоку, и вместо перезаписи
 // идёт дешёвое чтение кэша ($0.2/M).
 //
-// Запуск (обычно поднимается автоматически из алиаса oc-dev):
+// Плюс WARM: пока по /v1/messages нет новых запросов (например, оркестратор ждёт
+// субагента), прокси периодически переотправляет префикс последнего запроса с
+// max_tokens:1, чтобы запись кэша не вытеснялась. Это дешёвый cache_read вместо
+// полной перезаписи. Прогрев идёт мимо сессии — в её историю ничего не пишется.
+//
+// Запуск (обычно поднимается автоматически из алиаса oc-ds):
 //   PORT=8787 REWRITE=ttl bun zen-cache-proxy.mjs
+//
+// Для gpt-6-sol ситуация иная: он ходит через /v1/responses, где cache_control нет,
+// а TTL кэша задаётся полем prompt_cache_retention. opencode его не шлёт, поэтому
+// действует короткий in-memory TTL (~5–10 мин) и после простоя оркестратор
+// переписывает весь префикс (у замера — 80% всего cache_write). Прокси добавляет
+// prompt_cache_retention: "24h" (единственное поддерживаемое значение для gpt-6-sol).
 //
 // ENV:
 //   UPSTREAM    апстрим                       (default https://opencode.ai/zen/v1)
 //   PORT        порт прослушивания            (default 8787)
 //   REWRITE     none | ttl | add              (default ttl; add = ещё и инжектить блок)
+//   RETENTION   значение prompt_cache_retention для /v1/responses; "" | none — off
+//                                             (default 24h)
 //   LOG         1 — дампить тела запросов в CAPTURE_DIR (по умолчанию выключено)
 //   CAPTURE_DIR каталог дампа/лога            (default /tmp/opencode/zen-capture)
+//   WARM        0 — выключить прогрев кэша    (default 1 = включён)
+//   WARM_AFTER_MS  простой, после которого шлётся прогрев (default 180000 = 3 мин)
+//   WARM_TIMEOUT_MS таймаут прогревающего запроса          (default 60000)
+//
+// WARM для /v1/responses включается только при RETENTION=off (fallback): при
+// работающем retention прогрев не нужен и только жёг бы cache_read каждые 3 мин.
 //
 // Ключи не хранятся: заголовки авторизации клиента (x-api-key / Authorization)
 // проксируются как есть. Порт слушает только 127.0.0.1.
@@ -24,13 +43,68 @@ import { mkdirSync, writeFileSync, appendFileSync } from "node:fs";
 const UPSTREAM = (process.env.UPSTREAM || "https://opencode.ai/zen/v1").replace(/\/+$/, "");
 const PORT = Number(process.env.PORT || 8787);
 const REWRITE = process.env.REWRITE || "ttl";
+const RETENTION = process.env.RETENTION ?? "24h"; // "" | "none" — выключить
+const RETENTION_ON = RETENTION !== "" && RETENTION !== "none";
 const LOG = process.env.LOG === "1";
 const CAPTURE_DIR = process.env.CAPTURE_DIR || "/tmp/opencode/zen-capture";
+const WARM = process.env.WARM !== "0";
+const WARM_AFTER_MS = Number(process.env.WARM_AFTER_MS || 180000);
+const WARM_TIMEOUT_MS = Number(process.env.WARM_TIMEOUT_MS || 60000);
 
 if (LOG) mkdirSync(CAPTURE_DIR, { recursive: true });
 let seq = 0;
 const logline = (s) => { if (LOG) appendFileSync(`${CAPTURE_DIR}/proxy.log`, s + "\n"); };
 const safeJson = (t) => { if (typeof t !== "string") return t; try { return JSON.parse(t); } catch { return null; } };
+
+// --- prompt-cache warm ------------------------------------------------------
+// Помним последний cacheable-запрос к /v1/messages и, если по нему давно нет
+// активности (оркестратор ждёт субагента), переотправляем его префикс с
+// max_tokens:1. Кэш читается/освежается дёшево, полной перезаписи не случается.
+// Сессию не трогаем — это отдельный запрос к тому же апстриму и ключу.
+let last = null;       // { kind, target, headers, body, time }
+let inFlight = 0;      // сколько реальных запросов сейчас летит на апстрим
+let warming = false;
+
+function warmOnce() {
+  if (warming || !last || inFlight > 0) return;
+  const ageMs = Date.now() - last.time;
+  if (ageMs < WARM_AFTER_MS) return;
+  warming = true;
+  last.time = Date.now();
+  void (async () => {
+    let status = "?";
+    try {
+      const body = safeJson(last.body) ?? {};
+      body.stream = false;
+      if (last.kind === "responses") {
+        body.max_output_tokens = 16; // у Responses минимум 16
+      } else {
+        body.max_tokens = 1;
+        delete body.thinking; // max_tokens:1 несовместим с thinking
+      }
+      const ac = new AbortController();
+      const timer = setTimeout(() => ac.abort(), WARM_TIMEOUT_MS);
+      try {
+        const res = await fetch(last.target, { method: "POST", headers: new Headers(last.headers), body: JSON.stringify(body), signal: ac.signal });
+        status = res.status;
+        await res.text();
+      } finally {
+        clearTimeout(timer);
+      }
+      logline(`warm idle=${Math.round(ageMs / 1000)}s -> ${status}`);
+    } catch (e) {
+      logline(`warm idle=${Math.round(ageMs / 1000)}s -> error ${e?.message ?? e}`);
+    } finally {
+      warming = false;
+    }
+  })();
+}
+
+if (WARM) {
+  const tickMs = Math.max(15000, Math.min(30000, Math.floor(WARM_AFTER_MS / 2)));
+  const timer = setInterval(warmOnce, tickMs);
+  if (typeof timer.unref === "function") timer.unref();
+}
 
 // Ставит ttl:"1h" всем ephemeral-блокам cache_control. Возвращает число правок.
 function rewriteTtl(obj) {
@@ -48,6 +122,16 @@ function rewriteTtl(obj) {
   };
   walk(obj);
   return n;
+}
+
+// /v1/responses (gpt-6-sol): cache_control нет, TTL задаётся prompt_cache_retention.
+// Без него — короткий in-memory TTL и полная перезапись префикса после простоя.
+function addResponsesRetention(obj, path) {
+  if (path !== "/responses") return 0; // path уже без префикса /v1
+  if (!RETENTION_ON) return 0;
+  if (obj.prompt_cache_retention) return 0;
+  obj.prompt_cache_retention = RETENTION;
+  return 1;
 }
 
 // Добавляет ephemeral+1h на последний content-блок последнего сообщения (если блоков нет).
@@ -97,6 +181,7 @@ Bun.serve({
         let n = 0;
         if (REWRITE === "ttl" || REWRITE === "add") n += rewriteTtl(j);
         if (REWRITE === "add") n += addCacheControl(j);
+        n += addResponsesRetention(j, path);
         if (n > 0) {
           bodyText = JSON.stringify(j);
           logline(`${id} rewrite=${REWRITE} changed=${n} path=${path}`);
@@ -112,14 +197,26 @@ Bun.serve({
         JSON.stringify({ url: target, headers: red, body: safeJson(bodyText) ?? bodyText }, null, 2));
     }
 
+    if (WARM && req.method === "POST") {
+      if (path === "/messages" && bodyText?.includes('"cache_control"')) {
+        last = { kind: "messages", target, headers: [...fwd.entries()], body: bodyText, time: Date.now() };
+      } else if (path === "/responses" && !RETENTION_ON && bodyText?.includes('"prompt_cache_key"')) {
+        // fallback: только если retention выключен (иначе прогрев не нужен)
+        last = { kind: "responses", target, headers: [...fwd.entries()], body: bodyText, time: Date.now() };
+      }
+    }
+
+    inFlight++;
     let down;
     try {
       down = await fetch(target, { method: req.method, headers: fwd, body: bodyText ?? undefined });
     } catch (e) {
+      inFlight--;
       logline(`${id} ${req.method} ${path} -> 502 ${e?.message ?? e}`);
       return new Response(JSON.stringify({ error: { type: "proxy_error", message: String(e?.message ?? e) } }),
         { status: 502, headers: { "content-type": "application/json" } });
     }
+    inFlight--;
     logline(`${id} ${req.method} ${path} -> ${down.status}`);
     const out = new Headers(down.headers);
     out.delete("content-encoding");
@@ -132,4 +229,4 @@ Bun.serve({
   },
 });
 
-console.error(`zen-cache-proxy http://127.0.0.1:${PORT} -> ${UPSTREAM} (REWRITE=${REWRITE} LOG=${LOG ? 1 : 0})`);
+console.error(`zen-cache-proxy http://127.0.0.1:${PORT} -> ${UPSTREAM} (REWRITE=${REWRITE} RETENTION=${RETENTION_ON ? RETENTION : "off"} LOG=${LOG ? 1 : 0} WARM=${WARM ? WARM_AFTER_MS + "ms" : "off"})`);
