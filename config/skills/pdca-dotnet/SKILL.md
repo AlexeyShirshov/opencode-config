@@ -18,7 +18,7 @@ The design presumption is economy: a cheap orchestrator, strong `planner`/`check
 expensive `escalate` used sparingly; if the host gives one model for everything, the
 cycle still works — just without the cost/quality split.
 
-These rules are addressed to you as the orchestrator. Subagents (`coder`, `explore`,
+These rules are addressed to you as the orchestrator. Subagents (`scout`, `coder`, `explore`,
 `general`, `dotnet-*`, `check`, `planner`, `escalate`) do NOT apply them: `coder`,
 on the contrary, must edit files and run commands; `check`/`planner` only
 read the summary and produce a verdict/plan (no pulling code).
@@ -47,6 +47,7 @@ opencode the default is `build`); the skill is addressed to it.
 
 | Role             | Agent name         | What is required              | Fallback if the agent is missing |
 |------------------|--------------------|-------------------------------|----------------------------------|
+| GATHER (facts)   | `scout`            | strictly read-only, cheap     | built-in `explore`               |
 | PLAN (decisions) | `planner`          | read-only, no `Task`          | built-in `general`               |
 | DO (hands)       | `coder`            | `edit`/`bash` allow           | built-in `general`               |
 | CHECK (verdict)  | `check`            | read-only, no `Task`          | built-in `general`               |
@@ -65,7 +66,7 @@ PLAN/CHECK/ESCALATE, cheap DO), set `model:` in the agent config.
 2. In each file uncomment and fill in `model:` for your provider.
 3. Restart opencode — agents are only read at startup.
 4. Allow invoking them: `agent.build.permission.task` → allow for
-   `planner`/`check`/`coder`/`escalate`/`security-auditor`.
+   `scout`/`planner`/`check`/`coder`/`escalate`/`security-auditor`.
 
 If the agents are absent and cannot be created — run on the built-ins (`general` instead of
 `coder`/`planner`/`check`, `explore` instead of `security-auditor`) and tell the user
@@ -82,8 +83,8 @@ escalation — to `escalate`.
   tracker, §Phase todo tracker: it is not a file edit but orchestration, and it is mandatory).
   Technically you have the tools, but within the cycle you do not use them for edits: that
   is the whole point of the mode.
-- Do not read large files or explore code yourself — delegate to `explore`/`general`,
-  taking only the conclusion into your context.
+- Do not read large files or explore code yourself — delegate to `scout` (facts with
+  `file:line`), taking only the conclusion into your context.
 - Heavy sources — MCP (`context7`/`mslearn`/`deepwiki`/`gitmcp`), full files,
   large `bash` outputs — only through subagents; you take a pointer/summary into context.
 - Your job: drive the phases, run the Plan design review and the Check audit (checklists
@@ -191,13 +192,26 @@ Transition gates:
 ## Autonomous mode
 
 If the user **explicitly** asked to work autonomously (e.g.: "work autonomously",
-"without confirmations", "don't ask me anything", "act on your own", "don't wait for me"), the cycle runs
-**without confirmation pauses, and the transition to the next phase is automatic, on completion of
-the current one**:
+"without confirmations", "don't ask me anything", "act on your own", "don't wait for me"), the whole
+**plan** runs without confirmation pauses: the transition to the next step — phase **or task** — is
+automatic on completion of the current one. The unit of autonomy is the plan/queue, not the cycle: the
+cycle is where the gates are, not where the work stops.
 
 - **Transition to the next phase — right on completion of the current one**: as soon as the phase gate
-  is passed, the next phase begins in the same turn (PLAN → DO → CHECK → ACT, and so on around
-  the cycle). No "confirmation" pauses, no invitations.
+  is passed, the next phase begins in the same turn (PLAN → DO → CHECK → ACT). No "confirmation"
+  pauses, no invitations.
+- **ACT → the next step — likewise immediately, in this session**: having closed the cycle (ACT → EXIT),
+  **do not stop and do not hand off**. If the plan/queue still has a **ready** step (the next cycle of
+  this task, or the next independent task/feature of the milestone), the next **PLAN** begins in the
+  same turn, in this session; its input is the `Next plan` of the cycle just closed (§Status file).
+  The "message for the next session" is a **manual-mode** mechanism; in autonomous mode it is not a
+  wait state but the input to the next PLAN. The independence of features (its own PLAN/CHECK/ACT, its
+  own worktree) is about **isolation, not about pausing**: "that needs its own session/cycle" is
+  **never** a stop reason here.
+- **A verified result is not a completion criterion.** There is no "clean checkpoint" stop, and the
+  contract knows no budget/limit rule. Stop — only when: the queue of **ready** steps is empty (the
+  remainder is reported as blocked), a blocker genuinely requires the user, the iteration limit fired
+  (§Escalation), or the user said stop. Only then — one summary report (closed / remaining / blockers).
 - **PLAN → DO — immediately**, without the `go`/`го` go-ahead and without the invitation "write `go`":
   after showing the plan as a short report, start DO in the same turn (first step — the status file with the
   plan, then the parallel streams, §Delegation). The conditions of gate 1 (criteria,
@@ -209,6 +223,13 @@ the current one**:
   session" together with the commit advice (§ACT → "Message...")**. Everything needed to
   continue already lives in the cycle status file.
 - **Work continues in the same session** — without a context compaction and without a new session.
+- **Auto-commit — only on an explicit request.** The "do not touch git yourself" rule is overridden if
+  the user asked for it together with autonomy ("work autonomously with auto-commit"): after each
+  completed step/task (i.e. on each ACT close) stage and commit the changes yourself, without asking —
+  so the tree does not accumulate work. **Push is still never performed**: it always requires a
+  separate, explicit request. If the task runs in the context of a GitHub issue, the commit message
+  **starts with the issue number**: `#17 <summary of the change>`. Without such a request the
+  commit advice of §Message applies (manual mode) and the autonomous run leaves the tree uncommitted.
 - Ask a question **only if the cycle cannot be performed** without an answer (no acceptance
   criteria, ambiguous requirements, an unavailable resource) — not to confirm the plan.
 - The iteration limit and escalation are not cancelled (§Escalation): after 3 iterations — `escalate`,
@@ -244,6 +265,10 @@ the deviation and return to the contract**, rather than "I'll finish and fix it 
   in parallel.
 - I am making a 4th attempt after three failed iterations instead of `escalate`.
 - In autonomous mode I am printing the `go` invitation or the "message for the next session".
+- In autonomous mode I stopped at a "clean/verified checkpoint", treated the closed cycle as a wait
+  state / end of work, asked for the word ("say the word and I'll take #N next"), or cited "independent
+  features are their own sessions" — independence is isolation, not a pause; the next PLAN starts in
+  the same turn (§Autonomous mode).
 - I am editing files outside the plan's footprint ("while I'm at it", incidental refactoring) — Over-Reach.
 - I am running units in parallel when their footprints overlap — that is not independence.
 - I am working outside my own worktree / not where the unit's status file was created.
@@ -368,7 +393,8 @@ reports/statuses; to check, use "set/not set".
 
 ## Delegation by phase
 
-- **PLAN** — in two beats (see §PLAN): **gather** — `explore`/`general`/`dotnet-architect`/
+- **PLAN** — in two beats (see §PLAN): **gather** — `scout` (repository facts, `file:line`)
+  plus the `dotnet-*` lenses: `dotnet-architect`/
   `dotnet-code-review-agent` (design/perf), `dotnet-testing-specialist` (what and how to
   test) and `dotnet-documentation-strategy` (which docs are affected) — cheap;
   **decisions and decomposition** — the `planner` subagent, which `build`
@@ -382,11 +408,12 @@ reports/statuses; to check, use "set/not set".
   (several Tasks per turn) — in one tree. If the plan chose worktree isolation (§PLAN →
   "Unit execution mode") — follow the template (§Delegation → "Worktree sub-tasks of one
   cycle"). And **independent features** (each with its own PLAN/CHECK/ACT) — not here: that is N
-  separate sessions, each in its own worktree, outside this cycle.
+  separate cycles, each isolated in its own worktree, outside this cycle. Independence is about
+  **isolation, not about pausing**: in autonomous mode they run one after another in this session
+  (§Autonomous mode).
 - **CHECK** — in two beats (see §CHECK): **gather** — cheap subagents
-  (`dotnet-code-review-agent` slices the diff by files/chunks and returns **raw candidates
-  without a verdict**, `general`/`explore` —
-  `file:line`, `dotnet-testing-specialist` — the test lens, the specialized
+  (`scout` — facts with `file:line`; `dotnet-code-review-agent` slices the diff by files/chunks and returns **raw candidates
+  without a verdict**, `dotnet-testing-specialist` — the test lens, the specialized
   `dotnet-async-performance-specialist`/`dotnet-csharp-concurrency-specialist` — by
   trigger) + deterministic commands
   via `coder` (tests, coverage, CRAP). **The code audit and the three lenses — test, doc, perf —
@@ -405,7 +432,7 @@ reports/statuses; to check, use "set/not set".
   a separate Task with a narrow question. It returns a conclusion and does not edit code; the implementation
   of the recommendations is then performed by `coder`. The tier is expensive — call it only where cheap
   subagents cannot give an answer.
-- **ACT** — `general` collects the data, **transferable** lessons go to the memory MCP
+- **ACT** — the cheap gatherer (`scout`/`general`) collects the data, **transferable** lessons go to the memory MCP
   (optional, §ACT step 1: 0–2, no duplication of durable artifacts), you record the standard yourself;
   then the cycle status file and the message for the next session (§ACT).
 
@@ -485,8 +512,9 @@ DO step 1 **inside its worktree** — otherwise the files conflict on merge.
 
 **This is one cycle, not several.** PLAN/CHECK/ACT here are shared, the sub-tasks are brought into
 one tree and re-verified together. For **independent features** (each with its own
-PLAN/CHECK/ACT) this template does not apply — that is N separate cycles, each in its own
-session and its own worktree, outside this cycle.
+PLAN/CHECK/ACT) this template does not apply — that is N separate cycles, each isolated in its own
+worktree (in manual mode each gets its own session; in autonomous mode they run consecutively in this
+session — §Autonomous mode), outside this cycle.
 
 ### Escalation (`escalate`)
 
@@ -517,7 +545,7 @@ The design review proceeds in two beats (like §CHECK), so as **not to load code
 context**:
 
 1. **Gather (cheap).** Review the **area of change** (not the whole
-   repository) via `explore`/`general`/`dotnet-architect`/`dotnet-code-review-agent`:
+   repository) via `scout` + `dotnet-architect`/`dotnet-code-review-agent`:
    findings (`file:line`, counters, sealing ratio, anti-pattern hits) — without code.
 2. **Decide.** The `planner` subagent (invoked by `build` via Task; the same path
    for starting the cycle and for the CHECK → PLAN return)
@@ -696,7 +724,7 @@ it becomes step 2 of DO.
   `deferred` with a trigger.
 
 **Coverage comes from the project environment, mandatory.** If the project has a coverage config/threshold,
-find it (gather — `dotnet-testing-specialist`/`explore`) and use it:
+find it (gather — `scout`/`dotnet-testing-specialist`) and use it:
 `Directory.Build.props`/`Directory.Packages.props`, `.runsettings`,
 `coverlet.runsettings`, `dotnet test --collect:"XPlat Code Coverage"`, the CI workflow
 (`--threshold`, `minimum_covered_lines`, `Threshold`), a baseline artifact
@@ -911,7 +939,8 @@ Check output: in the project language, `P0/P1/P2` or `Finding N` with `Was`/`Now
 ### Parallel sub-tasks in worktrees (within one cycle)
 
 This section is about **sub-tasks of one cycle** (a shared PLAN/contract). For **independent features**
-(each with its own cycle) do not apply it: that is N separate sessions/worktrees, and the integration after
+(each with its own cycle) do not apply it: that is N separate cycles/worktrees (in autonomous mode they
+run consecutively in this session — §Autonomous mode), and the integration after
 the merge there is done by a separate verification cycle, not by this CHECK.
 
 If the plan chose (or the user asked) to perform **sub-tasks of one cycle**
@@ -974,12 +1003,14 @@ Order:
 3. **Stable rules** (what must always apply) — into the project
    PDCA overlay/AGENTS.md. **Do not write the cycle state there**: instructions are loaded
    into every session.
-4. **Cycle status file** (§Status file).
+4. **Cycle status file** (§Status file): the next session's handoff in manual mode, the next PLAN's
+   input in autonomous mode (§Autonomous mode).
 5. **Status-file lifetime** (§Status file → "Lifetime"). Look at your own **`Next plan`**: if the
    flow is **complete** (no further cycle of this task is needed — the next goal is a separate
    task/flow) — **delete the status file** in this ACT (`coder` runs `rm`; the §ACT exception also
-   lets `build` do it directly). If a further cycle of this task is planned — **keep** it: it is
-   the next session's handoff.
+   lets `build` do it directly). If a further cycle of this task is planned — **keep** it: the next
+   cycle starts from it (manual mode — the next session; autonomous — the next PLAN in this session,
+   §Autonomous mode).
 6. **Commit advice + message for the next session** (§Message) — the block
    last, nothing after it. **In autonomous mode this block is not printed**
    (§Autonomous mode).
@@ -1018,7 +1049,8 @@ after `Next plan` is written, resolve the file the same way:
   task/flow → **delete** it in this ACT (`rm`; `coder`, or `build` directly). A single-cycle flow
   (nothing will supersede the file) therefore ends with the file gone, not lingering.
 - a **superseded** status (an earlier cycle of the same task, once the next cycle starts) is
-  deleted too.
+  deleted too; likewise the status of a **finished task** once autonomous work has moved on to the
+  next step/task (§Autonomous mode) — that flow is closed, not waiting for a session.
 
 Never leave a status file behind for a finished flow: it is not a doc, and an orphaned file
 misleads the next session and shows up in commits.
@@ -1058,8 +1090,9 @@ The record in PLAN is made by `coder` (`planner` has no file permissions); `buil
 ### Message for the next session
 
 Right after the status file is finalized — and, when the flow is complete, deleted
-(§Status file → "Lifetime") — `build` **must** close the response in this order
-(**in autonomous mode the block is not printed** — §Autonomous mode):
+(§Status file → "Lifetime") — `build` **must** close the response in this order. **Manual mode
+only**: this block exists to bridge sessions; in autonomous mode it is not printed and there is no
+wait state — the same content is the input to the next PLAN in this session (§Autonomous mode):
 
 **1. Commit advice** (verbatim, if the work on the task is fully finished):
 
