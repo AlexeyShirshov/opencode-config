@@ -2,101 +2,44 @@
   "schema_version": 2,
   "diagram_type": "workflow",
   "meta": {
-    "title": "pdca-dotnet: PDCA вертикально, параллельные работы горизонтально",
+    "title": "pdca-dotnet: оркестратор и фазы цикла",
     "output": "pdca-dotnet.html",
     "quality_profile": "showcase",
     "views": [
       {
         "id": "main-cycle",
-        "label": "Фазы цикла",
+        "label": "Цикл",
         "focus": [
           "plan",
           "do",
           "check",
           "act"
         ],
-        "note": "Вход в цикл — скилл `pdca-dotnet` (обычные задачи идут мимо). PLAN → DO → CHECK → ACT сверху вниз по шлюзам."
+        "note": "PLAN → DO → CHECK → ACT по гейтам; go — начало DO."
       },
       {
-        "id": "plan-detail",
-        "label": "PLAN: что делает",
+        "id": "branches",
+        "label": "Оркестратор и ветки",
         "focus": [
-          "plan",
-          "plan_gather",
-          "plan_decide",
-          "plan_perf",
-          "plan_recon",
-          "plan_artifacts",
-          "do"
-        ],
-        "note": "Сбор дёшево → решение сильно: fix/defer, режим единиц, перф-замер, разведка, тест-стратегия, доки → отмашка go."
-      },
-      {
-        "id": "parallel",
-        "label": "DO ∥ CHECK: потоки",
-        "focus": [
-          "do",
-          "code",
-          "tests",
-          "docs",
+          "orb",
           "check",
-          "audit",
-          "lens_tests",
-          "lens_docs",
-          "lens_perf",
-          "sec_audit"
+          "sec_audit",
+          "escalate",
+          "stop"
         ],
-        "note": "DO: код∥тесты∥доки; CHECK: аудит∥тест∥док∥перф∥(безопасность*). Ветки независимы; независимые фичи — отдельные циклы/сессии."
-      },
-      {
-        "id": "act-close",
-        "label": "ACT: закрытие цикла",
-        "focus": [
-          "act",
-          "act_lesson",
-          "act_docs",
-          "act_rules",
-          "act_status",
-          "act_handoff"
-        ],
-        "note": "Шаги ACT по порядку: урок → memory, доки/AGENTS.md, правила, статус-файл, handoff (последним)."
-      },
-      {
-        "id": "returns",
-        "label": "Возвраты и эскалация",
-        "focus": [
-          "check",
-          "replan",
-          "plan",
-          "do",
-          "escalate"
-        ],
-        "note": "Дефект → DO, неверный план → PLAN; эскалация — по триггерам."
+        "note": "Оркестратор раскладывает вердикт: дефект → DO, план → PLAN; безопасность и эскалация — по триггеру."
       }
     ],
     "legend": {
-      "mode": "all",
       "entries": {
         "backend": {
           "label": "дешёвая ступень"
         },
         "security": {
-          "label": "сильная ступень"
+          "label": "средняя ступень (medium)"
         },
         "external": {
-          "label": "дорогая ступень"
-        },
-        "frontend": {
-          "visible": false
-        },
-        "database": {
-          "visible": false
-        },
-        "cloud": {
-          "visible": false
-        },
-        "messagebus": {
-          "visible": false
+          "label": "дорогая ступень (strong)"
         }
       }
     }
@@ -120,42 +63,8 @@
     },
     {
       "id": "l_ret",
-      "label": "Возвраты и эскалация",
+      "label": "Оркестратор и ветки",
       "variant": "exception"
-    }
-  ],
-  "groups": [
-    {
-      "id": "g_do",
-      "label": "DO · параллельно",
-      "lane": "l_do",
-      "fromCol": 1,
-      "toCol": 3,
-      "variant": "emphasis"
-    },
-    {
-      "id": "g_check",
-      "label": "CHECK · параллельно",
-      "lane": "l_check",
-      "fromCol": 1,
-      "toCol": 5,
-      "variant": "emphasis"
-    },
-    {
-      "id": "g_act",
-      "label": "ACT · последовательно",
-      "lane": "l_act",
-      "fromCol": 1,
-      "toCol": 5,
-      "variant": "emphasis"
-    },
-    {
-      "id": "g_plan",
-      "label": "PLAN · сбор → решение",
-      "lane": "l_plan",
-      "fromCol": 1,
-      "toCol": 5,
-      "variant": "emphasis"
     }
   ],
   "mainPath": [
@@ -171,7 +80,7 @@
       "col": 0,
       "type": "security",
       "label": "PLAN",
-      "sublabel": "дизайн · сбор→решение",
+      "sublabel": "дизайн · план → go",
       "width": 150
     },
     {
@@ -180,32 +89,8 @@
       "col": 0,
       "type": "backend",
       "label": "DO",
-      "sublabel": "статус-файл · потоки",
+      "sublabel": "код ∥ тесты ∥ доки",
       "width": 150
-    },
-    {
-      "id": "code",
-      "lane": "l_do",
-      "col": 1,
-      "type": "backend",
-      "label": "Поток кода",
-      "sublabel": "из плана"
-    },
-    {
-      "id": "tests",
-      "lane": "l_do",
-      "col": 2,
-      "type": "backend",
-      "label": "Поток тестов",
-      "sublabel": "из плана"
-    },
-    {
-      "id": "docs",
-      "lane": "l_do",
-      "col": 3,
-      "type": "backend",
-      "label": "Поток доков",
-      "sublabel": "из плана"
     },
     {
       "id": "check",
@@ -213,48 +98,16 @@
       "col": 0,
       "type": "security",
       "label": "CHECK",
-      "sublabel": "судит аудит + линзы",
+      "sublabel": "вердикт · аудит + линзы",
       "width": 150
-    },
-    {
-      "id": "audit",
-      "lane": "l_check",
-      "col": 1,
-      "type": "backend",
-      "label": "Аудит кода",
-      "sublabel": "сбор · кандидаты"
-    },
-    {
-      "id": "lens_tests",
-      "lane": "l_check",
-      "col": 2,
-      "type": "backend",
-      "label": "Линза тестов",
-      "sublabel": "прогон · покрытие"
-    },
-    {
-      "id": "lens_docs",
-      "lane": "l_check",
-      "col": 3,
-      "type": "backend",
-      "label": "Линза доков",
-      "sublabel": "XML-doc · surface"
-    },
-    {
-      "id": "lens_perf",
-      "lane": "l_check",
-      "col": 4,
-      "type": "backend",
-      "label": "Линза перфа",
-      "sublabel": "замер → суждение"
     },
     {
       "id": "sec_audit",
       "lane": "l_check",
-      "col": 5,
-      "type": "external",
-      "label": "Аудит безопасности",
-      "sublabel": "дорого · по триггеру",
+      "col": 1,
+      "type": "security",
+      "label": "Безопасность",
+      "sublabel": "auth/секреты/ввод · medium",
       "width": 132
     },
     {
@@ -263,17 +116,8 @@
       "col": 0,
       "type": "backend",
       "label": "ACT",
-      "sublabel": "закрытие цикла",
+      "sublabel": "закрытие · handoff",
       "width": 150
-    },
-    {
-      "id": "replan",
-      "lane": "l_ret",
-      "col": 1,
-      "type": "security",
-      "label": "Перепланирование",
-      "sublabel": "planner · сильная",
-      "width": 160
     },
     {
       "id": "escalate",
@@ -281,139 +125,35 @@
       "col": 3,
       "type": "external",
       "label": "Эскалация",
-      "sublabel": "дорого · read-only · по триггерам",
+      "sublabel": "повтор после 1 фикса · 3-й провал CHECK(r)",
       "width": 180
     },
     {
-      "id": "act_lesson",
-      "lane": "l_act",
-      "col": 1,
-      "type": "backend",
-      "label": "Урок",
-      "sublabel": "→ memory MCP"
-    },
-    {
-      "id": "act_docs",
-      "lane": "l_act",
+      "id": "orb",
+      "lane": "l_ret",
       "col": 2,
       "type": "backend",
-      "label": "Доки",
-      "sublabel": "AGENTS.md · тесты"
+      "label": "Оркестратор",
+      "sublabel": "build · диспетчер",
+      "width": 120
     },
     {
-      "id": "act_rules",
-      "lane": "l_act",
-      "col": 3,
-      "type": "backend",
-      "label": "Правила",
-      "sublabel": "→ PDCA-оверлей"
-    },
-    {
-      "id": "act_status",
-      "lane": "l_act",
+      "id": "stop",
+      "lane": "l_ret",
       "col": 4,
-      "type": "backend",
-      "label": "Статус",
-      "sublabel": "файл цикла · итог"
-    },
-    {
-      "id": "act_handoff",
-      "lane": "l_act",
-      "col": 5,
-      "type": "backend",
-      "label": "Handoff",
-      "sublabel": "→ EXIT · коммит"
-    },
-    {
-      "id": "plan_gather",
-      "lane": "l_plan",
-      "col": 1,
-      "type": "backend",
-      "label": "Сбор",
-      "sublabel": "дёшево · file:line"
-    },
-    {
-      "id": "plan_decide",
-      "lane": "l_plan",
-      "col": 2,
-      "type": "security",
-      "label": "Decide",
-      "sublabel": "fix/defer"
-    },
-    {
-      "id": "plan_perf",
-      "lane": "l_plan",
-      "col": 3,
-      "type": "security",
-      "label": "Перф",
-      "sublabel": "замер? + baseline"
-    },
-    {
-      "id": "plan_recon",
-      "lane": "l_plan",
-      "col": 4,
-      "type": "security",
-      "label": "Разведка",
-      "sublabel": "spike / harness"
-    },
-    {
-      "id": "plan_artifacts",
-      "lane": "l_plan",
-      "col": 5,
-      "type": "security",
-      "label": "Тесты · Доки",
-      "sublabel": "стратегия · план"
+      "type": "external",
+      "label": "STOP",
+      "sublabel": "с записью статуса",
+      "width": 92
     }
   ],
   "edges": [
-    {
-      "id": "e_fan_code",
-      "from": "do",
-      "to": "code",
-      "role": "branch"
-    },
-    {
-      "id": "e_fan_tests",
-      "from": "do",
-      "to": "tests",
-      "role": "branch"
-    },
-    {
-      "id": "e_fan_docs",
-      "from": "do",
-      "to": "docs",
-      "role": "branch"
-    },
     {
       "id": "e_do_check",
       "from": "do",
       "to": "check",
       "label": "потоки закрыты",
       "role": "main"
-    },
-    {
-      "id": "e_lens_audit",
-      "from": "check",
-      "to": "audit",
-      "role": "branch"
-    },
-    {
-      "id": "e_lens_tests",
-      "from": "check",
-      "to": "lens_tests",
-      "role": "branch"
-    },
-    {
-      "id": "e_lens_docs",
-      "from": "check",
-      "to": "lens_docs",
-      "role": "branch"
-    },
-    {
-      "id": "e_lens_perf",
-      "from": "check",
-      "to": "lens_perf",
-      "role": "branch"
     },
     {
       "id": "e_sec_audit",
@@ -424,171 +164,77 @@
       "role": "branch"
     },
     {
-      "id": "e_defect",
-      "from": "check",
-      "to": "do",
-      "label": "дефект реализации",
-      "variant": "security",
-      "role": "error"
-    },
-    {
-      "id": "e_replan",
-      "from": "check",
-      "to": "replan",
-      "label": "неверный план",
-      "variant": "security",
-      "role": "error"
-    },
-    {
-      "id": "e_escalate",
-      "from": "check",
-      "to": "escalate",
-      "label": "2–3× провал / риск",
-      "variant": "dashed",
-      "role": "branch"
-    },
-    {
-      "id": "e_replan_plan",
-      "from": "replan",
-      "to": "plan",
-      "variant": "security",
-      "role": "return"
-    },
-    {
       "id": "e_lenses",
       "from": "check",
       "to": "act",
       "label": "аудит + линзы зелёные"
     },
     {
-      "id": "e_act_lesson",
-      "from": "act",
-      "to": "act_lesson"
-    },
-    {
-      "id": "e_act_docs",
-      "from": "act_lesson",
-      "to": "act_docs"
-    },
-    {
-      "id": "e_act_rules",
-      "from": "act_docs",
-      "to": "act_rules"
-    },
-    {
-      "id": "e_act_status",
-      "from": "act_rules",
-      "to": "act_status"
-    },
-    {
-      "id": "e_act_handoff",
-      "from": "act_status",
-      "to": "act_handoff",
-      "label": "gate 4: всё записано"
-    },
-    {
-      "id": "e_plan_gather",
-      "from": "plan",
-      "to": "plan_gather"
-    },
-    {
-      "id": "e_plan_decide",
-      "from": "plan_gather",
-      "to": "plan_decide"
-    },
-    {
-      "id": "e_plan_perf",
-      "from": "plan_decide",
-      "to": "plan_perf"
-    },
-    {
-      "id": "e_plan_recon",
-      "from": "plan_perf",
-      "to": "plan_recon"
-    },
-    {
-      "id": "e_plan_artifacts",
-      "from": "plan_recon",
-      "to": "plan_artifacts"
-    },
-    {
       "id": "e_go",
       "from": "plan",
       "to": "do",
-      "label": "`go` / авто: сразу"
-    }
-  ],
-  "cards": [
-    {
-      "dot": "emerald",
-      "title": "Шлюзы цикла",
-      "items": [
-        "PLAN → DO — по отмашке `go`/`го`; в автономном режиме — сразу, без подтверждения",
-        "DO → CHECK — только когда закрыты все три потока DO",
-        "CHECK → ACT — только когда зелёны аудит кода и все три линзы",
-        "ACT → EXIT — урок, доки/тесты и статус-файл записаны (gate 4); сообщение для сессии — вне автономного режима"
-      ]
+      "label": "`go` · n=1 / авто: сразу"
     },
     {
-      "dot": "amber",
-      "title": "Что делает PLAN",
-      "items": [
-        "Сбор (дёшево): ревью области изменений через explore/general/dotnet-* — находки file:line, без кода",
-        "Decide (сильная ступень): fix now vs deferred, декомпозиция задач, фиксация плана",
-        "Режим единиц — обязательное решение: последовательно / параллельно в дереве / ворктри; режим по footprint, ворктри — только при нужде в изоляции",
-        "6 линз: дизайн SOLID/DRY · type design · perf-анти-паттерны · тест-стратегия · перф-замер · разведка",
-        "Перф-замер — обязательное решение: нужен (чем мерить + baseline) или аргумент почему нет (file:line)",
-        "Разведка — обязательное решение: нужен ли эксперимент/прототип (spike или experiment-only цикл) или аргумент почему нет; PoC вне src, под env-гейтом",
-        "Тест-стратегия: для каждой задачи — чем проверять; порог покрытия проекта",
-        "План доков: какие доки затронуты или «не трогаем»",
-        "Выход: находки по severity + one-line fix и инвариант; затем пауза и отмашка go",
-        "Статус-файл с планом создаёт coder первым шагом DO, а не PLAN"
-      ]
+      "id": "e_check_orb",
+      "from": "check",
+      "to": "orb",
+      "label": "вердикт pass/fail",
+      "role": "return"
     },
     {
-      "dot": "cyan",
-      "title": "Параллельные работы",
-      "items": [
-        "DO: код, тесты и доки пишутся одновременно из плана",
-        "CHECK: сбор дёшево — аудит (дифф по чанкам) и перф-замер → кандидаты/числа ∥ тест/док-линзы",
-        "Суждение по аудиту и вердикт — `check` (сильная ступень); аудит безопасности — по триггеру (дорогая ступень)",
-        "Потоки опираются на план, а не друг на друга; «часть из» — не проход",
-        "Независимые фичи (свой PLAN/CHECK/ACT) — не веер одного цикла, а отдельные сессии/ворктри (скрипт `pdca-fleet.sh`)",
-        "ACT — без веера: шаги идут по порядку, handoff строго последним"
-      ]
+      "id": "e_escalate_orb",
+      "from": "escalate",
+      "to": "orb",
+      "label": "рекомендация",
+      "variant": "security",
+      "role": "return"
     },
     {
-      "dot": "violet",
-      "title": "Роли и ступени (роли, а не модели)",
-      "items": [
-        "PLAN и возврат CHECK → PLAN — `planner`; вердикт CHECK — `check` (сильная ступень)",
-        "Оркестрация (`build`), DO (`coder`), ACT и сбор CHECK — дешёвая ступень",
-        "Аудит безопасности — `security-auditor`; `escalate` — дорогая ступень, по триггеру",
-        "Модели задаёт хост (профиль/конфиг агента), а не скилл",
-        "Без настройки субагент наследует модель оркестратора: цикл работает и на одной модели",
-        "Цикл включается скиллом `pdca-dotnet`; обычные задачи `build` делает напрямую"
-      ]
+      "id": "e_orb_do",
+      "from": "orb",
+      "to": "do",
+      "label": "исправимо → DO",
+      "variant": "security",
+      "role": "return"
     },
     {
-      "dot": "rose",
-      "title": "Возвраты и предел",
-      "items": [
-        "Дефект реализации → в DO (`coder`); неверный план → `planner` (сильная ступень)",
-        "Эскалация — по триггерам: 2–3× провал CHECK, риск-приёмка, неуверенность в PLAN",
-        "После 3 итераций — `escalate`, затем СТОП и вопрос"
-      ]
+      "id": "e_orb_act",
+      "from": "orb",
+      "to": "act",
+      "label": "принять риск",
+      "variant": "security",
+      "role": "return"
     },
     {
-      "dot": "slate",
-      "title": "Автономный режим",
-      "items": [
-        "Включается только явной просьбой: «работай автономно», «без подтверждений», «ничего не спрашивай»",
-        "Переход фаз — автоматически по завершении текущей: gate пройден → следующий шаг в том же ходе (PLAN→DO→CHECK→ACT→…)",
-        "PLAN → DO сразу: `go` и приглашение не нужны; условия gate 1 обязательны",
-        "Никаких сообщений пользователю: без приглашений, подтверждений плана, блока «Сообщение для следующей сессии» и совета по коммиту — всё уже в статус-файле",
-        "Работа идёт в той же сессии (без компакта и новой сессии); вопрос — только если цикл невыполним; после 3 итераций — escalate и СТОП без вопроса",
-        "Действует, пока пользователь явно не снимет"
-      ]
+      "id": "e_orb_stop",
+      "from": "orb",
+      "to": "stop",
+      "label": "не исправимо"
+    },
+    {
+      "id": "e_orb_escalate",
+      "from": "orb",
+      "to": "escalate",
+      "label": "повтор дефекта / 3-й провал r",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "e_orb_replan",
+      "from": "orb",
+      "to": "plan",
+      "label": "неверный план · r+1",
+      "variant": "security",
+      "role": "return"
+    },
+    {
+      "id": "e_do_replan",
+      "from": "do",
+      "to": "plan",
+      "label": "новое предусловие / блокер",
+      "variant": "security",
+      "role": "return"
     }
   ]
 }

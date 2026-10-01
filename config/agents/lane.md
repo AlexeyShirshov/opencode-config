@@ -1,7 +1,7 @@
 ---
 description: Orchestrates one pdca-collection group inside its own worktree — runs the group's tasks sequentially, one pdca-dotnet cycle per task, branch per task, auto-commit. Invoked by the collection loop; do not use for single tasks.
 mode: subagent
-# tier: weak
+# tier: cheap
 permission:
   task:
     "*": deny

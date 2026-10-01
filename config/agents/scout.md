@@ -1,7 +1,7 @@
 ---
 description: "WHEN facts must be gathered from the codebase, docs, the web, or wikis — code search, reading files for discovery, official docs (context7), Microsoft/Azure docs (mslearn), repo wikis (deepwiki/gitmcp) — and a distilled evidence report is wanted. Read-only: no edits, no recommendations. Use for every research request from an expensive primary (`architect`) and for pdca gather streams; triggers on: find, where is, search, look up, check the docs, research, gather, посмотри, найди, собери факты."
 mode: subagent
-# tier: weak
+# tier: cheap
 permission:
   edit: deny
   write: deny
@@ -16,7 +16,7 @@ permission:
     "git status*": allow
 ---
 
-# scout (weak tier) — дешёвый сборщик фактов
+# scout (cheap tier) — дешёвый сборщик фактов
 
 Ты — **только сборщик фактов** на дешёвой модели. Тебя зовёт дорогая модель
 (`architect`, оркестратор цикла), чтобы не жечь свой контекст на серфинг.

@@ -3,8 +3,8 @@
 
   // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
   // на DeepSeek Flash; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
-  // Triage CHECK `check` на GPT-6.1 Sol (variant high), «руки»/сбор — DeepSeek, `escalate` и
-  // `security-auditor` — Sonnet). Субагенты целиком живут в общих `agents/*.md`.
+  // Triage CHECK `check` на GPT-6.1 Sol (variant high), «руки»/сбор — DeepSeek, `security-auditor` —
+  // тоже Sol (medium), `escalate` — Sonnet). Субагенты целиком живут в общих `agents/*.md`.
   "model": "deepseek/deepseek-flash",
 
   // Дешёвая модель для служебных задач (генерация заголовков/резюме).
@@ -17,7 +17,7 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: weak = DeepSeek Flash (coder/scout/lane), medium = GPT-6.1 Sol (high), strong = Sonnet 5.5 (см. README).
+  // Тиры: cheap = DeepSeek Flash (coder/scout/lane), medium = GPT-6.1 Sol (high), strong = Sonnet 5.5 (см. README).
   // Проект переопределяет любую роль своим `.opencode/opencode.jsonc` — проектный конфиг
   // мержится после профиля, достаточно указать только изменённые роли (например, `escalate`).
   "agent": {
@@ -25,7 +25,7 @@
     "planner": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "check": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "security-auditor": { "model": "opencode/claude-sonnet-5-5" },
+    "security-auditor": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "coder": { "model": "deepseek/deepseek-flash" },
     "scout": { "model": "deepseek/deepseek-flash" },
     "lane": { "model": "deepseek/deepseek-flash" }

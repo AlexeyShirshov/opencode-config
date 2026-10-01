@@ -13,6 +13,28 @@
       }
     }
   },
+  "agent": {
+    // `plan` (встроенный primary) — как `architect`: без bash/read/правок.
+    // Факты — через `scout`, правки — через `coder`; `general`/`explore` запрещены.
+    "plan": {
+      "permission": {
+        "task": { "*": "allow", "general": "deny", "explore": "deny" },
+        "bash": "deny",
+        "edit": "deny",
+        "read": "deny",
+        "grep": "deny",
+        "glob": "deny",
+        "list": "deny",
+        "webfetch": "deny",
+        "websearch": "deny",
+        "lsp": "deny",
+        "context7_*": "deny",
+        "mslearn_*": "deny",
+        "deepwiki_*": "deny",
+        "gitmcp_*": "deny"
+      }
+    }
+  },
   "permission": {
     "external_directory": {
       "/mnt/c/Users/user/source/**": "allow",
