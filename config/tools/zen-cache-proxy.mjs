@@ -15,11 +15,11 @@
 // Запуск (обычно поднимается автоматически из алиаса oc-ds):
 //   PORT=8787 REWRITE=ttl bun zen-cache-proxy.mjs
 //
-// Для gpt-6-sol ситуация иная: он ходит через /v1/responses, где cache_control нет,
+// Для gpt-6.1-sol ситуация иная: он ходит через /v1/responses, где cache_control нет,
 // а TTL кэша задаётся полем prompt_cache_retention. opencode его не шлёт, поэтому
 // действует короткий in-memory TTL (~5–10 мин) и после простоя оркестратор
 // переписывает весь префикс (у замера — 80% всего cache_write). Прокси добавляет
-// prompt_cache_retention: "24h" (единственное поддерживаемое значение для gpt-6-sol).
+// prompt_cache_retention: "24h" (единственное поддерживаемое значение для gpt-6.1-sol).
 //
 // ENV:
 //   UPSTREAM    апстрим                       (default https://opencode.ai/zen/v1)
@@ -125,7 +125,7 @@ function rewriteTtl(obj) {
   return n;
 }
 
-// /v1/responses (gpt-6-sol): cache_control нет, TTL задаётся prompt_cache_retention.
+// /v1/responses (gpt-6.1-sol): cache_control нет, TTL задаётся prompt_cache_retention.
 // Без него — короткий in-memory TTL и полная перезапись префикса после простоя.
 function addResponsesRetention(obj, path) {
   if (path !== "/responses") return 0; // path уже без префикса /v1

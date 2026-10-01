@@ -1,8 +1,8 @@
 ---
 name: check
-description: "CHECK Triage-вердикт на GPT-6 Sol. Читает только сводный отчёт gather-потоков и возвращает pass/fail, ранжирование и loop-back. Use for the Check-phase triage."
+description: "CHECK Triage-вердикт на medium-тире. Читает только сводный отчёт gather-потоков и возвращает pass/fail, ранжирование и loop-back. Use for the Check-phase triage."
 mode: subagent
-model: opencode/gpt-6-sol
+# tier: medium
 steps: 12
 permission:
   edit: deny
@@ -18,7 +18,7 @@ tools:
   roslyn: false
 ---
 
-# check (GPT-6 Sol) — CHECK Triage
+# check (medium tier) — CHECK Triage
 
 Ты — вердикт фазы CHECK. Оркестратор (`build`) вызывает тебя через Task и передаёт
 **только сводный отчёт** gather-потоков (аудит кода + линзы тестов/доков/перфа). Код и
@@ -29,7 +29,7 @@ tools:
 - Сырые кандидаты аудита кода (сбор на ds): `file:line`, ID правила/категория, счётчик.
 - Отчёты линз: тесты (зелёные? покрытие ≥ порога?), доки (обновлены?), перф
   (замер/аргумент).
-- Условно — заключение security-аудита (Opus), если сработал триггер.
+- Условно — заключение security-аудита (strong-тир), если сработал триггер.
 
 ## Что делаешь
 

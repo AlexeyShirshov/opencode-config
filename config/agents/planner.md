@@ -1,8 +1,8 @@
 ---
 name: planner
-description: "PLAN Decide on GPT-6 Sol. Reads only the gather/triage summary and returns the updated plan / new P-task (CHECK→PLAN loop-back). Use for in-cycle re-planning."
+description: "PLAN Decide on the medium tier. Reads only the gather/triage summary and returns the updated plan / new P-task (CHECK→PLAN loop-back). Use for in-cycle re-planning."
 mode: subagent
-model: opencode/gpt-6-sol
+# tier: medium
 steps: 12
 permission:
   edit: deny
@@ -18,7 +18,7 @@ tools:
   roslyn: false
 ---
 
-# planner (GPT-6 Sol) — PLAN Decide
+# planner (medium tier) — PLAN Decide
 
 Ты — «мозг» фазы PLAN. Тебя вызывает оркестратор (`build`) через Task: и **на старте
 цикла**, и **при возврате CHECK → PLAN**. Ты **не исполнитель**: файлы не правишь,

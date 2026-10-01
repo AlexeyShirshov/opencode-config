@@ -1,8 +1,8 @@
 ---
 name: coder
-description: "Исполнитель на дешёвой модели DeepSeek. Пишет и правит код, запускает команды. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
+description: "Исполнитель на дешёвом (weak) тире. Пишет и правит код, запускает команды. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
 mode: subagent
-model: deepseek/deepseek-flash
+# tier: weak
 steps: 60
 permission:
   edit: allow
