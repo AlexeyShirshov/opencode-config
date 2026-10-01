@@ -51,7 +51,7 @@ opencode the default is `build`); the skill is addressed to it.
 | PLAN (decisions) | `planner`          | read-only, no `Task`          | built-in `general`               |
 | DO (hands)       | `coder`            | `edit`/`bash` allow           | built-in `general`               |
 | CHECK (verdict)  | `check`            | read-only, no `Task`          | built-in `general`               |
-| ESCALATE         | `escalate`         | read-only, `bash` allow       | `general` (+ warn the user)      |
+| ESCALATE         | `escalate`         | read-only, facts via `scout`  | `general` (+ warn the user)      |
 | SECURITY         | `security-auditor` | strictly read-only            | built-in `explore`               |
 
 Ready-made definitions live in this skill's `assets/agents/`. Models are **not set**
@@ -133,8 +133,10 @@ Transition gates:
 1. **PLAN → DO** — only if there is: a goal, acceptance criteria (how we will verify),
    a task list (only concrete steps — no `TBD`/"later"/"and so on"), known risks,
    a **test strategy** (what is covered by unit tests, what by
-   integration tests, which test cases, the coverage level; if the tests need a shared
-   contract — an abstraction/DTO/signature — it is named too — §PLAN → "Test strategy"),
+   integration tests, which test cases, the coverage level; for any path-changing work also the
+   **variant matrix** with every edge closed as test / guard / `deferred with a trigger` (a missing or
+   half-closed matrix does **not** pass gate 1); if the
+   tests need a shared contract — an abstraction/DTO/signature — it is named too — §PLAN → "Test strategy"),
    a **docs plan** (which docs are affected or "we do not touch them" — §PLAN → "Documentation"),
    a **perf-measurement decision** (a measurement is needed or not + the argument — §PLAN → "Performance measurement";
    "not needed" without an argument does not pass the gate),
@@ -475,6 +477,30 @@ coder/tester/documenter disappears.
 above); in the "worktree" mode — per the template (§Worktree sub-tasks), and the status file of **each**
 unit is created right at DO step 1, inside its worktree.
 
+### Coder editing discipline (applying fixes)
+
+When a stream **applies** fixes — the `coder` role, whether the fix came from the PLAN design
+review, from a design/type/pattern lens, or from a CHECK loop-back — it follows the specialist-editor
+contract (the discipline a dedicated design/performance engineer would apply when it edits):
+
+- **One axis per step, then verify.** Make one coherent change, then build + run the affected tests
+  before the next one. Do not batch unrelated refactors; no "while I'm at it" (Over-Reach).
+- **Verify after every step, not only at the end.** A red build or failing test stops the stream and
+  is reported — it is not written over with the next edit.
+- **Minimal blast radius.** Touch only the fix's blast radius; leave unrelated parallel edits alone.
+  Keep public-surface changes minimal and noted.
+- **Preserve the repo's line endings / formatting** while editing; never leave LF-only or mixed
+  endings behind (whatever the host mandates — the overlay supplies the concrete normalizer).
+- **Build is the gate** — the project's configured build must be clean under its own warning policy
+  (e.g. `TreatWarningsAsErrors`); a change that introduces a warning is not a fix.
+- **No commits and no push** unless the user explicitly asked — a cycle never commits on its own.
+- **No benchmark conclusions.** The coder may run a benchmark to sanity-check, but does not draw
+  conclusions from it; sub-noise deltas are noise. Interpretation goes to the perf lens/specialist.
+- **Hand off what needs numbers** to the perf specialist (via `task`) instead of asserting it.
+
+A host/project overlay supplies the concrete values (build command, line endings, artifact restore,
+test projects); this block is the generic skeleton and the overlay may not omit it.
+
 ### Subagent report format (mandatory)
 
 In every Task state the response format explicitly — otherwise the subagent will drag in code and dumps:
@@ -536,8 +562,11 @@ call it: the tier is expensive.
 
 The escalation brief is compact: the question in one formulation; the acceptance criterion; what was already
 tried and why it did not work; exact `file:line`/commands; the boundaries (what must not
-be changed). The answer — a recommendation, the rationale, risks, exact steps. The implementation is still
-done by `coder`, not `escalate`.
+be changed). **Facts come pre-gathered**: put a `scout` evidence pack (`file:line`, signatures,
+test names) into the brief — run `scout` (or reuse the CHECK gather reports) before escalating,
+because `escalate` no longer crawls the repository itself; it reasons over the pack and only
+re-checks specific lines. The answer — a recommendation, the rationale, risks, exact steps.
+The implementation is still done by `coder`, not `escalate`.
 
 ## PLAN: design checklist (generic)
 
@@ -574,6 +603,51 @@ What to look at:
   `.Replace`), collections/LINQ on a hot path, regex, I/O and serialization, async.
 - **Structural sealedness.** Count sealed vs unsealed and report the ratio
   (the Verify-the-Inverse rule), not a verdict on a single type.
+
+### PLAN owns the quality of the plan (a weak task statement is not an excuse)
+
+The task statement may be underdeveloped or outright weak: a vague issue, half-written acceptance
+criteria, no edge list, a solution sketched from habit. **Treat the statement as a hypothesis to test,
+not a contract to obey, and not a spec to transcribe.** PLAN is responsible for the quality of the plan
+irrespective of how good the input is:
+
+- **Reconstruct the goal in essence** first (§Minimal solution, Q1) — what result is actually needed —
+  before designing anything; do not inherit a solution the statement presupposes.
+- **Derive/complete the acceptance criteria** from the required observable behavior (each with a negative
+  case), not from the wording; a weak statement never narrows the scope of verification.
+- Keep an explicit **"What the statement did not say"** list: every gap is closed in exactly one of three
+  ways — (a) resolved from evidence (`file:line`), (b) recorded as an explicit **assumption / risk** in
+  the plan, or (c) raised as a **blocker / `escalate`**. A silent guess is forbidden.
+- Enumerate the **variant matrix** from the change's **execution path**, not from the requirement's
+  wording, and close every row as test / guard / `deferred with a trigger`; surface what the raw input
+  left unsaid — missing constructor/mapping, value vs reference types, `null`/uninitialized state,
+  explicit projection vs the whole object, per-provider behavior.
+- Never pass incompleteness through to DO: an open question is resolved in PLAN (or recorded as an
+  assumption/blocker), not "discovered" in CHECK.
+- **PLAN assigns priority; CHECK applies it.** The severity mapping — "what is P1 by construction" —
+  is fixed in PLAN, never chosen by the CHECK triage at judgment time. Sources, in order: (1) the
+  statement's explicit invariants (a violation is P1 by construction); (2) the project overlay's
+  class-priority table; (3) otherwise **PLAN authors the row set itself** from the execution path and
+  the sibling's edge list — this is the only option in autonomous mode, where no human supplies it.
+  Freeze the priority matrix before DO. `check` may not downgrade a requirement- or class-row, and
+  must answer every row with a finding or "checked clean, `file:line`"; severity-by-taste in triage is
+  a defect.
+- **Prefer the existing approach first.** Before designing something new, look for an applicable
+  approach in **neighboring classes/methods/features** (surface, formatters, error handling — e.g. the
+  sibling terminal/API) and **reuse** it. An original design is allowed only when the existing one does
+  not fit, and then PLAN states explicitly why it does not. Copying the neighbor is the default;
+  originality is an exception with justification. Feed the sibling's **edge list** (the variants its
+  tests already guard) into the variant matrix — do not re-derive it from memory.
+- **No fail-open degradation.** An unsupported shape/branch must not **silently** change observable
+  semantics: catching and continuing with a substituted raw value (or any path different from the
+  buffered sibling) is forbidden. Without support — **throw** a typed error; the refusal behaviour
+  matches the sibling's class.
+
+A thin requirement is **not** an excuse for a happy-path plan, and it is not an excuse for a defect.
+A plan that leaves an execution variant unenumerated is a **PLAN defect**: gate 1 does not pass, and when
+it is discovered in CHECK it is a **loop-back CHECK → PLAN**, not a footnote in the final report. The
+plan's quality is on PLAN, not on the requester — a weak statement raises PLAN's burden, it does not
+lower the bar.
 
 ### Minimal solution and first principles
 
@@ -644,6 +718,13 @@ instructions/local checklist (see §Project checklists).
 Plan output (into the plan, not the code): findings by severity (🔴 / 🟡 / ℹ️), `file:line`,
 a one-line fix and the applicable invariant; split into **fix now** vs
 **deferred with a trigger**. **The edits themselves are applied by `coder` in the Do phase**, not by Plan.
+
+**Scope does not leave the current milestone.** When the project tracks work by milestones/releases:
+if a task/unit cannot be finished in this cycle, it may be **split**, but every new task/slice/issue
+stays in the **same milestone** as the original. Moving the leftover to the next milestone is
+forbidden — a split inherits the current milestone, and an unimplemented slice is a separate
+unit/issue *in that milestone*, not `deferred` into a future release. Documenting a limitation
+records behavior but does **not** replace the task in the current milestone.
 
 ### Prototype / reconnaissance (spike) — mandatory decision
 
@@ -723,6 +804,13 @@ it becomes step 2 of DO.
 - **Not covered** — trivial proxies and `record` DTOs without logic; recorded as
   `deferred` with a trigger.
 
+**Variant/branch matrix — mandatory, before the test cases.** Enumerate the execution variants of the
+change on the axes that matter (input kinds; `null`/default/uninitialized; value vs reference types;
+a missing constructor/mapping; explicit projection vs the whole object; each provider/backend; on/off
+flags) and close **every** row explicitly: **test**, **guard**, or **`deferred` with a trigger**. A
+list of happy-path cases is not a test strategy — unenumerated edges are exactly where coverage gaps
+and silent data corruption hide. The matrix is the deliverable PLAN fixes; CHECK verifies each row.
+
 **Coverage comes from the project environment, mandatory.** If the project has a coverage config/threshold,
 find it (gather — `scout`/`dotnet-testing-specialist`) and use it:
 `Directory.Build.props`/`Directory.Packages.props`, `.runsettings`,
@@ -731,6 +819,13 @@ find it (gather — `scout`/`dotnet-testing-specialist`) and use it:
 (`coverage.cobertura.xml`, `coverage/`). **The project threshold is the lower bound:** the strategy
 and the edits must not lower the given level; new code comes with tests so the percentage
 does not drop. No config/threshold — explicitly record the baseline in the plan; do not invent your own threshold.
+
+**Branch, not only line; mutation, not only green.** A green line percentage does not prove the new
+branches are exercised. Report the **branch** delta and run **mutation testing** on the changed code
+(Stryker.NET / `dotnet stryker`, scoped to the touched assembly/type) — surviving mutants on new code
+are killed or explicitly justified. No mutation tooling available — say so and list the untested
+branches, never imply coverage you did not measure. Every row of the variant matrix above is closed
+as test / guard / `deferred with a trigger`.
 
 Gather — `dotnet-testing-specialist`: the existing tests of the area
 (`file:line`), gaps, regression risk, **the config and the current coverage level**. The decision —
@@ -750,6 +845,11 @@ Anti-patterns that the CHECK test lens will reject (and PLAN must not plan them)
   coverage for the percentage's sake.
 - **Happy-path only** — without boundaries and degenerate cases (empty/one/many,
   `null`/`default`, the upper bound); cheap edges first, then the happy path.
+- **Line coverage as proof** — a green percentage over a happy-path suite hides untested edges;
+  branch delta + mutation, not the line number alone.
+- **An edge without a decision** — every enumerated variant is a test, a guard, or an explicit
+  `deferred with a trigger`; an unlisted edge is a silent gap (this is how a real uncovered
+  value-type branch shipped in the #94 dynamic-columns work).
 - **Checking the implementation instead of the behavior** — the test breaks on refactoring while the
   contract is unchanged (testing the interface for the interface's sake, not the observable behavior).
 - **Mocking what works anyway** — real components are preferable to extra mocks;
@@ -813,6 +913,23 @@ Check proceeds in two beats, so as **not to load code into the orchestrator's co
    via `coder`, the `P:` task — via the `planner` subagent; no manual agent
    switching is required from the user.
 
+- **Keep CHECK within one approved PLAN.** `build` keeps temporary runtime state: the
+  active task, the approved PLAN, and the `task_id` returned by `check`.
+  - The first CHECK of an approved PLAN calls `check` normally and saves the returned `task_id`.
+  - If CHECK loops back to DO for an implementation defect, the next CHECK of the **same task
+    and the same unchanged PLAN** resumes the saved `task_id` and passes the **full, current**
+    aggregated gather report — not a delta. Only the current report supports the new verdict;
+    earlier reports/verdicts are history, not evidence.
+  - Reset `task_id` (start a new `check` session) after CHECK → PLAN (wrong plan), after ACT,
+    before the next task — even inside one collection — and whenever the ID is lost.
+  - If `task_id` is lost after compaction or resume fails, run CHECK anew with the full report.
+    A missing ID never counts as a passed CHECK gate, and a resumed session does not waive any
+    mandatory lens or triggered security verdict.
+    Never recover a `task_id` by matching the task slug alone: confirm it is the same PLAN and
+    the same orchestrator session, otherwise start a new `check` session.
+  - **Unchanged PLAN** means the acceptance criteria and the design decision are unchanged,
+    not merely the same iteration number.
+
 ### Parallel CHECK streams (code audit + test + doc + perf + security*)
 
 Three unconditional streams, one conditional (security) and specialized subagents by
@@ -871,6 +988,14 @@ finding registries, maintain them — `coder` edits them). Skills (load via `ski
 `dotnet-csharp-nullable-reference-types`, `dotnet-testing-strategy`, `crap-analysis`,
 `dotnet-integration-testing`, `testcontainers`, `snapshot-testing`, `dotnet-xunit`.
 
+**Inlined specialists may not drop the port.** If a host/project overlay inlines a specialist
+agent's checklist into CHECK instead of dispatching the agent, the inlined port must carry that
+agent's **skill-loading** (step 1) and its **measurable artifacts** — the suppression/slop counts
+and ratio (step 4) and the per-finding `file:line` + rule-ID output (step 8) — not just its topic
+list. An overlay may add project specifics; it may not silently drop the skills or the counters.
+A CHECK that skipped step 1 or reports no numbers is **not** a pass, and its "all done" is not a
+verdict (see the orchestrator's self-certification ban).
+
 Workflow (items 3–10 — the **code-audit** stream, it runs **in parallel** with lenses 11–13,
 see "Parallel CHECK streams"). The audit is **two-phase**: items 3–6 and 9–10 — **cheap gather**
 (commands + raw candidates), items 7–8 — **judgment on the strong model** (`check`, beat 2):
@@ -898,7 +1023,10 @@ see "Parallel CHECK streams"). The audit is **two-phase**: items 3–6 and 9–1
    the CA/analyzer ID or naming rule, a one-line fix; split **fix now** vs
    **accepted/deviation with justification**.
 9. Records in the registries (if any) are made by `coder` in the `Was`/`Now`/
-   `Check` format; do not rewrite unrelated sections.
+   `Check` format; do not rewrite unrelated sections. **Author ≠ certifier:** whoever wrote the
+   code/claim does not certify it — an independent read-only stream re-derives each registry and
+   acceptance claim from the cited `file:line`; a mismatch, or a self-assessed `deferred`/`acceptable`
+   with no code basis, is a finding.
 10. Hot-path measurement — favors the perf specialist (`dotnet-async-performance-specialist`
     — async hot paths; `dotnet-csharp-concurrency-specialist` — races/locks; by
     trigger); the code-fix application — `coder`.
@@ -906,7 +1034,14 @@ see "Parallel CHECK streams"). The audit is **two-phase**: items 3–6 and 9–1
     a new test **from the PLAN test strategy**; the run
     is green; **coverage not below the project threshold** (the config from PLAN; no threshold — not below
     the baseline report), the coverage of the area did not drop; no new 🔴 CRAP hotspots.
-    Missing tests / a coverage drop — a `D:` task for `coder`, not "good enough".
+    **Every row of the PLAN variant matrix is closed** (test / guard / `deferred with a trigger`);
+    CHECK **augments** the plan's matrix with rows derived from the actual diff and the sibling's edge
+    list, and an added row without coverage is itself a defect (loop-back CHECK → PLAN/DO). **PASS is
+    forbidden while any requirement/class row is open**, and the **number of iterations does not prove
+    completeness** — only a closed matrix does. The
+    **branch** delta is reported (not only line); **mutation testing** on the changed code was run (or the
+    untested branches are listed explicitly). Missing tests / a coverage drop / an open matrix row — a `D:`
+    task for `coder`, not "good enough".
 12. **Doc lens** (a parallel stream, see "Parallel CHECK streams"). A public
     contract/behavior is affected ⇒ the docs are updated per the PLAN docs plan:
     XML-doc on the new/changed public member (CS1591), README/guides/DocFX pages,
@@ -1071,7 +1206,8 @@ Content — a brief handoff, not a report:
   pass/fail fork (§PLAN → "Prototype / reconnaissance").
 - **Unit mode** — sequential / parallel in one tree / parallel in
   separate worktrees (+ why) — §PLAN → "Unit execution mode".
-- **Deferred + trigger** — what was deferred and by which signal to return.
+- **Deferred + trigger** — what was deferred and by which signal to return (the deferred remainder
+  stays in the current milestone, §PLAN → "Scope does not leave the current milestone").
 - **Next plan + next todo** — the next cycle as a list (the todo is NOT
   carried over between sessions, it must be here).
 - **Changed files** — what was affected (paths; ≥3 — as a table), so the next session
