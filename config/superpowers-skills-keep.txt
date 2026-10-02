@@ -1,0 +1,17 @@
+# Curated superpowers skills registered with opencode.
+#
+# Only the skills listed below are exposed (via
+#   ~/.config/opencode/superpowers-skills-curated, a folder of symlinks).
+# Everything else stays untouched in the plugin's full pack and costs no
+# context; read a specific one on demand at
+#   <plugin>/node_modules/superpowers/skills/<name>/SKILL.md
+#
+# NOTE: `using-superpowers` is intentionally NOT listed — it is the bootstrap,
+# which the plugin still injects by reading it from the full pack. Listing it
+# here would only re-advertise its description.
+#
+# Apply:  bun ~/.config/opencode/tools/curate-skills.mjs --fix --pack superpowers
+# Check:  bun ~/.config/opencode/tools/curate-skills.mjs --check --pack superpowers
+# then restart opencode. One skill name per line; `#` starts a comment.
+
+brainstorming

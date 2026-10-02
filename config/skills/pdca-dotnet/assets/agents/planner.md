@@ -1,18 +1,14 @@
 ---
 name: planner
-description: "PLAN Decide. Reads only the gather/triage summary and returns the updated plan / new P-task (CHECK->PLAN loop-back). Use for in-cycle re-planning."
+description: "PLAN Decide on the medium tier. Reads only the gather/triage summary and returns the updated plan / new P-task (CHECK→PLAN / DO→PLAN loop-back). Use for in-cycle re-planning."
 mode: subagent
 # tier: medium
 steps: 12
 permission:
-  edit: deny
-  task: deny
-  read: deny
-  grep: deny
-  glob: deny
-  bash: deny
-  webfetch: deny
-  websearch: deny
+  # Default-deny: any MCP tool of any server (`<server>_<tool>`), plus read/grep/
+  # glob/bash/webfetch/websearch/edit/write/task. planner works from the passed
+  # summary only; no need to enumerate MCP servers (context7_*, mslearn_*, …).
+  "*": deny
 ---
 
 # planner — PLAN Decide

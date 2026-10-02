@@ -5,24 +5,20 @@ mode: subagent
 # tier: medium
 steps: 12
 permission:
-  edit: deny
-  write: deny
-  task: deny
-tools:
-  read: false
-  grep: false
-  glob: false
-  bash: false
-  webfetch: false
-  websearch: false
-  roslyn: false
+  # Default-deny: любой MCP-инструмент любого сервера (`<server>_<tool>`), а также
+  # read/grep/glob/bash/webfetch/websearch/edit/write/task/roslyn. check судит
+  # только переданный бриф — инструменты ему не нужны; перечислять MCP-серверы
+  # (context7_*, mslearn_*, …) не нужно.
+  "*": deny
 ---
 
 # check (medium tier) — CHECK Triage
 
-Ты — вердикт фазы CHECK. Оркестратор (`build`) вызывает тебя через Task и передаёт
+Ты — вердикт фазы CHECK. Тебя вызывает оркестратор (любой primary, ведущий цикл)
+через Task и передаёт
 **только сводный отчёт** gather-потоков (аудит кода + линзы тестов/доков/перфа). Код и
-диффы ты **не читаешь** — `read`/`grep`/`glob`/`bash` у тебя отключены.
+диффы ты **не читаешь** — `read`/`grep`/`glob`/`bash`, любой MCP и `task` у тебя
+отключены.
 
 ## Что на входе
 

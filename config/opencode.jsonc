@@ -14,24 +14,18 @@
     }
   },
   "agent": {
-    // `plan` (встроенный primary) — как `architect`: без bash/read/правок.
+    // `plan` (встроенный primary) — как `architect`: default-deny.
+    // `*` запрещает всё, включая любой MCP (`<server>_<tool>`) и
+    // read/grep/glob/list/bash/edit/lsp/webfetch/websearch; ниже — разрешения.
     // Факты — через `scout`, правки — через `coder`; `general`/`explore` запрещены.
     "plan": {
       "permission": {
+        "*": "deny",
         "task": { "*": "allow", "general": "deny", "explore": "deny" },
-        "bash": "deny",
-        "edit": "deny",
-        "read": "deny",
-        "grep": "deny",
-        "glob": "deny",
-        "list": "deny",
-        "webfetch": "deny",
-        "websearch": "deny",
-        "lsp": "deny",
-        "context7_*": "deny",
-        "mslearn_*": "deny",
-        "deepwiki_*": "deny",
-        "gitmcp_*": "deny"
+        "question": "allow",
+        // `brainstorming` (superpowers) — только `architect` (см. топ-левел `permission.skill`).
+        "skill": { "*": "allow", "brainstorming": "deny" },
+        "todowrite": "allow"
       }
     }
   },
@@ -39,7 +33,17 @@
     "external_directory": {
       "/mnt/c/Users/user/source/**": "allow",
       "/mnt/c/Users/user/Pictures/Screenshots/**": "allow",
-      "/tmp/**": "allow"
+      "/tmp/**": "allow",
+      // Курируемый dotnet-набор + полный пак скиллов: невыбранные скиллы читаются
+      // по требованию напрямую из пака (`.config/opencode/skills-deepseek/<name>/SKILL.md`).
+      "~/.config/opencode/skills-deepseek/**": "allow",
+      "~/.config/opencode/skills-deepseek-curated/**": "allow"
+    },
+    // `brainstorming` виден только `architect`: глобально запрещён, а architect
+    // перекрывает это своим `skill: allow` (правила агента идут после глобальных).
+    // Прочие агенты, у кого `skill: allow`, дополнительно глушат его у себя.
+    "skill": {
+      "brainstorming": "deny"
     }
   }
 }

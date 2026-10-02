@@ -116,10 +116,10 @@ THEMES = {
     },
     "dark": {
         "bg": "#0f172a", "card": "#1e293b", "shadow": "0 1px 3px rgba(0,0,0,.5)",
-        "title": "#e2e8f0", "sub": "#94a3b8", "band": "#020617",
+        "title": "#e2e8f0", "sub": "#94a3b8", "band": "#141d31",
         "orb_list": "#e2e8f0", "arrow": "#94a3b8", "bus": "#64748b",
-        "label": "#cbd5e1", "box": "#0b1220", "box_stroke": "#e2e8f0",
-        "box_stroke_w": 1.3, "frame_op": 0.6, "frame_w": 1.6, "tint": False,
+        "label": "#cbd5e1", "box": "#223046", "box_stroke": "#3b4a63",
+        "box_stroke_w": 1, "frame_op": 0.6, "frame_w": 1.6, "tint": False,
         "badge_op": 0.13, "badge_text": "#cbd5e1",
         "state_neutral": "#94a3b8",
     },

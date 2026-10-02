@@ -5,21 +5,17 @@ mode: subagent
 # tier: medium
 steps: 12
 permission:
-  edit: deny
-  task: deny
-  read: deny
-  grep: deny
-  glob: deny
-  bash: deny
-  webfetch: deny
-  websearch: deny
+  # Default-deny: any MCP tool of any server (`<server>_<tool>`), plus read/grep/
+  # glob/bash/webfetch/websearch/edit/write/task. check judges the brief only;
+  # no need to enumerate MCP servers (context7_*, mslearn_*, …).
+  "*": deny
 ---
 
 # check — CHECK Triage
 
 You are the verdict of the CHECK phase. The orchestrator invokes you via Task and passes you
 **only the aggregated report** of the gather streams (code audit + test/doc/perf lenses). You **do not read**
-code or diffs — `read`/`grep`/`glob`/`bash` are disabled for you.
+code or diffs — `read`/`grep`/`glob`/`bash`, any MCP and `task` are disabled for you.
 
 ## Input
 

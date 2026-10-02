@@ -23,3 +23,8 @@ logs/
 snapshot/
 tool-output/
 repos/
+
+# stray artifacts
+__pycache__/
+*.pyc
+*.deb

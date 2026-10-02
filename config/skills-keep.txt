@@ -1,0 +1,57 @@
+# Curated always-on skills for the deepseek profile.
+#
+# Only the skills listed below are registered with opencode (via
+#   ~/.config/opencode/skills-deepseek-curated, a folder of symlinks).
+# Everything else stays untouched in the full pack
+#   ~/.config/opencode/skills-deepseek/<name>/SKILL.md
+# (not scanned, so its description costs no context) and can still be read
+# directly on demand when a task needs it.
+#
+# Edit this list, then:
+#   bun ~/.config/opencode/tools/curate-skills.mjs --fix     # apply
+#   bun ~/.config/opencode/tools/curate-skills.mjs --check   # verify (exit 1 on drift)
+# and restart opencode (config is not hot-reloaded).
+#
+# One skill name per line. `#` starts a comment; blank lines are ignored.
+
+# routing / meta
+dotnet-advisor
+find-skills
+skill-creator
+
+# C# language core
+modern-csharp-coding-standards
+dotnet-csharp-async-patterns
+dotnet-csharp-dependency-injection
+dotnet-csharp-modern-patterns
+dotnet-csharp-nullable-reference-types
+dotnet-csharp-code-smells
+dotnet-agent-gotchas
+
+# testing
+dotnet-testing-strategy
+dotnet-xunit
+dotnet-test-quality
+testcontainers
+
+# data access
+efcore-patterns
+dotnet-data-access-strategy
+optimizing-ef-core-queries
+
+# web / API
+dotnet-minimal-apis
+dotnet-architecture-patterns
+validation-patterns
+dotnet-http-client
+
+# security / performance / observability
+dotnet-security-owasp
+dotnet-performance-patterns
+dotnet-observability
+dotnet-modernize
+
+# project / build
+dotnet-project-analysis
+dotnet-solution-navigation
+dotnet-version-detection

@@ -12,7 +12,9 @@ permission:
     scout: allow
   edit: deny
   bash: deny
-  skill: allow
+  skill:
+    "*": allow
+    brainstorming: deny
 ---
 
 Ты ведёшь ОДНУ группу `pdca-collection`. Загрузи скилл `pdca-collection`

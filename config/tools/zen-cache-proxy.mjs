@@ -1,9 +1,9 @@
 // zen-cache-proxy — минимальный реверс-прокси перед OpenCode Zen (opencode.ai/zen/v1).
 //
-// Зачем: opencode отправляет Opus-запросы на Zen в формате Anthropic Messages
+// Зачем: opencode отправляет запросы strong-тир модели на Zen в формате Anthropic Messages
 // (`POST /v1/messages`) с `cache_control: { type: "ephemeral" }` без `ttl`, что даёт
 // 5-минутный prompt-cache. Если ход оркестратора ждёт субагента 5–10 мин, кэш
-// протухает и весь контекст перезаписывается по цене cache_write ($5/M у Opus 5.5).
+// протухает и весь контекст перезаписывается по цене cache_write ($5/M у strong-тира).
 // Прокси добавляет `ttl: "1h"` к каждому ephemeral-блоку, и вместо перезаписи
 // идёт дешёвое чтение кэша ($0.2/M).
 //
@@ -15,11 +15,11 @@
 // Запуск (обычно поднимается автоматически из алиаса oc-ds):
 //   PORT=8787 REWRITE=ttl bun zen-cache-proxy.mjs
 //
-// Для gpt-6.1-sol ситуация иная: он ходит через /v1/responses, где cache_control нет,
-// а TTL кэша задаётся полем prompt_cache_retention. opencode его не шлёт, поэтому
+// Для medium-тир модели, идущей через /v1/responses, ситуация иная: там cache_control
+// нет, а TTL кэша задаётся полем prompt_cache_retention. opencode его не шлёт, поэтому
 // действует короткий in-memory TTL (~5–10 мин) и после простоя оркестратор
 // переписывает весь префикс (у замера — 80% всего cache_write). Прокси добавляет
-// prompt_cache_retention: "24h" (единственное поддерживаемое значение для gpt-6.1-sol).
+// prompt_cache_retention: "24h" (единственное поддерживаемое значение для этой ветки API).
 //
 // ENV:
 //   UPSTREAM    апстрим                       (default https://opencode.ai/zen/v1)
@@ -125,7 +125,7 @@ function rewriteTtl(obj) {
   return n;
 }
 
-// /v1/responses (gpt-6.1-sol): cache_control нет, TTL задаётся prompt_cache_retention.
+// /v1/responses (medium-тир): cache_control нет, TTL задаётся prompt_cache_retention.
 // Без него — короткий in-memory TTL и полная перезапись префикса после простоя.
 function addResponsesRetention(obj, path) {
   if (path !== "/responses") return 0; // path уже без префикса /v1
@@ -156,7 +156,7 @@ Bun.serve({
   port: PORT,
   hostname: "127.0.0.1",
   // idleTimeout: 0 — иначе Bun закрывает соединение после ~10 с без байтов.
-  // Opus 5.5 штатно «молчит» дольше (thinking / TTFB / ожидание tool-call), и
+  // strong-тир штатно «молчит» дольше (thinking / TTFB / ожидание tool-call), и
   // SSE-стрим рвётся в mid-stream → opencode видит "socket connection was closed
   // unexpectedly" и ретраит. 0 = не закрывать по простою.
   idleTimeout: 0,

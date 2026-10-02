@@ -1113,6 +1113,26 @@ Anti-patterns that the CHECK test lens will reject (and PLAN must not plan them)
 - **A "for the future" test** without an acceptance criterion — not a plan but noise; either a case in the strategy or
   an explicit `deferred` with a trigger.
 
+### Test run safety (memory + streaming) — mandatory in every phase
+
+Any test invocation (`dotnet test` / `dotnet run` on a test project), in DO or CHECK, follows these
+rules; the orchestrator puts them in the `coder`/`check` brief, and CHECK rejects a report that
+violates them:
+
+- **Cap the test-host heap.** Start test hosts with an explicit GC heap limit so a runaway
+  recursion/materialization fails fast instead of OOM-killing the machine:
+  `DOTNET_GCHeapHardLimit=0x80000000 DOTNET_gcServer=0` (2 GiB — raise only when the plan justifies it)
+  and wrap the run in a wall-clock `timeout` (`timeout 600 …`). Exit code **137** or an
+  `Out of memory` failure means the test is unbounded — stop, record the test name and the SQL that
+  ran, and do **not** re-run it without the cap.
+- **Serialize heavyweight suites.** Never launch two test projects in parallel (e.g. `core` + `sqlite`),
+  and never beside the editor/agent stack (opencode workers, VS Code, LSPs). Run the affected project
+  **alone, one at a time**; a DB/provider suite runs at the stream boundary, not after every edit.
+- **Stream the log, never `| tail`.** A long run piped through `| tail` buffers to EOF, so the step
+  looks hung. Use `… 2>&1 | tee <log>` (add `stdbuf -oL` when live progress is needed), or
+  `… | tail -f` if a tail is wanted; keep `rc=${PIPESTATUS[0]}`. Always return the log path **and** the
+  exit code.
+
 ### Documentation (owners by phase)
 
 Documentation is part of the definition of done, not an appendix. **Prose documentation and XML-doc

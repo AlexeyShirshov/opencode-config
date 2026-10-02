@@ -4,19 +4,19 @@ description: "WHEN the orchestrator wants a second opinion beyond the routine ch
 mode: subagent
 # tier: strong
 permission:
-  edit: deny
-  write: deny
-  grep: deny
-  glob: deny
-  webfetch: deny
-  websearch: deny
-  "context7_*": deny
-  "mslearn_*": deny
-  "deepwiki_*": deny
-  "gitmcp_*": deny
+  # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`)
+  # и все прямые тулзы (grep/glob/list/lsp/webfetch/websearch/edit/write).
+  # Перечислять MCP-серверы (context7_*, mslearn_*, …) не нужно. Ниже — разрешения.
+  "*": deny
+  read:
+    "*": allow
+    "*.env": deny
+    "*.env.*": deny
+    "*.env.example": allow
   task:
     "*": deny
     scout: allow
+  # read-only inspection only; no build/test (run by coder/check), no repo-wide search
   bash:
     "*": deny
     "cd *": allow
@@ -34,16 +34,17 @@ permission:
     "git show*": allow
     "git blame*": allow
     "git ls-files*": allow
-    "dotnet test*": allow
-    "dotnet build*": allow
-    "dotnet restore*": allow
-    "dotnet run*": allow
-    "dotnet msbuild*": allow
   external_directory:
     "/mnt/c/Users/user/source/**": allow
     "/mnt/c/Users/user/Pictures/Screenshots/**": allow
     "/tmp/**": allow
     "/home/alex/sources/nextorm-worktrees/**": allow
+  skill:
+    "*": allow
+    brainstorming: deny
+  question: allow
+  todowrite: allow
+  doom_loop: ask
 ---
 
 # escalate (strong tier)
@@ -74,12 +75,13 @@ permission:
 ## Границы
 
 - Никаких правок файлов, коммитов и запуска изменяющих команд. Только чтение и
-  анализ (можно запускать сборку/тесты для проверки гипотезы, если это ничего не
-  меняет).
+  анализ. Сборку/тесты сам не запускаешь: их выполняет `coder`/`check`, а в бриф
+  приходит уже дистиллят (exit code, ключевые числа, путь к полному логу).
 - **Факты — только через `scout`** (или из scout-пака в брифе). Широкий поиск по
   репозиторию (`grep`/`glob`/`git grep`, веерное чтение файлов) запрещён; локально
   читаешь отдельный файл лишь чтобы подтвердить конкретный `file:line` из брифа.
-  `bash` ограничен read-only и сборкой/тестами (см. `permission`).
+  `bash` ограничен read-only командами (см. `permission`); сборка/тесты — не твоя
+  задача, их результат приходит в брифе.
 - Не пересказывать бриф и не лить код простынями — только суть и `file:line`.
 
 ## Формат ответа (коротко, на языке диалога)

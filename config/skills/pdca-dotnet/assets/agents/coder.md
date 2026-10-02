@@ -1,6 +1,6 @@
 ---
 name: coder
-description: "Implementer (the hands). Writes and edits code, runs commands. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
+description: "Implementer on the cheap tier. Writes and edits code, runs commands. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
 mode: subagent
 # tier: cheap
 steps: 60

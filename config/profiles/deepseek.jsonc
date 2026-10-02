@@ -1,10 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // Вложенные субагенты (primary → lane → роли). Дефолт 1 блокирует `lane`. Нужен перезапуск.
+  "subagent_depth": 3,
 
   // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
-  // на DeepSeek Flash; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
-  // Triage CHECK `check` на GPT-6.1 Sol (variant high), «руки»/сбор — DeepSeek, `security-auditor` —
-  // тоже Sol (medium), `escalate` — Sonnet). Субагенты целиком живут в общих `agents/*.md`.
+  // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
+  // Triage CHECK `check` — medium-тир, «руки»/сбор — cheap, `security-auditor` — medium,
+  // `escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
   "model": "deepseek/deepseek-flash",
 
   // Дешёвая модель для служебных задач (генерация заголовков/резюме).
@@ -17,7 +19,7 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: cheap = DeepSeek Flash (coder/scout/lane), medium = GPT-6.1 Sol (high), strong = Sonnet 5.5 (см. README).
+  // Тиры ролей: cheap (`coder`/`scout`/`lane`), medium (`architect`/`planner`/`check`/`security-auditor`, variant high), strong (`escalate`). Конкретные id моделей — только в блоке ниже и в `model`/`small_model`; в доках/ролях/скиллах — только тиры.
   // Проект переопределяет любую роль своим `.opencode/opencode.jsonc` — проектный конфиг
   // мержится после профиля, достаточно указать только изменённые роли (например, `escalate`).
   "agent": {
@@ -33,16 +35,19 @@
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
   // всем профилям) — в paths указывать не нужно, только профильные наборы.
+  // Профильный набор dotnet-скиллов — курируемый: регается только `skills-deepseek-curated`
+  // (симлинки на выбранные скиллы из полного пака `skills-deepseek`). Что включено — см.
+  // `~/.config/opencode/skills-keep.txt`; применить — `bun ~/.config/opencode/tools/curate-skills.mjs --fix`.
   "skills": {
     "paths": [
-      "/home/alex/.config/opencode/skills-deepseek"
+      "/home/alex/.config/opencode/skills-deepseek-curated"
     ]
   },
 
   "provider": {
     "opencode": {
       "options": {
-        // Рассуждающие модели (Sonnet 5.5 / GPT-6 Sol) долго «молчат» — запас больше.
+        // Рассуждающие (medium/strong-тир) модели долго «молчат» — запас больше.
         "headerTimeout": 60000,
         "chunkTimeout": 300000,
         // Локальный zen-cache-proxy добавляет cache_control.ttl="1h" (иначе 5 мин):

@@ -1,9 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  // Вложенные субагенты (primary → lane → роли). Дефолт 1 блокирует `lane`. Нужен перезапуск.
+  "subagent_depth": 3,
   "model": "opencode-go/kimi-k3",
-  // ── Привязка ролей: одномодельный хост. У oc-gp нет `provider.opencode` (Sol/Sonnet
-  // недоступны), поэтому все тиры идут на kimi-k3. Проект может переопределить роль
-  // своим `.opencode/opencode.jsonc` (проектный конфиг мержится после профиля).
+  // ── Привязка ролей: одномодельный хост. У oc-gp нет провайдера medium/strong-тира,
+  // поэтому все роли идут на единственную модель профиля (её id — в блоке ниже и в
+  // `model`). Проект может переопределить роль своим `.opencode/opencode.jsonc`
+  // (проектный конфиг мержится после профиля).
   "agent": {
     "architect": { "model": "opencode-go/kimi-k3" },
     "planner": { "model": "opencode-go/kimi-k3" },

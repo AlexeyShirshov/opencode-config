@@ -4,20 +4,15 @@ description: "WHEN reviewing a diff/code for security: auth, secrets, external i
 mode: subagent
 # tier: medium
 permission:
-  edit: deny
-  write: deny
-  grep: deny
-  glob: deny
-  webfetch: deny
-  websearch: deny
-  "context7_*": deny
-  "mslearn_*": deny
-  "deepwiki_*": deny
-  "gitmcp_*": deny
+  "*": deny
+  read:
+    "*": allow
+    "*.env": deny
+    "*.env.*": deny
+    "*.env.example": allow
   task:
     "*": deny
     scout: allow
-  # Host-adjustable: read-only inspection only; no repo-wide search.
   bash:
     "*": deny
     "cd *": allow
@@ -27,10 +22,22 @@ permission:
     "head *": allow
     "tail *": allow
     "wc *": allow
+    "stat *": allow
+    "file *": allow
     "git status*": allow
     "git log*": allow
     "git diff*": allow
     "git show*": allow
+    "git blame*": allow
+    "git ls-files*": allow
+  # external_directory: add paths outside the project worktree if the task needs them, e.g.
+  #   "/tmp/**": allow
+  skill:
+    "*": deny
+    dotnet-security-owasp: allow
+  question: allow
+  todowrite: allow
+  doom_loop: ask
 ---
 
 # security-auditor

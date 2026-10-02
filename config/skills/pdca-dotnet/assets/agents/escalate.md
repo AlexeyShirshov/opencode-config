@@ -4,20 +4,15 @@ description: "WHEN the orchestrator wants a second opinion beyond the routine ch
 mode: subagent
 # tier: strong
 permission:
-  edit: deny
-  write: deny
-  grep: deny
-  glob: deny
-  webfetch: deny
-  websearch: deny
-  "context7_*": deny
-  "mslearn_*": deny
-  "deepwiki_*": deny
-  "gitmcp_*": deny
+  "*": deny
+  read:
+    "*": allow
+    "*.env": deny
+    "*.env.*": deny
+    "*.env.example": allow
   task:
     "*": deny
     scout: allow
-  # Host-adjustable: read-only inspection plus build/test only; no repo-wide search.
   bash:
     "*": deny
     "cd *": allow
@@ -27,14 +22,22 @@ permission:
     "head *": allow
     "tail *": allow
     "wc *": allow
+    "stat *": allow
+    "file *": allow
     "git status*": allow
     "git log*": allow
     "git diff*": allow
     "git show*": allow
-    "dotnet test*": allow
-    "dotnet build*": allow
-    "dotnet restore*": allow
-    "dotnet run*": allow
+    "git blame*": allow
+    "git ls-files*": allow
+  # external_directory: add paths outside the project worktree if the task needs them, e.g.
+  #   "/tmp/**": allow
+  skill:
+    "*": allow
+    brainstorming: deny
+  question: allow
+  todowrite: allow
+  doom_loop: ask
 ---
 
 # escalate
@@ -64,12 +67,12 @@ defect** history — the same defect after one fix still escalates before the se
 ## Boundaries
 
 - No file edits, commits or running changing commands. Reading and
-  analysis only (you may run a build/tests to verify a hypothesis, if that changes
-  nothing).
+  analysis only. You do not run build/tests yourself: `coder`/`check` do, and the
+  brief arrives with a distilled result (exit code, key numbers, full-log path).
 - **Facts come only via `scout`** (or from the scout pack in the brief). Repo-wide search
   (`grep`/`glob`/`git grep`, reading files in bulk) is forbidden; read a single file locally
   only to confirm a specific `file:line` from the brief. `bash` is limited to read-only
-  inspection and build/test (see `permission`).
+  inspection (see `permission`); build/test is not your job — its result arrives in the brief.
 - Do not retell the brief and do not pour code in walls of text — only the gist and `file:line`.
 
 ## Response format (short, in the language of the dialogue)

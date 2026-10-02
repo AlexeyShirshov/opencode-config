@@ -4,16 +4,15 @@ description: "WHEN reviewing a diff/code for security: auth, secrets, external i
 mode: subagent
 # tier: medium
 permission:
-  edit: deny
-  write: deny
-  grep: deny
-  glob: deny
-  webfetch: deny
-  websearch: deny
-  "context7_*": deny
-  "mslearn_*": deny
-  "deepwiki_*": deny
-  "gitmcp_*": deny
+  # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`)
+  # и все прямые тулзы (grep/glob/list/lsp/webfetch/websearch/edit/write).
+  # Перечислять MCP-серверы (context7_*, mslearn_*, …) не нужно. Ниже — разрешения.
+  "*": deny
+  read:
+    "*": allow
+    "*.env": deny
+    "*.env.*": deny
+    "*.env.example": allow
   task:
     "*": deny
     scout: allow
@@ -36,6 +35,13 @@ permission:
     "git ls-files*": allow
   external_directory:
     "/tmp/**": allow
+  # Только профильный скилл; остальные 37 скрыты правами и не занимают контекст.
+  skill:
+    "*": deny
+    dotnet-security-owasp: allow
+  question: allow
+  todowrite: allow
+  doom_loop: ask
 ---
 
 # security-auditor (medium tier)

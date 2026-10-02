@@ -3,25 +3,29 @@ description: "WHEN making decisions rather than gathering facts: requirements in
 mode: primary
 # tier: medium
 permission:
-  question: allow
-  # Факты — только через `scout`; правки — только через `coder`. Прямые инструменты запрещены.
+  # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`),
+  # а также read/grep/glob/list/bash/edit/lsp/webfetch/websearch. Перечислять
+  # серверы (context7_*, mslearn_*, deepwiki_*, gitmcp_*, …) не нужно — новые
+  # MCP автоматически попадают под `*`. Ниже — только явные разрешения.
+  "*": deny
+  # Allowlist: диспатчить можно только роли цикла/разведки; всё прочее (в т.ч.
+  # `general`/`explore` и `dotnet-*`-линзы) запрещено и НЕ попадает в контекст
+  # (permission.task фильтрует рекламируемый список `task`).
   task:
-    "*": allow
-    general: deny
-    explore: deny
-  bash: deny
-  edit: deny
-  read: deny
-  grep: deny
-  glob: deny
-  list: deny
-  webfetch: deny
-  websearch: deny
-  lsp: deny
-  "context7_*": deny
-  "mslearn_*": deny
-  "deepwiki_*": deny
-  "gitmcp_*": deny
+    "*": deny
+    scout: allow
+    coder: allow
+    planner: allow
+    check: allow
+    escalate: allow
+    lane: allow
+  question: allow
+  # Из 38 скиллов каталога архитектору нужен только `brainstorming` — остальные
+  # запрещены и не занимают контекст.
+  skill:
+    "*": deny
+    brainstorming: allow
+  todowrite: allow
 ---
 
 # architect (medium tier) — решения на средней модели
@@ -71,5 +75,5 @@ permission:
 
 ## Скиллы
 
-Рабочий набор — `brainstorming` (новая фича/идея), `writing-plans`, `executing-plans`,
-`systematic-debugging` (loop-back CHECK→DO), `receiving-code-review`. Грузи через `skill`.
+Единственный доступный скилл — `brainstorming` (новая фича/идея). Остальные superpowers-скиллы
+не зарегистрированы, а dotnet/pdca-каталог тебе закрыт правами. Грузи через `skill`.
