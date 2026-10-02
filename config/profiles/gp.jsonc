@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // Вложенные субагенты (primary → lane → роли). Дефолт 1 блокирует `lane`. Нужен перезапуск.
+  // Вложенные субагенты (primary → pdca-orchestrator → роли). Дефолт 1 блокирует `pdca-orchestrator`. Нужен перезапуск.
   "subagent_depth": 3,
   "model": "opencode-go/kimi-k3",
   // ── Привязка ролей: одномодельный хост. У oc-gp нет провайдера medium/strong-тира,
@@ -15,7 +15,7 @@
     "security-auditor": { "model": "opencode-go/kimi-k3" },
     "coder": { "model": "opencode-go/kimi-k3" },
     "scout": { "model": "opencode-go/kimi-k3" },
-    "lane": { "model": "opencode-go/kimi-k3" }
+    "pdca-orchestrator": { "model": "opencode-go/kimi-k3" }
   },
   "skills": {
     "paths": [

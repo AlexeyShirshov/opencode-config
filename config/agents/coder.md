@@ -4,6 +4,10 @@ description: "Исполнитель на дешёвом (cheap) тире. Пи�
 mode: subagent
 # tier: cheap
 steps: 60
+tools:
+  "deepwiki_*": false
+  "gitmcp_*": false
+  "memory_*": false
 permission:
   edit: allow
   bash: allow

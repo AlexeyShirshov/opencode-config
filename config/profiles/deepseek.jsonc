@@ -1,6 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // Вложенные субагенты (primary → lane → роли). Дефолт 1 блокирует `lane`. Нужен перезапуск.
+  // Вложенные субагенты (primary → pdca-orchestrator → роли). Дефолт 1 блокирует `pdca-orchestrator`. Нужен перезапуск.
   "subagent_depth": 3,
 
   // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
@@ -19,7 +19,7 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры ролей: cheap (`coder`/`scout`/`lane`), medium (`architect`/`planner`/`check`/`security-auditor`, variant high), strong (`escalate`). Конкретные id моделей — только в блоке ниже и в `model`/`small_model`; в доках/ролях/скиллах — только тиры.
+  // Тиры ролей: cheap (`coder`/`scout`/`pdca-orchestrator`), medium (`architect`/`planner`/`check`/`security-auditor`, variant high), strong (`escalate`). Конкретные id моделей — только в блоке ниже и в `model`/`small_model`; в доках/ролях/скиллах — только тиры.
   // Проект переопределяет любую роль своим `.opencode/opencode.jsonc` — проектный конфиг
   // мержится после профиля, достаточно указать только изменённые роли (например, `escalate`).
   "agent": {
@@ -30,7 +30,7 @@
     "security-auditor": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "coder": { "model": "deepseek/deepseek-flash" },
     "scout": { "model": "deepseek/deepseek-flash" },
-    "lane": { "model": "deepseek/deepseek-flash" }
+    "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден

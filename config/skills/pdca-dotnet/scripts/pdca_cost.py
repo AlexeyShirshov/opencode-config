@@ -52,7 +52,7 @@ PHASE = {
     "scout": "Сбор·gather",
     "explore": "Сбор·gather",
     "coder": "D·DO",
-    "lane": "D·DO (collection)",
+    "pdca-orchestrator": "D·DO (collection)",
     "check": "C·CHECK",
     "security-auditor": "БЕЗОПАСНОСТЬ",
     "escalate": "ЭСКАЛАЦИЯ",

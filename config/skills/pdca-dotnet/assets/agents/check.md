@@ -22,7 +22,10 @@ code or diffs — `read`/`grep`/`glob`/`bash`, any MCP and `task` are disabled f
 - Raw candidates from the code audit: `file:line`, rule ID/category, counter.
 - Lens reports: tests (green? coverage ≥ threshold?), docs (updated?), perf
   (measurement/argument).
-- Optionally, the security-audit conclusion (medium tier) if the trigger fired.
+- Optionally, the security-audit **report** (medium tier) if the trigger fired: it is a gather
+  stream, its result **returns into the aggregate** and is judged here; it has no independent
+  verdict, and an ordinary security finding never bypasses the aggregate triage (immediate
+  escalation only for a hard security trade-off).
 - The evidence chain: `coder`'s fresh re-run (exit code, numbers, log path) and `scout`'s diff facts.
 - From the plan: the **variant matrix** and the **priority matrix**.
 - The current durable state passed by the orchestrator (you cannot read files): plan **revision `r`**,

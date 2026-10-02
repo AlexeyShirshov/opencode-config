@@ -27,7 +27,7 @@ BOX_H, BOX_STEP = 50, 62
 
 COLOR = {"P": "#2563eb", "D": "#7c3aed", "C": "#d97706", "SEC": "#be123c",
          "E": "#b91c1c", "S": "#b91c1c", "A": "#059669"}
-NAME = {"P": "P · PLAN", "D": "D · DO", "C": "C · CHECK", "SEC": "БЕЗОПАСНОСТЬ",
+NAME = {"P": "P · PLAN", "D": "D · DO", "C": "C · CHECK", "SEC": "CHECK · security (поток)",
         "E": "ЭСКАЛАЦИЯ", "S": "STOP", "A": "A · ACT"}
 TIER_COLOR = {"weak": "#0d9488", "medium": "#4f46e5", "strong": "#ea580c"}
 TIER_MODEL = {"weak": "cheap", "medium": "medium", "strong": "strong"}
@@ -51,7 +51,7 @@ BLOCKS = {
         ("Доки · проза", "README · DocFX", "weak"),
     ],
     "C": [
-        ("CHECK", "судит аудит + линзы", "medium"),
+        ("CHECK · gather", "форк 4 потоков + security", "medium"),
         ("Аудит кода", "сбор · кандидаты", "weak"),
         ("Линза тестов", "прогон · покрытие", "weak"),
         ("Линза доков", "проза + XML-doc", "weak"),
@@ -59,11 +59,11 @@ BLOCKS = {
     ],
     "SEC": [
         ("Скаут", "scout · факты · file:line", "weak"),
-        ("Аудит безопасности", "read-only · решает", "medium"),
+        ("Аудит безопасности", "read-only · отчёт → CHECK", "medium"),
     ],
     "E": [
         ("Скаут", "scout · факты · file:line", "weak"),
-        ("Эскалация", "read-only · дорого · решает", "strong"),
+        ("Эскалация", "решает · решение → орб", "strong"),
     ],
     "S": [
         ("Статус-файл", "запись · source of truth", "weak"),
@@ -84,21 +84,23 @@ TAIL = {"D": [
     ("XML-doc", "после кода · если требует проект", "weak"),
     ("Сборка · тесты", "build-гейт · unit-луп", "weak"),
     ("Интеграц. тесты", "граница DO → CHECK", "weak"),
+], "C": [
+    ("Триаж · вердикт", "агрегат всех потоков → pass/fail", "medium"),
 ]}
 
 # orchestrator inputs, per phase
 INPUTS = [
     "PLAN ← «старт» · «реплан от check» · «реплан от DO»",
-    "DO ← «план готов» · «фикс дефекта от check» · «фикс дефекта от security» · «фикс дефекта от escalate»",
+    "DO ← «план готов» · «фикс дефекта от check (вкл. security)» · «фикс от escalate при r не исчерпан»",
     "CHECK ← «потоки закрыты»",
-    "БЕЗОПАСНОСТЬ ← «auth / секреты / ввод»",
+    "CHECK · security ← «условно: auth / секреты / ввод» · «отчёт → CHECK»",
     "ACT ← «check pass»",
-    "ЭСКАЛАЦИЯ ← «повтор дефекта после 1 фикса» · «3-й провал CHECK(r)» · «security fail»",
-    "STOP ← «escalate fail»",
+    "ЭСКАЛАЦИЯ ← «повтор дефекта после 1 фикса» · «3-й провал CHECK(r)» · «жёсткий security tradeoff»",
+    "STOP ← «нет выполнимого PLAN r+1»",
 ]
 # down-arrow (dispatch) label per column
-DISPATCH = {"P": "старт\nреплан от check\nреплан от DO", "D": "план готов\nфикс дефекта от check\nфикс дефекта от security\nфикс дефекта от escalate", "C": "потоки закрыты",
-            "SEC": "из CHECK\nauth/секр/ввод", "E": "повтор после 1 фикса\n3-й провал CHECK(r)\nsecurity fail", "S": "escalate fail", "A": "check pass"}
+DISPATCH = {"P": "старт\nреплан от check\nреплан от DO", "D": "план готов\nфикс от check (с security)\nфикс от escalate (r активен)", "C": "потоки закрыты",
+            "SEC": "из CHECK · условно\nсбор (gather)\nотчёт → CHECK", "E": "повтор после 1 фикса\n3-й провал CHECK(r)\nжёсткий tradeoff", "S": "нет плана r+1", "A": "check pass"}
 
 # per-phase state-graph node colors (shared by both themes)
 STC = {"START": None, "PLAN": "#2563eb", "DO": "#7c3aed", "CHECK": "#d97706",
@@ -163,11 +165,12 @@ def render(P, title):
         return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{COLOR[col]}"/>'
                 f'<text x="{x+w/2}" y="{y+h/2+5}" class="h" text-anchor="middle">{esc(lbl)}</text>')
 
-    def poly(points, color=None, dash=None, marker="arrow"):
+    def poly(points, color=None, dash=None, marker="arrow", edge_id=None):
         color = color or P["arrow"]
         pts = " ".join(f"{a},{b}" for a, b in points)
         d = f' stroke-dasharray="{dash}"' if dash else ""
-        return f'<polyline points="{pts}" fill="none" stroke="{color}"{d} marker-end="url(#{marker})"/>'
+        eid = f' data-edge-id="{edge_id}"' if edge_id else ""
+        return f'<polyline points="{pts}" fill="none" stroke="{color}"{d}{eid} marker-end="url(#{marker})"/>'
 
     def label(x, y, text, color=None, anchor="middle"):
         color = color or P["label"]
@@ -204,7 +207,7 @@ def render(P, title):
              '</style>')
 
     s.append(f'<rect x="{M}" y="{ORB_Y}" width="{W-M-M}" height="{ORB_H}" rx="10" class="band"/>')
-    s.append(f'<text x="{M+18}" y="{ORB_Y+24}" class="bt">Оркестратор · build — входы по фазам</text>')
+    s.append(f'<text x="{M+18}" y="{ORB_Y+24}" class="bt">Оркестратор · cheap — normal: primary · autonomous: pdca-orchestrator</text>')
     _cw = W - 2 * M
     _col2 = M + 18 + _cw / 2
     for _i, _t in enumerate(INPUTS):
@@ -259,13 +262,13 @@ def render(P, title):
     mid = (ORB_B + SPINE_Y) / 2 + 3
     for c in COLN:
         xc = cx(c)
-        s.append(poly([(xc - 16, ORB_B), (xc - 16, SPINE_Y)]))
+        s.append(poly([(xc - 16, ORB_B), (xc - 16, SPINE_Y)], edge_id=f"dispatch_{c.lower()}"))
         _lines = DISPATCH[c].split("\n")
         _n = len(_lines)
         for _k, _ln in enumerate(_lines):
             s.append(label(xc - 24, mid + (_k - (_n - 1) / 2) * 13, _ln, P["arrow"], "end"))
         if c != "S":
-            s.append(poly([(xc + 16, SPINE_Y), (xc + 16, ORB_B)]))
+            s.append(poly([(xc + 16, SPINE_Y), (xc + 16, ORB_B)], edge_id=f"return_{c.lower()}"))
 
     legend = [
         ("#0d9488", "дешёвая ступень", "cheap", "оркестрация · scout · coder · DO · ACT"),
@@ -295,36 +298,51 @@ def render(P, title):
     neutral = P["state_neutral"]
     stc = {k: (v or neutral) for k, v in STC.items()}
     for _k, _v in stx.items():
-        s.append(f'<rect x="{_v}" y="{R1_TOP}" width="{NW}" height="{NH}" rx="10" fill="{stc[_k]}" fill-opacity="0.08" stroke="{stc[_k]}" stroke-width="1.6"/>')
+        s.append(f'<rect x="{_v}" y="{R1_TOP}" width="{NW}" height="{NH}" rx="10" fill="{stc[_k]}" fill-opacity="0.08" stroke="{stc[_k]}" stroke-width="1.6" data-node-id="{_k}"/>')
         s.append(f'<text x="{_v+NW/2}" y="{R1_TOP+NH/2+5}" class="st" fill="{stc[_k]}" text-anchor="middle">{esc(_k)}</text>')
     _y = R1_TOP + NH / 2
-    for _a, _b, _lab in [("START", "PLAN", "старт"), ("PLAN", "DO", "go · n=1"), ("DO", "CHECK", "потоки закрыты"), ("CHECK", "ACT", "pass"), ("ACT", "EXIT", "закрыто")]:
+    for _eid, _a, _b, _lab in [("start_plan", "START", "PLAN", "старт"),
+                               ("plan_do", "PLAN", "DO", "go · n=1"),
+                               ("do_check", "DO", "CHECK", "потоки закрыты"),
+                               ("check_act", "CHECK", "ACT", "pass"),
+                               ("act_exit", "ACT", "EXIT", "закрыто")]:
         _x1, _x2 = stx[_a] + NW, stx[_b]
-        s.append(poly([(_x1, _y), (_x2, _y)]))
+        s.append(poly([(_x1, _y), (_x2, _y)], edge_id=_eid))
         s.append(label((_x1 + _x2) / 2, _y - 7, _lab, P["label"]))
-    s.append(f'<path d="M880,{R1_TOP} C880,{R1_TOP-60} 686,{R1_TOP-60} 686,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)"/>')
+    s.append(f'<path d="M880,{R1_TOP} C880,{R1_TOP-60} 686,{R1_TOP-60} 686,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_do_defect"/>')
     s.append(label(786, R1_TOP - 46, "дефект · n+1", P["label"]))
-    s.append(f'<path d="M950,{R1_TOP} C950,{R1_TOP-112} 415,{R1_TOP-112} 415,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)"/>')
+    s.append(f'<path d="M950,{R1_TOP} C950,{R1_TOP-112} 415,{R1_TOP-112} 415,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_plan_replan"/>')
     s.append(label(683, R1_TOP - 100, "неверный план · r+1", P["label"]))
-    s.append(f'<path d="M606,{R1_TOP} C606,{R1_TOP-60} 420,{R1_TOP-60} 420,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)"/>')
+    s.append(f'<path d="M606,{R1_TOP} C606,{R1_TOP-60} 420,{R1_TOP-60} 420,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="do_plan_blocker"/>')
     s.append(label(513, R1_TOP - 46, "новое предусловие/блокер", P["label"]))
-    for _x, _t, _c, _d in [(837, "SECURITY", "#be123c", True), (1100, "ESCALATE", "#b91c1c", False), (1360, "STOP", "#b91c1c", False)]:
+    for _nid, _x, _t, _c, _d in [("sec_check", 837, "поток CHECK", "#be123c", True),
+                                 ("escalate", 1100, "ESCALATE", "#b91c1c", False),
+                                 ("stop", 1360, "STOP", "#b91c1c", False)]:
         _da = ' stroke-dasharray="5 4"' if _d else ''
-        s.append(f'<rect x="{_x}" y="{R2_TOP}" width="{NW}" height="{NH}" rx="10" fill="{_c}" fill-opacity="0.08" stroke="{_c}" stroke-width="1.6"{_da}/>')
+        s.append(f'<rect x="{_x}" y="{R2_TOP}" width="{NW}" height="{NH}" rx="10" fill="{_c}" fill-opacity="0.08" stroke="{_c}" stroke-width="1.6"{_da} data-node-id="{_nid}"/>')
         s.append(f'<text x="{_x+NW/2}" y="{R2_TOP+NH/2+5}" class="st" fill="{_c}" text-anchor="middle">{esc(_t)}</text>')
     _y2 = R2_TOP + NH / 2
-    s.append(poly([(917, R1_BOT), (917, R2_TOP)], "#be123c", dash="5 4"))
-    s.append(label(925, (R1_BOT + R2_TOP) / 2, "auth/секр/ввод", "#be123c", "start"))
-    s.append(poly([(960, R1_BOT), (960, R1_BOT + 30), (1180, R1_BOT + 30), (1180, R2_TOP)]))
+    # conditional parallel CHECK stream: CHECK forks, stream reports back into CHECK triage
+    s.append(poly([(917, R1_BOT), (917, R2_TOP)], "#be123c", dash="5 4", edge_id="check_security"))
+    s.append(label(907, (R1_BOT + R2_TOP) / 2 - 6, "условно · auth/секр/ввод", "#be123c", "end"))
+    s.append(poly([(937, R2_TOP), (937, R1_BOT)], "#be123c", edge_id="security_check_report"))
+    s.append(label(947, (R1_BOT + R2_TOP) / 2 + 6, "отчёт → CHECK", "#be123c", "start"))
+    # CHECK verdict (all streams aggregated) triggers escalation on repeat / 3rd fail(r)
+    s.append(poly([(960, R1_BOT), (960, R1_BOT + 30), (1180, R1_BOT + 30), (1180, R2_TOP)], edge_id="check_escalate_trigger"))
     s.append(label(1070, R1_BOT + 22, "повтор после 1 фикса · 3-й провал CHECK(r)", P["label"]))
-    s.append(poly([(997, _y2), (1100, _y2)], "#b91c1c"))
-    s.append(label(1048, _y2 - 7, "значимо", P["label"]))
-    s.append(poly([(1260, _y2), (1360, _y2)], "#b91c1c"))
-    s.append(label(1310, _y2 - 7, "fail", P["label"]))
-    s.append(poly([(837, _y2), (700, _y2), (700, R1_BOT)]))
-    s.append(label(768, _y2 + 16, "дефект", P["label"]))
-    s.append(poly([(1180, R2_BOT), (1180, M4), (620, M4), (620, R1_BOT)]))
-    s.append(label(900, M4 - 8, "рекомендация", P["label"]))
+    # ONLY a hard security tradeoff escalates directly (no ordinary security fail bypass)
+    s.append(poly([(997, _y2), (1100, _y2)], "#b91c1c", edge_id="security_escalate_tradeoff"))
+    s.append(label(1048, _y2 - 7, "жёсткий tradeoff", P["label"]))
+    # escalate decides; cheap dispatcher routes: no actionable r+1 -> STOP
+    s.append(poly([(1260, _y2), (1360, _y2)], "#b91c1c", edge_id="escalate_stop"))
+    s.append(label(1310, _y2 - 7, "нет плана r+1", P["label"]))
+    # escalate decision -> DO while r not exhausted (current plan)
+    s.append(poly([(1160, R2_BOT), (1160, M4), (646, M4), (646, R1_BOT)], edge_id="escalate_do_nonexhausted"))
+    s.append(label(850, M4 - 8, "решение · r не исчерпан → DO", P["label"]))
+    # escalate decision -> genuine PLAN r+1 only when exhausted; never a 4th DO
+    _m4 = M4 + 14
+    s.append(poly([(1200, R2_BOT), (1200, _m4), (375, _m4), (375, R1_BOT)], edge_id="escalate_plan_exhausted"))
+    s.append(label(760, _m4 + 13, "исчерпан r → PLAN r+1", P["label"]))
     s.append('</svg>')
     return "\n".join(s)
 

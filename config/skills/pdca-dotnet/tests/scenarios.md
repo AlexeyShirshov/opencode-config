@@ -1,11 +1,16 @@
-# Сценарная матрица pdca-dotnet (A–I)
+# Сценарная матрица pdca-dotnet (A–L)
 
 Статус: **статическая (не исполняемая) матрица для независимого разбора**. Это — **не доказательство** поведения: ни один агент/модель по этим сценариям **не запускался**, реальный цикл не исполнялся, production-автомат не создавался. Присутствие правил проверяет
 `test_contract_consistency.py`, и она тоже лишь фиксирует наличие правил, а не поведение.
 Поведенческий разбор проходит независимый `escalate` по полным соответствующим контрактам.
 
-Источник правил: `docs/superpowers/specs/2026-10-01-pdca-consistency-design.md`, §1–7 и §Проверяемые
-сценарии. Счётчики: цикл `<N>` (растёт только в ACT), ревизия плана `r`, попытка `n/3` в пределах
+Источник правил (действующая норма): `config/skills/pdca-dotnet/SKILL.md` (§State machine,
+§Transition gates, §Orchestrator role, §Host requirements), EN-роли
+`config/skills/pdca-dotnet/assets/agents/*.md` с зеркалами `config/agents/*.md` и исходники диаграммы
+`config/skills/pdca-dotnet/assets/diagram/{workflow.json,gen_pdca.py}`. Исторический дизайн
+`docs/superpowers/specs/2026-10-01-pdca-consistency-design.md` — только контекст, не норма (в нём
+допустим любой primary, включая `architect`; действует cheap-only). Счётчики: цикл `<N>` (растёт
+только в ACT), ревизия плана `r`, попытка `n/3` в пределах
 ревизии; отвергнутый кандидат **без смены плана** не новая ревизия и не сбрасывает ретраи.
 
 | # | Кратко | Требуемый исход |
@@ -18,8 +23,11 @@
 | E | `planner` не может классифицировать кандидата | Сначала точечные факты (`scout`), затем `escalate` по низкой уверенности даже без доказанной внешности |
 | F | Автономно: нет критерия / недоступен ресурс | Без вопроса; сбор/решение, затем blocked STOP с записанным итогом; обычный режим сохраняет вопросы и `go` |
 | G | Три параллельных потока DO | Ровно один активный агрегированный `D:` todo; правдивые состояния каждого потока в статус-файле |
-| H | `architect` делегирует начальный PLAN и replan | Привязки моделей — из `agent`-блока профиля, в ролях только `# tier`, без `model:` |
-| I | Security-триггер red | Гейт 3 заблокирован до снятия security-находки |
+| H | Cheap-only оркестрация; `architect` — решения вне цикла | Цикл ведёт только cheap-tier primary (эффективный тир, не имя агента); начальный PLAN/replan — `planner`; в ролях только `# tier`, без `model:` |
+| I | Security-триггер red | Conditional gather возвращается в агрегат `check` (своего независимого вердикта нет); обычный security-провал — провальный CHECK ревизии по общим счётчикам; немедленная эскалация — только жёсткий security-tradeoff |
+| J | Эскалация: исчерпана ревизия `r` или нет | `escalate` даёт **решение**; оркестратор только роутит: revised remediation `r+1` → `planner`, реализация/STOP → `coder`; семантически не перевыбирает, гейты/no-4th/scope/security не отменяет |
+| K | Автономно: cheap primary делегирует цикл | `Task(pdca-orchestrator)` с cycle brief; субагент ведёт PLAN→DO→CHECK→ACT, возвращает сводку ≤8 строк; primary не читает/не правит |
+| L | Fallback: `pdca-orchestrator` недоступен | Flat primary ведёт цикл сам, fallback зафиксирован (`Notice:`); гейты/no-4th/scope/security не отменяются |
 
 Общая оперативная база (применяется ко всем кейсам, если ниже не уточнено):
 `config/skills/pdca-dotnet/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
@@ -115,7 +123,7 @@ actionable пересмотренный план (`r+1`) — работа про
 `Notice:` и финальный итог допустимы; автономность — не разрешение авто-коммита. В обычном режиме
 сохраняются необходимые вопросы и явный PLAN `go`.
 **Оперативные источники:** SKILL §Autonomous mode, §Transition gates (gate 1: normal mode
-go-ahead), §Cycle quickref; `assets/agents/planner.md` (plan-disk paragraph).
+go-ahead), §State machine; `assets/agents/planner.md` (plan-disk paragraph).
 
 ## G. Один агрегированный активный `D:` при параллельных потоках
 
@@ -127,32 +135,74 @@ go-ahead), §Cycle quickref; `assets/agents/planner.md` (plan-disk paragraph).
 **Оперативные источники:** SKILL §Phase todo tracker (exactly one in_progress, one aggregate `D:`,
 units in status file), §Transition gates (gate 1 single aggregate `D:`), §Cycle status file.
 
-## H. Полномочия PLAN, диспетчер-primary и привязки моделей
+## H. Cheap-only оркестрация, полномочия PLAN и привязки моделей
 
-**Вход:** `architect` (primary) выступает диспетчером; нужен начальный PLAN и replan; установка
-шести EN-ассетов ролей.
-**Требуемый исход:** и начальный PLAN, и replan принадлежат субагенту `planner`; **все** primary,
-включая `architect`, внутри PDCA — только диспетчеры и никогда сами не читают файлы/не выполняют
-команды; привязки моделей даёт `agent`-блок профиля хоста, в ролях только ярлык `# tier`
-(`coder`/`scout` = cheap; `planner`/`check`/`security-auditor` = medium; `escalate` = strong),
+**Вход:** цикл запускается из primary; нужен начальный PLAN и replan; установка шести EN-ассетов
+ролей.
+**Требуемый исход:** цикл ведёт **только cheap-tier primary** (по **эффективному тиру профиля**, а
+не по имени агента); medium/strong primary (в т.ч. `architect`) цикл не диспетчеризует и вне цикла
+остаётся решающим primary; и начальный PLAN, и replan принадлежат субагенту `planner`, вердикт —
+`check`; привязки моделей даёт `agent`-блок профиля хоста, в ролях только ярлык `# tier`
+(`coder`/`scout`/`pdca-orchestrator` = cheap; `planner`/`check`/`security-auditor` = medium; `escalate` = strong),
 `model:` в ролях отсутствует; профили не редактируются ради выбора id; `general`/`explore` не
-обходятся.
+обходятся; права дорогих ролей не расширяются.
 **Оперативные источники:** SKILL §Orchestrator role, §Host requirements (roles → agents);
-`config/agents/architect.md`; `assets/agents/*.md` (tier labels, no `model:`);
-`config/profiles/*.jsonc` (`agent` block, только чтение).
+`config/AGENTS.md` (Tier routing), `README.md` (§Тиры ролей); `config/agents/architect.md`;
+`assets/agents/*.md` (tier labels, no `model:`); `config/profiles/*.jsonc` (`agent` block, только
+чтение).
 
-## I. Security-триггер red блокирует гейт 3
+## I. Security-conditional gather и агрегатный вердикт
 
-**Вход:** срабатывает security-триггер (auth/секреты/ввод), `security-auditor` возвращает
-красный вердикт.
-**Требуемый исход:** гейт 3 (CHECK → ACT) заблокирован; red-находка уходит в разбор/исправление,
-не выдаётся за pass; строки/потоки CHECK не обходят security-гейт; сработавший security-провал
-считается провальным CHECK текущей ревизии для счётчика эскалации.
-**Оперативные источники:** SKILL §Transition gates (gate 3, «every failed CHECK of the current
-revision counts, including a triggered security failure»), §Parallel CHECK streams
-(four unconditional streams + security by trigger; any failed stream counts as a failed CHECK of
-the current revision), §Escalation (triggers; security failure counting);
+**Вход:** срабатывает security-триггер (auth/секреты/ввод/крипто); `security-auditor` возвращает
+отчёт/находку.
+**Требуемый исход:** security — **conditional gather-поток** CHECK; его результат **возвращается в
+агрегат** и судится `check` (своего независимого вердикта нет; обычный security-дефект не обходит
+агрегированный триаж); гейт 3 зелёный только при **всех** потоках; обычный security-провал считается
+провальным CHECK текущей ревизии по общим счётчикам `n/3`/истории дефектов; немедленная эскалация —
+только **жёсткий security-tradeoff**; финальный вердикт по всем потокам — `check`'s.
+**Оперативные источники:** SKILL §Transition gates (gate 3, «every failed CHECK … triggered security
+failure»), §Parallel CHECK streams (security gather/return; any failed stream counts as a failed CHECK
+of the current revision), §Escalation (hard security trade-off, counters);
 `assets/agents/security-auditor.md`, `assets/agents/check.md`.
+
+## J. Решение эскалации: роутинг, не перевыбор и без обхода гейтов
+
+**Вход:** `escalate` вернул решение. Два случая: (1) ревизия **не исчерпана**; (2) ревизия
+**исчерпана** (третий провальный CHECK той же `r`).
+**Требуемый исход:** `escalate` возвращает **решение**, не меню и не код; cheap-оркестратор исполняет
+его **только маршрутизацией** — реально пересмотренный remediation-план `r+1` → `planner` (автор
+плана), реализация по текущему плану или STOP статуса → `coder`; оркестратор **семантически не
+перевыбирает** и план не переписывает. Решение **не отменяет** гейты, запрет 4-й попытки, scope и
+security-ограничения; при **не исчерпанной** ревизии продолжение возможно по текущему плану, при
+**исчерпанной** — 4-й попытки нет даже после эскалации, продолжение только через genuine `r+1`; нет
+actionable-плана → **STOP** (обычный режим — вопрос пользователю; автономный — записанный STOP без
+вопроса).
+**Оперативные источники:** SKILL §Orchestrator role (execute by routing, never re-decide),
+§Escalation (After the escalation …), §State machine (no 4th), §Red flags;
+`config/agents/escalate.md`, `assets/agents/escalate.md`.
+
+## K. Автономное делегирование: primary диспатчит `pdca-orchestrator`
+
+**Вход:** cheap-tier primary; пользователь **явно** просит работать автономно; цикл ещё не начат.
+**Требуемый исход:** primary **не ведёт** цикл сам, а вызывает `Task` на cheap-субагенте
+`pdca-orchestrator` с **cycle brief** (goal, scope, acceptance criteria, constraints,
+references); `pdca-orchestrator` проводит PLAN→DO→CHECK→ACT и возвращает компактную
+**сводку ≤8 строк**; primary лишь передаёт сводку дальше и **не читает** файлы/логи и **не правит** их;
+коллекционный статус-файл не создаётся, обязательный pdca-dotnet статус-файл пишет `coder`;
+вопросы не задаются.
+**Оперативные источники:** SKILL §Two paths → "Two paths, one contract." / §Autonomous mode
+(Delegation) / §Host requirements (Autonomous driver; setup-allowlist включает `pdca-orchestrator`);
+`config/agents/pdca-orchestrator.md` (вход «одиночный автономный цикл», cycle brief → сводка ≤8 строк).
+
+## L. Fallback: `pdca-orchestrator` недоступен
+
+**Вход:** автономная просьба, но `Task` к `pdca-orchestrator` невозможен — агент отсутствует,
+либо `subagent_depth` < 2, либо `Task` запрещён хостом.
+**Требуемый исход:** primary переходит в **flat primary** и ведёт цикл **сам** (PLAN→DO→CHECK→ACT
+с теми же гейтами); fallback зафиксирован (`Notice:` в статус-файле); запрет 4-й попытки, scope и
+security-ограничения **не отменяются**; вопросы по-прежнему не задаются.
+**Оперативные источники:** SKILL §Autonomous mode (Delegation: fall back to the flat primary, log
+the fallback) / §Host requirements (resource blocker); `config/agents/pdca-orchestrator.md`.
 
 ---
 

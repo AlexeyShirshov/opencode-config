@@ -30,7 +30,7 @@ PEER_ROW = ["P", "DO", "MERGE", "C", "A"]
 CHILD_PARENT = {"REPAIR": "C", "E": "MERGE"}
 COLN = PEER_ROW  # the band and the straight dispatch/result buses cover this row
 WIDTH = {"P": 196, "DO": 424, "MERGE": 176, "C": 196,
-         "REPAIR": 196, "E": 216, "A": 208}
+         "REPAIR": 196, "E": 216, "A": 232}
 # full canvas width comes from the lower state graph (`EXIT` right edge + margin)
 W = GX["EXIT"] + NW + M
 # spread the top row across the canvas
@@ -66,8 +66,12 @@ MAIN_COLUMN_TO_STATE = {
 # DO→ESCALATE) are absent by construction.  The normal path is DO→MERGE→C;
 # the single-group degradation keeps the direct DO→C bypass; a conflict goes
 # MERGE→ESCALATE and the resolution returns ESCALATE→MERGE (the orchestrator
-# re-dispatches the retry to `coder`).  MERGE therefore has exactly two inputs:
-# the phase-DO completion and the escalate decision.
+# re-dispatches the retry to `coder`, or the group tip is skipped as
+# `incomplete`).  MERGE therefore has exactly two inputs: the phase-DO
+# completion and the escalate decision.  The corrective `REPAIR` composition
+# returns to a full `C` on success and terminates in the distinct lower `STOP`
+# node when the pdca-dotnet revision is exhausted with no actionable revised
+# plan (no 4th implementation CHECK; the collection stays `unverified`).
 STATE_EDGES = [
     ("START", "P", "старт"),
     ("P", "DO", "группы"),
@@ -80,7 +84,8 @@ STATE_EDGES = [
     ("C", "A", "PASS"),
     ("A", "EXIT", "finalized"),
     ("MERGE", "ESCALATE", "merge-конфликт"),
-    ("ESCALATE", "MERGE", "решено · переставить"),
+    ("ESCALATE", "MERGE", "решено/переставить/пометить incomplete"),
+    ("REPAIR", "STOP", "ревизия исчерпана · нет плана"),
 ]
 
 # The single central human-label map, keyed by the FULL edge triple.  Both the
@@ -93,13 +98,14 @@ EDGE_LABELS = {
     ("DO", "MERGE", "≥2 · all-lanes-terminal"): "все группы завершены",
     ("DO", "C", "одна группа · без merge"): "одна группа: без MERGE",
     ("MERGE", "C", "интеграция завершена"): "MERGE завершён",
-    ("C", "REPAIR", "FAIL"): "CHECK fail",
+    ("C", "REPAIR", "FAIL"): "CHECK fail · real defect",
     ("REPAIR", "C", "full-verification"): "REPAIR completed",
-    ("C", "C", "re-gather"): "recheck after inv fail",
+    ("C", "C", "re-gather"): "re-gather: blocked",
     ("C", "A", "PASS"): "CHECK pass",
     ("A", "EXIT", "finalized"): "финализация",
     ("MERGE", "ESCALATE", "merge-конфликт"): "MERGE fail",
-    ("ESCALATE", "MERGE", "решено · переставить"): "решение ESCALATE: повтор MERGE",
+    ("ESCALATE", "MERGE", "решено/переставить/пометить incomplete"): "ESCALATE: повтор MERGE или incomplete skip",
+    ("REPAIR", "STOP", "ревизия исчерпана · нет плана"): "STOP: нет пересмотренного плана",
 }
 
 # strict completeness guard: every edge into a mapped peer block must have a
@@ -192,7 +198,10 @@ BLOCKS = {
         ("Лейн · группа", "один Task · оркеструет, не решает", "weak"),
         ("Ветка задачи", "от tip предыдущей · coder", "weak"),
         ("pdca-цикл", "PLAN→DO→CHECK→ACT · руки cheap, решения medium", "mixed"),
-        ("Коммит (если режим автокоммит)", "только файлы задачи", "weak"),
+        # autocommit is MANDATORY inside the explicitly authorized collection
+        # mode (otherwise the next task cannot branch from a committed tip); the
+        # card never grants that permission by itself.
+        ("Коммит · обязателен", "при явно разрешённом автокоммите · только файлы задачи", "weak"),
     ],
     "MERGE": [
         ("merge --no-ff", "coder · в текущий бранч", "weak"),
@@ -222,7 +231,9 @@ BLOCKS = {
     ],
     "A": [
         ("Отчёт", "группы · задачи · evidence", "weak"),
-        ("Чистка", "worktree + временные ветки", "weak"),
+        # ACT cleanup is limited to disposable DONE/merged outputs; incomplete
+        # results (branches/patch/pointers) are preserved.
+        ("Чистка · done/merged", "incomplete сохраняются", "weak"),
         ("Статус-файл", "Done / Verified / Incomplete", "weak"),
     ],
 }
@@ -282,7 +293,8 @@ def _main_column_bottom(c: str) -> float:
 _R2_GAP = 56
 _PARENT_BOTTOM = {
     "C": _main_column_bottom("C"),
-    "MERGE": _main_column_bottom("MERGE") + 55,  # clear the three barrier lines
+    # clear the five wrapped barrier lines under the narrow MERGE column
+    "MERGE": _main_column_bottom("MERGE") + 100,
 }
 
 
@@ -315,12 +327,19 @@ R1_TOP = SG_TITLE_Y + 120
 R1_BOT = R1_TOP + NH
 R2_TOP = R1_BOT + 76
 R2_BOT = R2_TOP + NH
-M4 = R2_BOT + 30
+# third graph row: the terminal corrective STOP (unrecoverable), a vertical
+# branch directly below `REPAIR`; lower-graph node only, never a main phase.
+R3_TOP = R2_BOT + 76
+R3_BOT = R3_TOP + NH
+M4 = R3_BOT + 34
 NOTE_Y = M4 + 28
-H = NOTE_Y + 34
+# five footnote lines (single-group/no-rollback, autocommit, merge barrier,
+# STOP/cleanup, lane definition) with a bottom margin.
+H = NOTE_Y + 16 * 4 + 40
 
 # x/y are generator-owned absolute layout; `tier` is the visible workflow role
-# ("mixed" is workflow composition, not a fourth model tier).
+# ("mixed" is workflow composition, not a fourth model tier).  `annotation` is a
+# small local visible note rendered under the node.
 STATE_NODES = {
     "START":      {"x": GX["START"], "y": R1_TOP, "label": "START",        "tier": None},
     "P":          {"x": GX["P"],     "y": R1_TOP, "label": "PLAN",          "tier": None},
@@ -334,14 +353,17 @@ STATE_NODES = {
     "REPAIR":     {"x": GX["C"],     "y": R2_TOP, "label": "REPAIR",         "tier": "mixed",
                    "owner": "pdca · mixed"},
     "ESCALATE":   {"x": GX["MERGE"], "y": R2_TOP, "label": "ESCALATE",      "tier": "strong"},
+    "STOP":       {"x": GX["C"],     "y": R3_TOP, "label": "STOP",          "tier": None,
+                   "annotation": "unverified · без ACT/cleanup"},
 }
 
 STATE_COLOR = {"START": None, "P": "#2563eb", "DO": "#7c3aed", "MERGE": "#475569",
                "C": "#4f46e5", "A": "#059669", "EXIT": None,
-               "REPAIR": "#8b5cf6", "ESCALATE": "#b91c1c"}
+               "REPAIR": "#8b5cf6", "ESCALATE": "#b91c1c", "STOP": "#b91c1c"}
 
 _R1C = R1_TOP + NH / 2
 _MID = (R1_BOT + R2_TOP) / 2
+_MID3 = (R2_BOT + R3_TOP) / 2
 _BYPASS_TOP = R1_TOP - 40
 # Every corrective loop is a tight parallel pair of vertical arrows below its
 # source node (`REPAIR` under `C`, `ESCALATE` under `MERGE`); captions sit
@@ -373,22 +395,34 @@ ROUTES = {
     # reverse arrows are never captioned.
     ("REPAIR", "C"): {"points": [(_GCC + 15, R2_TOP), (_GCC + 15, R1_BOT)],
                       "caption": []},
-    # a missing mandatory report is re-gathered by the existing gather path
+    # a missing mandatory report is re-gathered by the existing gather path;
+    # this is a `blocked`/awaiting-reports state, NOT a code defect and never a
+    # REPAIR trigger (no edits).
     ("C", "C"): {"points": [(GX["C"] + 113, R1_TOP), (GX["C"] + 113, R1_TOP - 20),
                             (GX["C"] + 193, R1_TOP - 20), (GX["C"] + 193, R1_TOP + 28),
                             (GX["C"] + 160, R1_TOP + 28)],
                  "caption": _wrap_label(EDGE_LABELS[("C", "C", "re-gather")], 80),
-                 "label": (GX["C"] + 153, R1_TOP - 44)},
+                 "label": (GX["C"] + 153, R1_TOP - 60)},
     # conflict is discovered at MERGE; `ESCALATE` sits directly below it as a
     # tight vertical loop.
     ("MERGE", "ESCALATE"): {"points": [(_GMC - 15, R1_BOT), (_GMC - 15, R2_TOP)],
                             "caption": EDGE_LABELS[("MERGE", "ESCALATE", "merge-конфликт")],
                             "label": (_GMC - 107, _MID - 8)},
     # resolution returns to MERGE; the ORCHESTRATOR re-dispatches coder's retry
-    # (the strong expert itself never patches).  Reverse arrows are uncaptioned.
+    # (the strong expert itself never patches) or the group tip is skipped as
+    # `incomplete`.  Reverse arrows are uncaptioned.
     ("ESCALATE", "MERGE"): {"points": [(_GMC + 15, R2_TOP), (_GMC + 15, R1_BOT)],
                             "caption": [],
                             "dispatched_by": "orchestrator"},
+    # unrecoverable corrective outcome: the standard pdca-dotnet revision is
+    # exhausted and there is no actionable revised plan -> STOP, a distinct
+    # terminal (never a successful EXIT), preserving evidence with no ACT.
+    ("REPAIR", "STOP"): {"points": [(_GCC, R2_BOT), (_GCC, R3_TOP)],
+                         "caption": _wrap_label(
+                             EDGE_LABELS[("REPAIR", "STOP", "ревизия исчерпана · нет плана")],
+                             200),
+                         "label": (_GCC + 46, _MID3 - 6),
+                         "anchor": "start"},
 }
 
 THEMES = {
@@ -566,7 +600,9 @@ def render(P, title):
             gx = x + 16
             s.append(f'<path d="M{child_x},{cy_last} L{gx},{cy_last} L{gx},{cy_first} L{child_x},{cy_first}" fill="none" stroke="{P["bus"]}" marker-end="url(#arrow)"/>')
             _my = (cy_first + cy_last) / 2
-            s.append(f'<text x="{gx - 5}" y="{_my}" class="g" fill="{P["label"]}" text-anchor="middle" transform="rotate(-90 {gx - 5} {_my})">следующая ветка группы</text>')
+            # inside a lane the loop-back is task-to-task: after the committed
+            # task the next task branches from its tip.
+            s.append(f'<text x="{gx - 5}" y="{_my}" class="g" fill="{P["label"]}" text-anchor="middle" transform="rotate(-90 {gx - 5} {_my})">следующая задача</text>')
         else:
             for j, (t, sub, tier) in enumerate(blocks):
                 by = COL_Y + j * BOX_STEP
@@ -591,12 +627,15 @@ def render(P, title):
         if c == "MERGE":
             # the actual all-terminal merge barrier (>=2 groups): every lane must be
             # terminal (done or incomplete) before the sequential merge of the
-            # successful tips.  The visible label lives *inside* this marker group.
+            # successful tips; `incomplete` tips are skipped.  The visible label
+            # lives *inside* this marker group and is wrapped to the narrow column.
             s.append('<g data-condition="all-lanes-terminal">')
             s.append(_frame)
             s.append(f'<text x="{cx(c)}" y="{bottom + 25}" class="g" fill="{P["label"]}" text-anchor="middle">{esc(CONDITIONAL[c])}</text>')
             s.append(f'<text x="{cx(c)}" y="{bottom + 40}" class="g" fill="{P["label"]}" text-anchor="middle">barrier · ALL LANES TERMINAL</text>')
-            s.append(f'<text x="{cx(c)}" y="{bottom + 55}" class="ls" fill="{P["sub"]}" text-anchor="middle">done или incomplete</text>')
+            s.append(f'<text x="{cx(c)}" y="{bottom + 55}" class="ls" fill="{P["sub"]}" text-anchor="middle">done | incomplete</text>')
+            s.append(f'<text x="{cx(c)}" y="{bottom + 70}" class="ls" fill="{P["sub"]}" text-anchor="middle">merge только done</text>')
+            s.append(f'<text x="{cx(c)}" y="{bottom + 85}" class="ls" fill="{P["sub"]}" text-anchor="middle">incomplete · skip</text>')
             s.append('</g>')
         else:
             s.append(_frame)
@@ -687,7 +726,7 @@ def render(P, title):
                      f'data-entry-condition="{esc(_cond)}">')
             for _ln in _lines:
                 _y += BUS_LABEL_LINE_H
-                s.append(label(xc - 24, _y - 3, _ln, P["arrow"], "end"))
+                s.append(label(xc - 20, _y - 3, _ln, P["arrow"], "end"))
             s.append('</g>')
             _y += BUS_ENTRY_GAP
         s.append('</g>')
@@ -700,7 +739,7 @@ def render(P, title):
         s.append('</g>')
 
     legend = [
-        ("#0d9488", "дешёвая ступень", "cheap", "lane · scout · coder · инфраструктура"),
+        ("#0d9488", "дешёвая ступень", "cheap", "pdca-orchestrator · scout · coder"),
         ("#4f46e5", "средняя ступень", "medium", "planner · check · security-auditor"),
         ("#ea580c", "дорогая ступень", "strong", "escalate"),
         ("#8b5cf6", "составной PDCA", "mixed", "pdca-цикл · руки cheap, решения medium"),
@@ -769,6 +808,8 @@ def render(P, title):
                 _y0 = _n["y"] + 17
                 for _i, _line in enumerate(_lines):
                     s.append(f'<text x="{_n["x"]+NW/2}" y="{_y0 + _i*14}" class="st" fill="{_c}" text-anchor="middle">{esc(_line)}</text>')
+        if _n.get("annotation"):
+            s.append(f'<text x="{_n["x"]+NW/2}" y="{_n["y"]+NH+16}" class="nt" text-anchor="middle">{esc(_n["annotation"])}</text>')
         s.append('</g>')
     for _a, _b, _cond in STATE_EDGES:
         _route = ROUTES[(_a, _b)]
@@ -787,11 +828,31 @@ def render(P, title):
             _caption = [_caption]
         if "label" in _route:
             _lx, _ly = _route["label"]
+            _anchor = _route.get("anchor", "middle")
             for _i, _line in enumerate(_caption):
-                s.append(label(_lx, _ly + _i * 12, _line, P["label"]))
+                s.append(label(_lx, _ly + _i * 12, _line, P["label"], _anchor))
         s.append('</g>')
-    s.append(f'<text x="{M}" y="{NOTE_Y}" class="nt">Одна группа — деградация: worktree и ветки не создаются, работа в текущем бранче, merge --no-ff не нужен · push — никогда</text>')
-    s.append(f'<text x="{M}" y="{NOTE_Y + 16}" class="nt">Лейн (work stream) — один параллельный поток работ на группу: отдельный субагент, свой worktree и ветка, задачи строго по одной, полный pdca-цикл на каждую; параллельно идут группы (≤ cap), не задачи внутри лейна.</text>')
+    _notes = [
+        # single-group degradation + no rollback of earlier commits
+        "Одна группа — деградация: worktree и ветки не создаются, работа в текущем бранче, "
+        "merge --no-ff не нужен; сделанные ранее коммиты остаются, автоотката нет · push — никогда",
+        # explicit authorized-autocommit prerequisite (the card never grants it)
+        "Автокоммит обязателен только в явно разрешённом режиме коллекции; без разрешения/при запрете — "
+        "patch сохраняется, коммитов и цепочки незакоммиченных веток нет (исключение задаётся overlay проекта, не глобально)",
+        # merge barrier: terminal = readiness; only successful (done) tips merge
+        "≥2: барьер ждёт терминальности ВСЕХ лейнов (done | incomplete) — это готовность, не успех; "
+        "MERGE только успешных (done) tip, incomplete пропускается; конфликт → abort → escalate",
+        # STOP is not success; ACT cleanup preserves incomplete results;
+        # re-gather is a blocked/no-defect state, never a code repair
+        "C: re-gather остаётся blocked (нет отчёта) — не дефект, правок кода нет; "
+        "STOP корректирующего PDCA ≠ EXIT: unverified, evidence сохранён, без ACT/cleanup; "
+        "ACT чистит только DONE/merged, incomplete-результаты (ветки/patch/указатели) сохраняются",
+        # lane definition
+        "Лейн (work stream) — один параллельный поток работ на группу: отдельный субагент, свой worktree и ветка, "
+        "задачи строго по одной, полный pdca-цикл на каждую; параллельно идут группы (≤ cap), не задачи внутри лейна.",
+    ]
+    for _i, _ntext in enumerate(_notes):
+        s.append(f'<text x="{M}" y="{NOTE_Y + _i * 16}" class="nt">{esc(_ntext)}</text>')
     s.append('</svg>')
     return "\n".join(s)
 
