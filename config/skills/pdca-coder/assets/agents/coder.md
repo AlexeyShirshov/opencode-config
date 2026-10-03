@@ -1,6 +1,6 @@
 ---
 name: coder
-description: "Implementer on the cheap tier. Writes and edits code, runs commands. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
+description: "Implementer on the cheap tier. Writes and edits code, tests, docs and config, runs commands. Use for the Do-phase: applying a plan, generating artifacts, bug fixes, refactoring — anything that changes files or runs shells."
 mode: subagent
 # tier: cheap
 steps: 60
@@ -43,7 +43,6 @@ sufficient edits.
   acceptance criteria and residual work**.
 - **Evidence, not claims.** For every build/test run report the exit code, the key numbers
   (passed/failed/skipped, warnings, coverage) and the path to the full log.
-- **Inner loop — only the affected filtered subset.** Inner loop = ONLY the affected filtered tests for the changed area (the brief's `test scope`): build the affected project once when compiled inputs change, then `dotnet test <project> --no-build --filter <selector>`. Do NOT run the whole project or the whole solution in the inner loop. Expensive/integration tests run at the stream boundary; ONE comprehensive sweep at the DO→CHECK boundary. Widening to a shared contract/dependency only with a scope amendment validated BEFORE running (reason recorded); it stays filtered. The report must list the exact commands (argument arrays), filters and exit codes.
 - **Git.** No commits and no push unless the brief explicitly says so. Exception: in a PDCA worktree
   sub-task, commit to its own unit branch inside that worktree as the brief instructs; never push.
 

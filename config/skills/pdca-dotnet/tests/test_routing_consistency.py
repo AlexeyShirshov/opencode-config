@@ -121,7 +121,8 @@ class RolePermissionTest(unittest.TestCase):
         self.assertEqual(
             allow_keys(perm["task"]),
             {"planner", "coder", "check", "escalate", "scout", "security-auditor",
-             "docfx-specialist", "dotnet-*"},
+             "docfx-specialist", "dotnet-*",
+             "pdca-planner", "pdca-executor", "pdca-check", "pdca-escalate"},
         )
         self.assertEqual(perm.get("edit"), "deny")
         self.assertEqual(perm.get("bash"), "deny")

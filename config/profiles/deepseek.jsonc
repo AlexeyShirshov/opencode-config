@@ -23,6 +23,10 @@
   // Проект переопределяет любую роль своим `.opencode/opencode.jsonc` — проектный конфиг
   // мержится после профиля, достаточно указать только изменённые роли (например, `escalate`).
   "agent": {
+    "pdca-planner": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
+    "pdca-check": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
+    "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
+    "pdca-executor": { "model": "deepseek/deepseek-flash" },
     "architect": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "planner": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "check": { "model": "opencode/gpt-6.1-sol", "variant": "high" },

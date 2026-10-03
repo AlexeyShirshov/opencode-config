@@ -40,6 +40,13 @@
 > tip»/продолжение лейна после `incomplete` **перекрыты** этой ревизией; исторические
 > baseline/after-сэмплы остаются дословной историей и не переписываются.
 
+> **Ревизия v4 (текущая).** Коллекция **стек-нейтральна**: вариант цикла выбирается
+> **на задачу** агентом `pdca-orchestrator` — `.NET/C#` → `pdca-dotnet`, другой код →
+> `pdca-coder`, иначе → `pdca` (по умолчанию `pdca`); база (`pdca-coder`/`pdca-dotnet`)
+> идентична. Ранние фразы этого файла про корректирующую задачу «`pdca-dotnet`»
+> (v2-заметка, рубрика a-3, дословные baseline/after-сэмплы) сохранены **дословно как
+> история** и не переписываются.
+
 Поведенческие сэмплы (Step 2 RED / Step 4 GREEN плана) — **отдельный** слой: это симуляция
 выбора протокола (роли/cwd/действия/статус), а **не** живое исполнение коллекции. Их
 результаты дословно сохраняет контроллер в
@@ -48,12 +55,13 @@
 
 Источник правил: `docs/superpowers/specs/2026-10-01-pdca-collection-verification-recovery-design.md`
 и план `docs/superpowers/plans/2026-10-01-pdca-collection-verification-recovery-plan.md`.
-Скилл коллекции **не переопределяет** state machine/гейты/правила ревизий базы
-`config/skills/pdca-dotnet/SKILL.md`.
+Скилл коллекции **не переопределяет** state machine/гейты/правила ревизий базы кодового
+PDCA-контракта (`config/skills/pdca-coder/SKILL.md`; для .NET — идентичная `pdca-dotnet`).
 
 Общая оперативная база (применяется ко всем кейсам, если ниже не уточнено):
 `config/skills/pdca-collection/SKILL.md` — §C (верификация), §Сбой, §Статус коллекции, §D
-(инфраструктура/merge); база `config/skills/pdca-dotnet/SKILL.md` — §State machine (счётчики
+(инфраструктура/merge); база кодового контракта (`config/skills/pdca-coder/SKILL.md`; для .NET —
+идентичная `pdca-dotnet`) — §State machine (счётчики
 `r`/`n`/3), §Escalation (`escalate`), §Cycle status file. Роли не изобретаются:
 `coder`/`scout` — cheap, `planner`/`check`/security — medium, `escalate` — strong; `pdca-orchestrator` —
 обёртка группы, не решающая; «mixed» — композиция workflow, **не** четвёртый тир.
@@ -258,8 +266,8 @@ baseline/after-сэмпл и **не** живой прогон (промпт `sce
   `skipped` — примечание интеграции, **не** статус группы; `incomplete` остаётся
   `incomplete` и никогда не `merged`.
 
-**Оперативные источники:** SKILL §C, §A, §Статус, §Сбой, §P/§Лейн; база
-`config/skills/pdca-dotnet/SKILL.md` (счётчики/эскалация не меняются).
+**Оперативные источники:** SKILL §C, §A, §Статус, §Сбой, §P/§Лейн; база кодового
+контракта `config/skills/pdca-coder/SKILL.md` (для .NET — идентичная `pdca-dotnet`; счётчики/эскалация не меняются).
 
 ---
 

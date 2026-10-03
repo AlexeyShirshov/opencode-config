@@ -8,6 +8,10 @@
   // `model`). Проект может переопределить роль своим `.opencode/opencode.jsonc`
   // (проектный конфиг мержится после профиля).
   "agent": {
+    "pdca-planner": { "model": "opencode-go/kimi-k3" },
+    "pdca-check": { "model": "opencode-go/kimi-k3" },
+    "pdca-escalate": { "model": "opencode-go/kimi-k3" },
+    "pdca-executor": { "model": "opencode-go/kimi-k3" },
     "architect": { "model": "opencode-go/kimi-k3" },
     "planner": { "model": "opencode-go/kimi-k3" },
     "check": { "model": "opencode-go/kimi-k3" },

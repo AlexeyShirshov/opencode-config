@@ -9,8 +9,9 @@ They prove the diagram/output structure only (routes, node references, tiers,
 merge barrier, determinism, canvas fit).  They do **not** prove a live collection
 integration run; that is a separate concern.
 
-v2 (user-approved): collection verification `C` is the *standard* `pdca-dotnet`
-CHECK.  The bespoke `TRIAGE` stage, the `BLOCKED` diagram state and the
+v2 (user-approved): collection verification `C` is the *standard* CHECK of the
+per-task code contract (`pdca-coder`, or the identical `pdca-dotnet` base).  The
+bespoke `TRIAGE` stage, the `BLOCKED` diagram state and the
 conditional `C-fail` recovery panel are removed.  The expected contract is
 literal: column `C` is owned by `check · medium` from the outset, carries the
 four cheap measurement cards plus an always-run medium verdict card; the state
@@ -65,7 +66,7 @@ EXPECTED_NODE_IDS = {
     "REPAIR",
     "ESCALATE",
     # terminal unrecoverable corrective outcome (distinct from the successful
-    # EXIT): pdca-dotnet revision exhausted with no actionable revised plan.
+    # EXIT): the corrective revision exhausted with no actionable revised plan.
     "STOP",
 }
 RECOVERY_NODE_IDS = {"REPAIR", "STOP"}
@@ -2380,9 +2381,31 @@ class CollectionContractSemanticsTest(unittest.TestCase):
         )
         self.assertRegex(header, r"глобальные AGENTS\.md не расширяет")
         self.assertRegex(header, re.compile(r"без разрешения", re.I))
-        params = self._skill_plain("## Параметры", "## Связь с pdca-dotnet")
+        params = self._skill_plain("## Параметры", "## Связь с базовым PDCA")
         self.assertRegex(params, r"проектный overlay или явный запрос пользователя")
         self.assertRegex(params, r"сам скилл права не даёт")
+
+    # --- stack-neutral: per-task variant, no hard pdca-dotnet dependency -----
+
+    def test_collection_is_stack_neutral_with_per_task_variant(self):
+        # The collection must not require .NET: the cycle variant is chosen per
+        # task, so both code contracts are named and the base stays generic.
+        header = self._skill_plain("## Роль", "## Коллекция")
+        self.assertRegex(header, re.compile(r"вариант цикла выбирается на задачу", re.I))
+        self.assertIn("pdca-dotnet", header)
+        self.assertIn("pdca-coder", header)
+        self.assertRegex(
+            header,
+            re.compile(r"\.NET/C#\s*→\s*pdca-dotnet, другой код\s*→\s*pdca-coder"),
+        )
+        lane_sec = self._skill_plain("## Лейн (work stream)", "## Git-модель")
+        self.assertRegex(lane_sec, re.compile(r"выбранн\w+ для задачи варианта", re.I))
+        self.assertIn("pdca-coder", lane_sec)
+        self.assertIn("pdca-dotnet", lane_sec)
+        conn = self._skill_plain("## Связь с базовым PDCA", "## Fallback")
+        self.assertTrue(conn, "SKILL §Связь с базовым PDCA not found")
+        self.assertRegex(conn, re.compile(r"стек-нейтрален", re.I))
+        self.assertIn("pdca-coder", conn)
 
     # --- the branch chain is per task, not per group ----------------------
 

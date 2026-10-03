@@ -4,7 +4,7 @@
 #   straight to the band, while the corrective blocks sit on a second row
 #   directly under their trigger (`REPAIR · PDCA` under CHECK, `ESCALATE` under
 #   MERGE) joined by a parent->child dispatch/return pair, so the loops read like
-#   the state graph.  Mirrors gen_pdca.py (pdca-dotnet) so the two diagrams read
+#   the state graph.  Mirrors the sibling pdca diagrams so they read alike.
 #   as the same family.
 # Renders two artefacts: light (collection-hand.*) and dark (collection-hand-dark.*).
 import html
@@ -70,7 +70,7 @@ MAIN_COLUMN_TO_STATE = {
 # `incomplete`).  MERGE therefore has exactly two inputs: the phase-DO
 # completion and the escalate decision.  The corrective `REPAIR` composition
 # returns to a full `C` on success and terminates in the distinct lower `STOP`
-# node when the pdca-dotnet revision is exhausted with no actionable revised
+# node when the corrective revision is exhausted with no actionable revised
 # plan (no 4th implementation CHECK; the collection stays `unverified`).
 STATE_EDGES = [
     ("START", "P", "старт"),
@@ -219,7 +219,7 @@ BLOCKS = {
         ("Review-линзы", "риск · регресс · соответствие", "weak"),
     ],
     "REPAIR": [
-        # the orchestrator-launched corrective standard `pdca-dotnet`
+        # the orchestrator-launched corrective standard PDCA
         # composition; `mixed` marks the workflow composition, not a model tier.
         # the long title is wrapped so it clears the tier badge instead of
         # running underneath it (a single line is wider than REPAIR's column).
@@ -272,7 +272,7 @@ INPUTS = [
 # stages.  The verification node is the semantic id `C` (the standard CHECK
 # owned by `check`/medium); `A` is the parent collection ACT (report /
 # authorized cleanup / finalize), a real reachable node.  `REPAIR` is the
-# standard corrective `pdca-dotnet` composition (mixed), triggered by the
+# standard corrective PDCA composition (mixed), triggered by the
 # orchestrator on FAIL.  `MERGE` is the explicit integration node (`coder`
 # cheap): lanes reach it at their terminal barrier, it hands the integrated
 # tree to `C`, and a merge conflict routes through it to `ESCALATE`.
@@ -414,7 +414,7 @@ ROUTES = {
     ("ESCALATE", "MERGE"): {"points": [(_GMC + 15, R2_TOP), (_GMC + 15, R1_BOT)],
                             "caption": [],
                             "dispatched_by": "orchestrator"},
-    # unrecoverable corrective outcome: the standard pdca-dotnet revision is
+    # unrecoverable corrective outcome: the standard corrective revision is
     # exhausted and there is no actionable revised plan -> STOP, a distinct
     # terminal (never a successful EXIT), preserving evidence with no ACT.
     ("REPAIR", "STOP"): {"points": [(_GCC, R2_BOT), (_GCC, R3_TOP)],

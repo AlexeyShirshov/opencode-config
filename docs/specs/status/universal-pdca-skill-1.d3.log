@@ -1,0 +1,52 @@
+test_autonomous_delegation_and_fallback (test_contract_consistency.ContractConsistencyTest) ... ok
+test_cycle_status_file_schema (test_contract_consistency.ContractConsistencyTest) ... ok
+test_description_is_universal_and_stack_agnostic (test_contract_consistency.ContractConsistencyTest) ... ok
+test_escalation_is_routed_not_re_decided (test_contract_consistency.ContractConsistencyTest) ... ok
+test_escalation_no_fourth_attempt (test_contract_consistency.ContractConsistencyTest) ... ok
+test_escalation_triggers_and_counter_scope (test_contract_consistency.ContractConsistencyTest) ... ok
+test_evidence_over_assertion (test_contract_consistency.ContractConsistencyTest) ... ok
+test_frontmatter_has_exactly_name_and_description (test_contract_consistency.ContractConsistencyTest) ... ok
+test_gate1_conditions (test_contract_consistency.ContractConsistencyTest) ... ok
+test_gate2_conditions (test_contract_consistency.ContractConsistencyTest) ... ok
+test_gate3_conditions (test_contract_consistency.ContractConsistencyTest) ... ok
+test_gate4_conditions (test_contract_consistency.ContractConsistencyTest) ... ok
+test_instruction_priority_and_injection_defense (test_contract_consistency.ContractConsistencyTest) ... ok
+test_loopback_description_present (test_contract_consistency.ContractConsistencyTest) ... ok
+test_no_model_binding_in_frontmatter (test_contract_consistency.ContractConsistencyTest) ... ok
+test_parallel_do_streams (test_contract_consistency.ContractConsistencyTest) ... ok
+test_recovery_after_compaction (test_contract_consistency.ContractConsistencyTest) ... ok
+test_state_machine_has_all_phases (test_contract_consistency.ContractConsistencyTest) ... ok
+test_three_counters_described (test_contract_consistency.ContractConsistencyTest) ... ok
+test_todo_tracker_rules (test_contract_consistency.ContractConsistencyTest) ... ok
+test_worktree_sub_task_template (test_contract_consistency.ContractConsistencyTest) ... ok
+test_all_nine_patterns_are_scanned (test_contract_consistency.ForbiddenTokenGuardTest) ... ok
+test_detector_catches_a_rejected_sample (test_contract_consistency.ForbiddenTokenGuardTest) ... ok
+test_no_forbidden_token_in_any_pdca_file (test_contract_consistency.ForbiddenTokenGuardTest) ... ok
+test_every_group_key_is_a_known_phase_or_unclassified (test_cost_accounting.CostAccountingTest) ... ok
+test_known_roles_classify (test_cost_accounting.CostAccountingTest) ... ok
+test_module_loads (test_cost_accounting.CostAccountingTest) ... ok
+test_no_agent_name_prefix_inference (test_cost_accounting.CostAccountingTest) ... ok
+test_store_from_records_walks_descendants (test_cost_accounting.CostAccountingTest) ... ok
+test_totals_reconcile_across_groups (test_cost_accounting.CostAccountingTest) ... ok
+test_unclassified_bucket_is_present_in_summary (test_cost_accounting.CostAccountingTest) ... ok
+test_unknown_role_is_unclassified_not_dropped (test_cost_accounting.CostAccountingTest) ... ok
+test_lenses_are_selected_per_task (test_routing_consistency.LensSelectionWordingTest) ... ok
+test_no_mandatory_stack_lens_wording (test_routing_consistency.LensSelectionWordingTest) ... ok
+test_each_asset_has_tier_label_and_no_model (test_routing_consistency.RoleAssetTest) ... ok
+test_permission_blocks_are_wellformed (test_routing_consistency.RoleAssetTest) ... ok
+test_permission_roles_stay_narrow (test_routing_consistency.RoleAssetTest) ... ok
+test_six_assets_exist (test_routing_consistency.RoleAssetTest) ... ok
+test_workflow_escalation_is_a_decision (test_routing_consistency.WorkflowJsonTest) ... ok
+test_workflow_has_all_phases (test_routing_consistency.WorkflowJsonTest) ... ok
+test_workflow_json_parses (test_routing_consistency.WorkflowJsonTest) ... ok
+test_code_worked_example (test_universality.UniversalityTest) ... ok
+test_five_step_lens_selection_model (test_universality.UniversalityTest) ... ok
+test_lens_selection_section_present (test_universality.UniversalityTest) ... ok
+test_no_mandatory_stack_specialist (test_universality.UniversalityTest) ... ok
+test_noncode_uses_review_checklist_not_a_fake_build (test_universality.UniversalityTest) ... ok
+test_noncode_worked_example (test_universality.UniversalityTest) ... ok
+
+----------------------------------------------------------------------
+Ran 47 tests in 0.030s
+
+OK

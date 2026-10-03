@@ -1,6 +1,6 @@
 ---
-name: pdca-dotnet
-description: "PDCA cycle for .NET/C# tasks and features: PLAN → DO → CHECK → ACT with gates, parallel DO/CHECK streams, role routing (decisions — planner, hands — coder, escalation — escalate) and an ACT handoff. Invoke ONLY when the user explicitly asks to run work through the cycle — \"by the cycle\", \"via PDCA\", \"run PDCA\", \"use the pdca-dotnet skill\" — not for ordinary tasks."
+name: pdca-coder
+description: "PDCA cycle executor for software-engineering tasks — writing and changing code, tests, documentation, refactoring, and configuration. Stack-agnostic: PLAN selects the build/test/lint toolchain and review lenses per language. PLAN → DO → CHECK → ACT with transition gates, a mandatory todo tracker, autonomous delegation, escalation accounting, an evidence-over-assertion chain, recovery after compaction, and instruction-priority/injection defense."
 ---
 
 # PDCA cycle: orchestrator contract
@@ -8,9 +8,11 @@ description: "PDCA cycle for .NET/C# tasks and features: PLAN → DO → CHECK �
 **The skill is loaded — the task is now driven strictly by the cycle below.** Without
 it the contract does not apply: ordinary tasks are performed directly.
 
-**This skill targets .NET/C# repositories.** The PLAN/CHECK checklists, coverage
-thresholds and role fallbacks reference .NET tooling and `dotnet-*` subagents; for
-another stack, treat them as a template and replace the tooling.
+**This skill is stack-agnostic and targets software-engineering tasks** — writing and changing
+code, tests, documentation, refactoring, and configuration. The PLAN/CHECK checklists, review lenses and role
+fallbacks below are generic; for a concrete task, PLAN selects the toolchain and the lenses
+(§PLAN selects the toolchain and lenses) and the project overlay supplies the concrete
+commands, thresholds and formats.
 
 **Models and providers live outside this skill.** The skill names only **roles**; the
 host binds them to concrete subagents and models (see §Host requirements below).
@@ -19,7 +21,7 @@ The design presumption is economy: a cheap orchestrator, cheap `scout`/`coder`, 
 cycle still works — just without the cost/quality split.
 
 These rules are addressed to you as the orchestrator. Subagents (`scout`, `coder`, `explore`,
-`general`, `dotnet-*`, `check`, `planner`, `escalate`) do NOT apply them: `coder`,
+`general`, `check`, `planner`, `escalate`) do NOT apply them: `coder`,
 on the contrary, must edit files and run commands; `check`/`planner` only
 read the summary and produce a verdict/plan (no pulling code).
 
@@ -75,8 +77,8 @@ model (works out of the box, but on one model); bind ids in the profile `agent` 
 **Setup (once):** (1) `cp assets/agents/*.md ~/.config/opencode/agents/` (or project `.opencode/agents/`);
 (2) restart opencode (agents load at startup); (3) allow the cheap orchestrator's
 `agent.<primary>.permission.task` for `scout`/`planner`/`check`/`coder`/`escalate`/`security-auditor`,
-`pdca-orchestrator` (autonomous delegation), and the `dotnet-*` gather lenses + `docfx-specialist` used by
-PLAN/CHECK. A cheap `pdca-orchestrator` that
+`pdca-orchestrator` (autonomous delegation), and the **domain lenses/specialists selected by PLAN for
+the task** (only those actually available/permitted). A cheap `pdca-orchestrator` that
 drives a child cycle needs the same allowlist (it may not widen the expensive roles' permissions).
 
 If agents are absent and the host **allows the built-ins**, run on them (`general` for
@@ -186,22 +188,24 @@ established externalness (§Escalation). Only a genuinely **new** item that make
 **Transition gates:**
 
 1. **PLAN → DO** — only if `planner`'s answer contains: goal; acceptance criteria; concrete task list
-   (no `TBD`/"later"); risks; **test strategy** (unit vs integration, cases, coverage level; path-changing
-   work also needs the **variant matrix**, every edge closed as test / guard / `deferred with a trigger` —
-   a missing or half-closed matrix fails gate 1; name the shared contract if tests need one — §PLAN "Test
-   strategy"); **docs plan** (§PLAN "Documentation"); **perf-measurement decision** with an argument (§PLAN
-   "Performance measurement"); **reconnaissance decision** with an argument (§PLAN "Prototype /
-   reconnaissance"); **unit execution mode** (§PLAN "Unit execution mode"); the design checklist passed;
-   **the plan written to the status file by `coder`** (last step, before the go-ahead) **and an explicit
-   `go`/`го`** — except in autonomous mode, where DO starts right after PLAN. The orchestrator only checks
-   each item is **present** (§Orchestrator role) and returns an incomplete answer to `planner`. On DO start:
-   `coder` logs `DO started`, then `todowrite` (`P:`→`completed`, single `D:`→`in_progress`), then the
-   parallel streams (§Parallel DO streams). Normal mode with no acceptance criteria → ask the user, do not
-   guess; autonomous → route through `planner`/`escalate` and STOP (§Autonomous mode).
+   (no `TBD`/"later"); risks; **test strategy** (unit vs integration vs E2E, cases, coverage level;
+   path-changing work also needs the **variant matrix**, every edge closed as test / guard / `deferred
+   with a trigger` — a missing or half-closed matrix fails gate 1; name the shared contract if tests
+   need one — §PLAN "Test strategy"); **docs plan** (§PLAN "Documentation"); **perf-measurement
+   decision** with an argument (§PLAN "Performance measurement"); **reconnaissance decision** with an
+   argument (§PLAN "Prototype / reconnaissance"); **unit execution mode** (§PLAN "Unit execution
+   mode"); the design checklist passed; **the toolchain-and-lens selection recorded** (§PLAN selects
+   the toolchain and lenses); **the plan written to the status file by `coder`** (last step, before
+   the go-ahead) **and an explicit `go`/`го`** — except in autonomous mode, where DO starts right
+   after PLAN. The orchestrator only checks each item is **present** (§Orchestrator role) and returns
+   an incomplete answer to `planner`. On DO start: `coder` logs `DO started`, then `todowrite`
+   (`P:`→`completed`, single `D:`→`in_progress`), then the parallel streams (§Parallel DO streams).
+   Normal mode with no acceptance criteria → ask the user, do not guess; autonomous → route through
+   `planner`/`escalate` and STOP (§Autonomous mode).
 2. **DO → CHECK** — only when all `D:` tasks and all DO streams (code, tests, docs) are closed, the
-   build/tests have run (`coder`: exit code + log path), and every closed `D:` is in the status file. A
-   blocker report is **not `done`**: `done` counts only actually completed **accepted** work; unfinished
-   work stays `blocked`/`pending` (never `completed`), a
+   project-declared build/tests have run (`coder`: exit code + log path), and every closed `D:` is in
+   the status file. A blocker report is **not `done`**: `done` counts only actually completed
+   **accepted** work; unfinished work stays `blocked`/`pending` (never `completed`), a
    rejected candidate resumes the original `D`, and unresolved work prevents gate 2. Supersede vs additive
    prerequisite and the single gate-2 definition are canonical in §Cycle status file → "Unit states".
    On entry: status first, then `todowrite` (`D:`→`completed`, `C:`→`in_progress`).
@@ -229,7 +233,7 @@ cycle: the cycle is where the gates are, not where the work stops.
 **Delegation (autonomous).** The cheap primary does not run the cycle: it composes a cycle brief
 (goal, scope, acceptance criteria, constraints, references) and calls `Task` on
 `pdca-orchestrator`, which runs PLAN → DO → CHECK → ACT and returns a compact summary (≤8 lines).
-No collection status file is created (single cycle); the mandatory pdca-dotnet cycle status file is
+No collection status file is created (single cycle); the mandatory pdca cycle status file is
 still written by `coder`. No questions are asked. If the `Task` to `pdca-orchestrator` fails (agent
 absent, `subagent_depth` < 2, or `Task` forbidden), fall back to the flat primary (drive the cycle
 yourself) and log the fallback (`Notice:` in the status file, §Host requirements).
@@ -282,7 +286,7 @@ contract**, not "finish and fix later".
 - I skip CHECK or close the cycle without ACT.
 - I did not fetch the project overlay (instructions/`*-pdca`/`AGENTS.md`, via `scout`/`skill`) before PLAN.
 - I silently skipped a mandatory PLAN decision: test strategy, docs plan, perf measurement,
-  reconnaissance, unit mode.
+  reconnaissance, unit mode, toolchain/lens selection.
 - An event happened but `coder` did not update the status file (§Cycle status file → "Progress log").
 - I deleted a status file — it is finalized and kept, never deleted (§Status file → "Lifetime").
 - I pushed project facts, or >0–2 transferable lessons, into the memory MCP (§ACT step 1).
@@ -298,9 +302,6 @@ contract**, not "finish and fix later".
 - I worked outside my own worktree / the unit's status location.
 - I closed a phase/cycle on a `coder` self-report without the evidence chain — fresh re-run + `scout`
   diff + `check` verdict (§Evidence over assertion).
-- A DO report whose inner loop was the **whole project/solution**, or that lacks the exact
-  commands + filters + exit codes — **immediate STOP: reject the report**, it is not continued DO
-  (§Delegation by phase → "DO brief: mandatory `test scope`", §CHECK → item 11).
 
 **Excuses (the AI justifies the deviation) → reality:**
 - "Too simple for PDCA" → "simple" causes the most rework; size does not cancel the gates.
@@ -337,7 +338,7 @@ mix up the cycle number or status path; you answer by impression rather than by 
 **Recovery order (do not skip):**
 1. **Stop** the current action.
 2. **Status file — via `scout`** (you do not read it): durable state — cycle `<N>`, revision `r`,
-   attempt `n/3`; goal and criteria; decisions (perf/recon/unit mode); `D:` tasks with states
+   attempt `n/3`; goal and criteria; decisions (perf/recon/unit mode/toolchain); `D:` tasks with states
    (including unfinished); defect history (keys, revisions/attempts, fix count, last escalation
    outcome); current phase/iteration and last log entries; Done/Verified. **Load `N`, `r`, `n`, the
    unfinished states and the defect history before any decision.**
@@ -390,21 +391,20 @@ to check, use "set/not set".
 ## Delegation by phase
 
 - **PLAN** — in two beats (see §PLAN): **gather** — `scout` (repository facts, `file:line`)
-  plus the `dotnet-*` lenses: `dotnet-architect`/
-  `dotnet-code-review-agent` (design/perf), `dotnet-testing-specialist` (what and how to
-  test) and `scout` with the **skill** `dotnet-documentation-strategy` (which docs are affected) —
+  plus the **domain lenses/specialists selected by PLAN** (§PLAN selects the toolchain and lenses) —
   cheap; **decisions and decomposition** — the `planner` subagent, which `build`
   invokes via Task (both when starting the cycle and on the CHECK → PLAN / DO → PLAN return); do not load code into your
   context. **The last step of PLAN** — `coder` writes `planner`'s plan into the status file
   (`planner` has no file permissions), and only then the go-ahead is requested.
 - **DO** — code, tests and prose docs are written in parallel right after the plan (not "test then
-  code", not "docs later"); XML-doc comments follow the finished code. All through `coder`
-  (`docfx-specialist` — DocFX structure); each closed `D:` is logged in the status file (§Cycle
+  code", not "docs later"); generated/API docs follow the finished code. All through `coder`
+  (a docs/format specialist selected by PLAN when one is available); each closed `D:` is logged in the
+  status file (§Cycle
   status file → "Progress log"). Units per the chosen mode (§PLAN → "Unit execution mode",
   §Parallel DO streams). Independent features are N separate cycles, not this one (§Autonomous mode).
-- **CHECK** — two beats (§CHECK): gather cheap (`scout`; `dotnet-code-review-agent` returns raw
-  candidates without a verdict; `dotnet-testing-specialist` test lens; async/concurrency specialists
-  by trigger; deterministic commands via `coder`) → triage `check` (judges the candidates, aggregates
+- **CHECK** — two beats (§CHECK): gather cheap (`scout`; the code/correctness review lens returns raw
+  candidates without a verdict; the test lens; concurrency/performance specialists by trigger;
+  deterministic commands via `coder`) → triage `check` (judges the candidates, aggregates
   verdict/ranking/loop-back); `build` relays, it does not judge. Streams run in parallel; add
   `security-auditor` by trigger (auth/secrets/external input/crypto) — §CHECK → "Parallel CHECK
   streams". Worktree sub-tasks also merge + re-verify the merged tree (§CHECK → "Parallel sub-tasks
@@ -424,7 +424,7 @@ to check, use "set/not set".
 DO proceeds in these steps; **code, tests and prose documentation are written simultaneously**, right after the
 plan, not sequentially (a deliberate rejection of "test → code" and "docs later"; there is no TDD
 ordering in DO — the only red→green requirement is the regression test of a bug fix, §Debugging).
-**XML-doc comments** are not part of this launch — they follow the finished code (step 4):
+**Generated/API docs** are not part of this launch — they follow the finished code (step 4):
 
 1. **Status file.** The plan is already written there (the last step of PLAN, §PLAN → "User
    go-ahead"); on the `go` go-ahead `coder` records `DO started` in its progress log.
@@ -433,12 +433,12 @@ ordering in DO — the only red→green requirement is the regression test of a 
    types **without implementation** (a single `coder` Task or a sketch in the status file). The
    streams need nothing beyond that from each other. No contract — the step is skipped.
 3. **Parallel launch.** In one turn, several Tasks in one message:
-   the **code stream** (`coder`), the **test stream** (`coder`; for new logic —
-   `dotnet-xunit`/`dotnet-tunit-test`) and the **prose-docs stream** (`coder`; README/guides/DocFX
-   pages; for docs-site structure — `docfx-specialist`) start together.
-4. **XML-doc — after the code (when required).** Once the code stream has finished writing the code,
-   `coder` adds the **XML-doc comments** (`///` on the new/changed public members) — **only when the
-   project settings mandate XML-doc (CS1591 enforced) or the user requested it** (§Documentation).
+   the **code stream** (`coder`), the **test stream** (`coder`; with the project's test
+   framework/tooling) and the **prose-docs stream** (`coder`; README/guides/user documentation;
+   with the docs/format specialist selected by PLAN when one is available) start together.
+4. **Generated/API docs — after the code (when required).** Once the code stream has finished writing
+   the code, `coder` adds the **generated API-doc comments/annotations** the toolchain uses —
+   **only when the project/task mandates them** or the user requested it (§Documentation).
    They live in the code files, so they cannot run in parallel with the code stream.
 
 Invariants:
@@ -448,8 +448,9 @@ Invariants:
   otherwise they cannot be written simultaneously with the implementation.
 - The streams must not be queued one after another; "test first, then code" and
   "prose docs after code" are forbidden.
-- **XML-doc comments** (`///` on public members) are the exception: they live in the code files the
-  code stream owns, so they are written **after the code stream finishes** (step 4), not in parallel.
+- **Generated/API docs** (public-member doc comments/annotations) are the exception: they live in the
+  code files the code stream owns, so they are written **after the code stream finishes** (step 4),
+  not in parallel.
 - The contract from step 2 is **frozen**: only PLAN changes it, not a stream.
 - Anything that writes to **the same file** from different streams is not parallelized: such a
   file is moved into the contract (step 2) or the task stays single.
@@ -477,29 +478,18 @@ contract (the discipline a dedicated design/performance engineer would apply whe
 - **One axis per step, then verify.** Make one coherent change, then build + run the **affected
   tests** before the next one; do not batch unrelated refactors, no "while I'm at it" (Over-Reach).
 - **Cheap inner loop, expensive at the boundary.** After each edit run only the **fast (unit)
-  affected tests**; **expensive tests — integration (DB/EF Core, HTTP, `Testcontainers`)** — are run
-  at the **stream boundary** (before the DO → CHECK gate) and in the **CHECK** test lens, **not
-  after every micro-edit**. The DO brief **MUST** carry a mandatory structured `test scope`
-  (projects, exact filtered selectors, files, rebuild policy, the boundary sweep point, and a
-  rationale); without it the brief is not dispatched. The inner loop is the **filtered affected
-  subset**: build the affected project once, then
-  `dotnet test <project> --no-build --filter <selector>` (a `rebuild: none` docs-only scope skips
-  the build). Running the **whole project or solution** in the inner loop is a **red flag** and the
-  report is rejected. The **comprehensive sweep runs once at the DO → CHECK boundary**, not per
-  edit. Widening to a shared contract/dependency is allowed **only** if the scope is amended **and
-  validated BEFORE running**, the reason is recorded, and the run stays **filtered**. `coder` runs
-  `scripts/validate_inner_loop.py` — `brief` before editing and `report` before CHECK — and CHECK
-  consumes the evidence; a missing/invalid gate fails closed. (If the change is integration-only,
-  run the affected integration case directly at the boundary or as a filtered case; but do not
-  re-run the whole suite per edit.)
+  affected tests**; **expensive tests — integration (real database/broker/storage, HTTP, container
+  dependencies)** — are run at the **stream boundary** (before the DO → CHECK gate) and in the
+  **CHECK** test lens, **not after every micro-edit**. (If the change is integration-only, run the
+  affected integration case directly; but do not re-run the whole suite per edit.)
 - **Verify after every step, not only at the end.** A red build or failing test stops the stream and
   is reported — it is not written over with the next edit.
 - **Minimal blast radius.** Touch only the fix's blast radius; leave unrelated parallel edits alone.
   Keep public-surface changes minimal and noted.
 - **Preserve the repo's line endings / formatting** while editing; never leave LF-only or mixed
   endings behind (whatever the host mandates — the overlay supplies the concrete normalizer).
-- **Build is the gate** — the project's configured build must be clean under its own warning policy
-  (e.g. `TreatWarningsAsErrors`); a change that introduces a warning is not a fix.
+- **Build/lint is the gate** — the project's configured build and lint must be clean under its own
+  warning/error policy; a change that introduces a warning or lint error is not a fix.
 - **No commits and no push** unless the user explicitly asked — a cycle never commits to the
   working branch on its own. **One mechanical exception:** in the worktree mode each unit commits to
   its own isolated branch `pdca/<task>` inside its worktree (§Delegation → "Worktree sub-tasks") —
@@ -510,8 +500,8 @@ contract (the discipline a dedicated design/performance engineer would apply whe
   conclusions from it; sub-noise deltas are noise. Interpretation goes to the perf lens/specialist.
 - **Hand off what needs numbers** to the perf specialist (via `task`) instead of asserting it.
 
-A host/project overlay supplies the concrete values (build command, line endings, artifact restore,
-test projects); this block is the generic skeleton and the overlay may not omit it.
+A host/project overlay supplies the concrete values (build/test/lint commands, line endings, artifact
+restore, test projects); this block is the generic skeleton and the overlay may not omit it.
 
 ### Subagent report format (mandatory)
 
@@ -519,46 +509,10 @@ In every Task state the response format explicitly — otherwise the subagent wi
 
 - conclusion: `file:line` + the gist, **≤8 lines**; do NOT send code, diffs or logs;
 - **changed files** — a list of paths (what and where), ≥3 files — a compact table;
-- **test evidence** — the actual build/test invocations as **argument arrays** (not shell
-  strings), each with its `--filter` value, `phase` (`inner`/`boundary`), `exit_code`, the
-  number of selected tests (`selected_count ≥ 1`), and the
-  `scripts/validate_inner_loop.py report <evidence.json>` **exit code**; a zero-match or
-  missing `selected_count` ⇒ CHECK FAIL, and missing or invalid evidence ⇒ CHECK cannot pass;
 - the full build/test/dump output — write it to a file and return the path;
 - not enough data — a short question, not a guess.
 
 Details live in files; only a pointer enters the orchestrator's context.
-
-### DO brief: mandatory `test scope`
-
-Every implementation brief to `coder` **MUST** carry a mandatory structured `test scope` (with a
-rationale); **without it the orchestrator must NOT dispatch the brief** — it returns to `planner`
-to complete the scope. `coder` runs `scripts/validate_inner_loop.py brief <scope.json>` **before
-any edit**; a nonzero exit is **fail-closed** → return to the orchestrator (do not start editing).
-
-Required fields:
-
-```json
-{
-  "projects": ["<affected test project path>"],
-  "selectors": ["<exact, non-broad filtered selector>"],
-  "files": ["<changed file path>"],
-  "rebuild": "affected | none",
-  "boundary": "<the single DO → CHECK comprehensive sweep point>",
-  "rationale": "<why this subset covers the changed behavior>"
-}
-```
-
-- `projects` — the affected test project(s); `selectors` — nonempty, never a whole-project/solution
-  or all-selecting filter.
-- `rebuild` — `affected` on a compiled-input change; `none` for a docs-only change (no fictitious
-  rebuild). A docs-only scope (no `.cs`/`.fs`/`.vb` file) must **not** claim an `affected` rebuild;
-  a fictitious rebuild fails the gate.
-- `boundary` — the one comprehensive sweep point at the **DO → CHECK boundary**; a **filtered**
-  integration test run directly at the boundary is legitimate.
-- Before CHECK, the full evidence (scope + `executions` with exact argument arrays, filters, phase,
-  revisions, exit codes) is validated with `scripts/validate_inner_loop.py report <evidence.json>`;
-  CHECK consumes that exit code and fails closed when it is missing or nonzero.
 
 ### Worktree sub-tasks of one cycle: subagent prompt template
 
@@ -569,8 +523,6 @@ task and paths):
 
 ```text
 Task: <what to do>.
-Test scope: <scope.json> — mandatory; validate with
-  scripts/validate_inner_loop.py brief before any edit (fail-closed).
 Work ONLY in worktree <ABS_WT>.
 - In bash always: cd <ABS_WT> && <command>
 - read/edit/write/glob/grep — only with absolute paths inside <ABS_WT>;
@@ -657,30 +609,73 @@ because `escalate` no longer crawls the repository itself; it reasons over the p
 re-checks specific lines. The answer — a **decision**: what to do, why, risks, exact steps. The
 orchestrator routes it; `escalate` never edits and `coder` performs the implementation.
 
+## PLAN selects the toolchain and lenses (per task)
+
+The cycle is stack-agnostic; the **toolchain and the review lenses are selected by PLAN for each
+concrete task**. This selection is mandatory and is recorded in the plan and the status file; gate 1
+checks it is present. The model has five steps:
+
+1. **Identify the deliverable type.** Code/implementation, tests, prose/API documentation,
+   configuration/infrastructure, refactoring, or a mix. The deliverable type
+   drives which lenses are needed.
+2. **Discover the project's declared toolchain (facts, via `scout`).** The build/test/lint/validate/
+   render commands and their config: project manifests, CI workflows, `Makefile`/task runners, README,
+   the project overlay. If the project declares no build gate (e.g. a docs-only or config-only
+   change), PLAN states that and names the manual/structural checks instead.
+3. **Select the correctness lenses appropriate to the artifact.** Generic default set: design
+   (structure/duplication), data/type design, correctness/anti-pattern scan, test strategy, performance
+   measurement, reconnaissance — the last three always carry a mandatory decision. The lens set is
+   tailored to the artifact (e.g. a docs-only change keeps the doc lens and drops the perf lens).
+4. **Bind each lens to an available, permitted agent/skill — or an explicit generic-role path.** Only
+   agents/skills the host actually exposes may be dispatched. A **missing optional lens is replaced by
+   an explicit generic-role path** (`scout` for facts, `coder` for mechanics, `check` for judgment) —
+   never silently dropped, and never a fabricated agent name. The escalation/security roles stay
+   reserved to their triggers.
+5. **Freeze the selection and the evidence each lens must return** (command/exit code/numbers for a
+   build; `file:line` + rule for a review; source pointers for a claim). The frozen selection is what
+   DO executes and CHECK verifies against.
+
+**Worked example — CODE.** Task: *implement a small Python CSV-summary CLI that reads a CSV path and
+prints per-column count/min/max.* PLAN's selection:
+- toolchain: the project's declared test command (e.g. `python3 -m unittest discover`) and its declared
+  lint command if any; if none is declared, PLAN names the run command explicitly;
+- lenses: **correctness/error-handling** (rows with missing/malformed fields; type inference),
+  **CLI/UX** (arguments, exit status), **security** if it reads untrusted files (path handling,
+  resource limits), **performance** only if the matrix shows a per-row hotspot;
+- acceptance criteria: valid CSV summarizes correctly; **empty input** (header only) is handled;
+  **malformed rows** produce a clear error and a **nonzero exit status**; output is **deterministic**
+  (stable column order and formatting); a negative case per criterion (e.g. a bad path must fail, not
+  print an empty summary);
+- test strategy: unit cases for parsing/summary plus one end-to-end CLI invocation; variant matrix rows
+  (empty, one row, many rows, malformed, missing file) each closed as test/guard/deferred.
+
+A task may combine streams (e.g. a tool plus its README): PLAN selects the union, and each stream
+carries its own lens subset.
+
 ## PLAN: design checklist (generic)
 
 PLAN runs in two beats (like §CHECK), so as not to load code into the orchestrator's context:
-1. **Gather (cheap):** review the **area of change** (not the whole repo) via `scout` +
-   `dotnet-architect`/`dotnet-code-review-agent` — findings (`file:line`, counters, sealing ratio,
+1. **Gather (cheap):** review the **area of change** (not the whole repo) via `scout` + the selected
+   domain lenses — findings (`file:line`, counters, structural-invariant ratio,
    anti-pattern hits), no code.
 2. **Decide:** `planner` (invoked by the primary via Task — start and CHECK → PLAN / DO → PLAN returns)
    reads **only the summary**, chooses fix-now vs deferred, decomposes, fixes the plan. Do not pull code
    into context — a missing datum goes to the gatherer.
 
-Six lenses: SOLID/DRY design, type design for performance, perf anti-pattern scan, test strategy, perf
+Six lenses (as selected per task — §PLAN selects the toolchain and lenses): design
+(SOLID/DRY), data/type design, correctness/anti-pattern scan, test strategy, performance
 measurement, reconnaissance (the last three have mandatory decisions below). Skills (via `skill`):
-`dotnet-solid-principles`, `type-design-performance`, `analyzing-dotnet-performance` (+ the
-`references/*.md` it selects).
+the project's declared design/quality skills; only available/permitted ones are named.
 
 Look at:
-- **Design (SOLID/DRY):** god classes, fat interfaces, throwing overrides, leaky contracts, `IFoo`/`Foo`
-  without a second consumer, duplicated knowledge, switch-on-type.
-- **Type design:** unsealed library types, mutable/defensive-copy structs, `List<T>` from a public API,
-  `ValueTask` misuse, `Span<T>` in async, per-call `new Dictionary/List`.
-- **Perf anti-patterns:** strings (no `StringComparison`, `.Substring`, `.Replace` chains),
-  collections/LINQ on a hot path, regex, I/O/serialization, async.
-- **Structural sealedness:** count sealed vs unsealed and report the ratio (Verify-the-Inverse), not a
-  verdict on one type.
+- **Design (SOLID/DRY):** god classes/objects, fat interfaces, throwing overrides, leaky contracts,
+  interface/implementation pairs without a second consumer, duplicated knowledge, type-switch.
+- **Data/type design:** needlessly open/final types, mutable/defensive-copy value types, leaky mutable
+  collections from a public API, async/await misuse, per-call allocation of collections/maps.
+- **Correctness/anti-pattern scan:** string handling (culture/locale/encoding, slicing, replace
+  chains), collections/iteration on a hot path, regex, I/O/serialization, async.
+- **Structural invariants:** count invariant-preserving vs open types and report the ratio
+  (Verify-the-Inverse), not a verdict on one type.
 
 ### PLAN owns the quality of the plan
 
@@ -693,7 +688,7 @@ Treat a weak statement (vague issue, half-written criteria, no edge list, habit-
   (`file:line`), (b) an explicit **assumption/risk**, (c) a **blocker/`escalate`**. A silent guess is forbidden.
 - Enumerate the **variant matrix** from the **execution path**, every row closed as test / guard /
   `deferred with a trigger`; surface what the input left unsaid (missing constructor/mapping, value vs
-  reference types, `null`/uninitialized, explicit projection vs whole object, per-provider behavior).
+  reference types, absent/default/uninitialized, explicit projection vs whole object, per-provider behavior).
 - Never pass incompleteness to DO: resolve in PLAN (or record an assumption/blocker). A genuinely new
   prerequisite/blocker surfaced by execution is a **DO → PLAN** loop-back (§State machine), not improvised.
 - **PLAN assigns priority; CHECK applies it.** The severity map ("what is P1 by construction") is fixed in
@@ -717,7 +712,7 @@ it does not lower the bar.
 For a non-trivial plan, record in the plan answers to: (1) the goal **in essence** (which result, not which
 edit)? (2) constraints that **must not** be violated (public contract, compatibility, invariants)? (3) the
 optimal solution **under these constraints**? Keep it **minimal** (YAGNI ladder): no functionality without a
-consumer → reuse what exists → BCL/standard library → platform capability → only then a dependency/new code;
+consumer → reuse what exists → standard library → platform capability → only then a dependency/new code;
 "the minimum that works". A superfluous abstraction, "future" config or generalization without a second
 consumer is a PLAN finding like duplication. Perf measurement and reconnaissance are needed only if they
 affect the solution choice.
@@ -747,9 +742,9 @@ without a footprint is not a reason. The mode is **visible at gate 1** (plan + g
 
 PLAN **explicitly** decides whether a **runtime measurement** is needed and records the argument in the plan and
 status file. A silent skip or "not needed" without an argument fails gate 1.
-- **Needed** — the change touches a hot/repeated path (per-row/per-item: parameter binding, materialization,
-  serialization, executor/plan cache) or the overlay requires acceptance. Record **what** to measure (existing
-  benchmark/suite, a new case, a profile) and the **baseline**.
+- **Needed** — the change touches a hot/repeated path (per-row/per-item work: parsing, binding,
+  materialization, serialization, cache handling) or the overlay requires acceptance. Record **what** to
+  measure (existing benchmark/suite, a new case, a profile) and the **baseline**.
 - **Not needed** — with proof: not on a per-row path (per-column/one-time: metadata, config-time validation) or
   docs-only; point to the `file:line` where the work runs once.
 - A change adding work **into a per-row loop**, without a measurement (or a project benchmark gate), does not
@@ -791,12 +786,14 @@ plan but must not be the plan: for a shipping change gate 1 is not cancelled.
 
 **The plan goes to disk before the go-ahead, in both modes.** Last step of PLAN: the primary passes
 `planner`'s plan to `coder`, which writes the **status file** (`docs/specs/status/<task>-<N>.md`) — goal,
-acceptance criteria, test strategy with the variant matrix, docs plan, perf/recon/unit-mode decisions, DO
+acceptance criteria, test strategy with the variant matrix, docs plan, perf/recon/unit-mode decisions, the
+toolchain/lens selection, DO
 task list, risks — and the log entry `PLAN ready — awaiting go` (`planner` never writes files). A compaction
 while waiting for `go` loses nothing.
 
 **Autonomous mode: no pause** — DO starts immediately. Normal mode ends with a **pause and an invitation**:
-show the plan (goal, criteria, test strategy, docs plan, perf decision, unit mode, tasks, risks), give the
+show the plan (goal, criteria, test strategy, docs plan, perf decision, unit mode, toolchain/lenses, tasks,
+risks), give the
 status-file path, and ask (substitute the gist for `<…>`):
 
 > The plan is ready: <1–2 lines of the gist>. Plan file: `docs/specs/status/<task>-<N>.md`.
@@ -814,90 +811,85 @@ independent of the implementation (in DO tests are written in parallel with code
 contract (abstraction/DTO/signature), name it here — it becomes DO step 2.
 - **Unit** — pure logic, branching, boundaries (new public method/class, rules, mappers, value objects); one
   test per behavior, name = assertion.
-- **Integration** — what a unit test cannot see: DB/EF Core (Testcontainers), HTTP/endpoints
-  (`WebApplicationFactory`), DI graph, serialization/snapshot, migrations; use `dotnet-integration-testing` /
-  `testcontainers` / `snapshot-testing`.
-- **Not covered** — trivial proxies and logic-free `record` DTOs; recorded as `deferred` with a trigger.
+- **Integration** — what a unit test cannot see: data store (real database/broker/storage), HTTP/endpoints,
+  DI graph, serialization/snapshot, migrations; use the project's integration/snapshot tooling.
+- **E2E** — the full user-visible path, only when the project declares such a suite.
+- **Not covered** — trivial proxies and logic-free data/DTO types; recorded as `deferred` with a trigger.
 
 **Variant/branch matrix — mandatory, before the cases.** Enumerate the change's execution variants on the axes
-that matter (input kinds; `null`/default/uninitialized; value vs reference types; missing constructor/mapping;
+that matter (input kinds; absent/default/uninitialized; value vs reference types; missing constructor/mapping;
 explicit projection vs whole object; per provider/backend; on/off flags) and close **every** row: test, guard,
 or `deferred` with a trigger. A happy-path list is not a strategy; unenumerated edges hide coverage gaps and
 silent corruption. The matrix is PLAN's deliverable; CHECK verifies each row.
 
 **Coverage comes from the project, mandatory.** Find the project's coverage config/threshold (gather via
-`scout`/`dotnet-testing-specialist`): `Directory.Build.props`/`Directory.Packages.props`, `.runsettings`,
-`coverlet.runsettings`, `dotnet test --collect:"XPlat Code Coverage"`, the CI workflow, a baseline artifact.
-**The project threshold is the lower bound** — do not lower it; new code comes with tests. No config → record
-the baseline explicitly; do not invent a threshold.
+`scout`/the test lens): the project's build/test config files, coverage config, the CI workflow, a baseline
+artifact. **The project threshold is the lower bound** — do not lower it; new code comes with tests. No
+config → record the baseline explicitly; do not invent a threshold.
 
 **Branch, not only line; mutation, not only green.** A green line % does not prove new branches are exercised:
-report the **branch** delta and run **mutation testing** (Stryker.NET, scoped to the touched
-assembly/type) — surviving mutants on new code are killed or explicitly justified. No tooling → say so and list
-the untested branches; never imply coverage you did not measure.
+report the **branch** delta and run **mutation testing** (the project's mutation tool, scoped to the touched
+module) — surviving mutants on new code are killed or explicitly justified. No tooling → say so and list the
+untested branches; never imply coverage you did not measure.
 
-Gather (`dotnet-testing-specialist`): existing tests of the area (`file:line`), gaps, regression risk, config
-and current coverage. Decision (case list, unit/integration, name, what it checks) by `planner`, written by
-`coder`. Skills: `dotnet-testing-strategy`, `crap-analysis`, `dotnet-test-quality`, `dotnet-xunit` (+
-`dotnet-tunit-test` if present). Output: case list + split + current/target coverage. CHECK verifies against it.
+Gather (the test lens): existing tests of the area (`file:line`), gaps, regression risk, config
+and current coverage. Decision (case list, unit/integration/E2E, name, what it checks) by `planner`, written by
+`coder`. Skills: the project's declared testing/quality skills; only available/permitted ones are named.
+Output: case list + split + current/target coverage. CHECK verifies against it.
 
 Anti-patterns the CHECK test lens rejects (PLAN must not plan them): tests that survive a wrong implementation
 (control: "which test still passes if the logic is subtly swapped?"); a test that cannot fail (tautology, mock
-not behavior, coverage-for-the-%); happy-path only (no empty/one/many, `null`/`default`, upper bound); line
+not behavior, coverage-for-the-%); happy-path only (no empty/one/many, absent/default, upper bound); line
 coverage as proof; an edge without a decision; checking the implementation instead of behavior; mocking what
 works (prefer real components / integration); a "for the future" test without a criterion.
 
-**Per-unit test scope is part of the strategy.** For **every unit** the plan names its **affected
-subset** — the test project(s) and the exact, non-broad filtered selector(s) — and the **boundary
-sweep point** (the single DO → CHECK comprehensive run). This mapping feeds the DO brief's mandatory
-`test scope` (§Delegation by phase → "DO brief: mandatory `test scope`"); a unit whose affected
-subset or boundary point is unnamed fails gate 1.
+### Test run safety (resources + streaming) — every phase
 
-### Test run safety (memory + streaming) — every phase
-
-Any test invocation (`dotnet test`/`dotnet run` on a test project) in DO or CHECK; put these in the
+Any test invocation in DO or CHECK; put these in the
 `coder`/`check` brief; CHECK rejects a violating report:
-- **Cap the test-host heap** so a runaway recursion fails fast instead of OOM-killing the machine:
-  `DOTNET_GCHeapHardLimit=0x80000000 DOTNET_gcServer=0` (2 GiB — raise only when justified) and wrap in a
-  wall-clock `timeout 600 …`. Exit **137**/"Out of memory" ⇒ the test is unbounded: stop, record the test name
-  and SQL, do not re-run without the cap.
-- **Serialize heavyweight suites:** never two test projects in parallel (e.g. `core` + `sqlite`), and never
-  beside the editor/agent stack (opencode workers, VS Code, LSPs); run the affected project alone. A
-  DB/provider suite runs at the stream boundary, not per edit.
+- **Cap the test-host resources** so a runaway recursion/allocation fails fast instead of OOM-killing the
+  machine: the toolchain's memory limit and a wall-clock `timeout 600 …` (raise only when justified). Exit
+  **137**/"Out of memory" ⇒ the test is unbounded: stop, record the test name and the query, do not re-run
+  without the cap.
+- **Serialize heavyweight suites:** never two heavy test suites in parallel, and never beside the
+  editor/agent stack (opencode workers, editors, language servers); run the affected project alone. A
+  database/service suite runs at the stream boundary, not per edit.
 - **Stream the log, never `| tail`:** a long run piped through `| tail` buffers to EOF and looks hung. Use
   `… 2>&1 | tee <log>` (`stdbuf -oL` for live progress) or `| tail -f`; keep `rc=${PIPESTATUS[0]}`. Always
   return the log path **and** the exit code.
 
 ### Documentation (owners by phase)
 
-Documentation is part of done. **Prose docs and XML-doc are separate artifacts with different timing.**
-Prose (README/guides/DocFX) — derived from the plan, written in parallel: **PLAN** gathers via `scout` + skill
-`dotnet-documentation-strategy` (which docs and format); "no contract/behavior change" → record "we do not touch
-the docs". **DO** — the third parallel stream, from the plan/contract, not from the code; `coder` (+
-`docfx-specialist`). **CHECK** — doc lens: created and matching the implementation.
-XML-doc (`///`) — from the **finished code**; mandatory only if the project enables it (`GenerateDocumentationFile`
-/ CS1591 via `TreatWarningsAsErrors` or `<NoWarn>`): **PLAN** — `scout` reports the setting (required ⇒
-mandatory, else only on user request); **DO** — written after the code stream (`coder`); **CHECK** — generated
-on every new/changed public member and matching signatures when mandatory, else only if requested.
+Documentation is part of done. **Prose docs and generated/API docs are separate artifacts with different
+timing.** For code this means API docs + README/guides; for a configuration change, comments + a
+runbook. The condition is always **"when the project/task mandates it"**.
+Prose (README/guides/user documentation) — derived from the plan, written in parallel: **PLAN** gathers via
+`scout` (which docs and format); "no contract/behavior change" → record "we do not touch the docs". **DO** —
+the third parallel stream, from the plan/contract, not from the code; `coder` (+ the docs/format specialist
+selected by PLAN). **CHECK** — doc lens: created and matching the implementation.
+Generated/API docs — from the **finished code**; mandatory only if the project/task mandates them
+(the project's doc-generation setting/config) or the user requested it: **PLAN** — `scout` reports the setting
+(required ⇒ mandatory, else only on user request); **DO** — written after the code stream (`coder`); **CHECK** —
+generated on every new/changed public member and matching signatures when mandatory, else only if requested.
 **ACT** — the final stable-rules **AGENTS.md** (`coder`); docs are finished in DO/CHECK, not edited in ACT.
-Rule: a public contract/behavior change without updated prose docs does not close the cycle; missing CS1591
-blocks closure only when the project mandates XML-doc. On-demand skills: `dotnet-xml-docs`, `dotnet-github-docs`,
-`dotnet-mermaid-diagrams`.
+Rule: a public contract/behavior change without updated prose docs does not close the cycle; missing mandated
+API docs block closure only when the project/task mandates them. On-demand skills: the project's declared
+documentation/format skills; only available/permitted ones are named.
 
 ## CHECK: audit checklist (generic)
 
 Check proceeds in two beats, so as **not to load code into the orchestrator's context**:
 
-1. **Gather (cheap + commands).** Mechanics via `coder` (no LLM): build (0 warnings — gate), suppressions
-   scan (`#pragma warning disable`, `[SuppressMessage]`, `<NoWarn>`, `Skip=`, empty `catch`, `Task.Delay`),
-   enumerate public types, XML-doc coverage (CS1591) — metrics/tables, not code. Semantics via
-   `dotnet-code-review-agent` (diff sliced by files/chunks → **raw candidates** `file:line`+rule ID/counter,
-   **no verdict/severity**). Tests via `coder` (run, coverage against the **project threshold**, CRAP) +
-   `dotnet-testing-specialist` (does the suite match the **PLAN test strategy**; missing cases / coverage
-   drop — `file:line`). Docs via `dotnet-docs-generator` (+ on-demand `dotnet-api-docs`): affected docs,
-   XML-doc completeness, API-reference mismatches, outdated examples — `file:line`. Perf, when PLAN says
-   "needed": `dotnet-benchmark-designer` + `coder` commands (suite/case, runs, baseline) → **raw numbers, no
-   verdict**; async hot paths + `dotnet-async-performance-specialist`; `dotnet-performance-analyst` only with
+1. **Gather (cheap + commands).** Mechanics via `coder` (no LLM): the project's declared build/lint
+   (clean under its own warning/error policy — gate), suppressions scan (the project's suppression markers,
+   skipped tests, empty catch, sleeps), enumerate public surface, mandated doc coverage — metrics/tables, not
+   code. Semantics via the selected code/correctness lens (diff sliced by files/chunks → **raw candidates**
+   `file:line`+rule ID/counter, **no verdict/severity**). Tests via `coder` (run, coverage against the
+   **project threshold**, complexity/mutation) + the test lens (does the suite match the **PLAN test
+   strategy**; missing cases / coverage drop — `file:line`). Docs via the doc lens: affected docs, API-doc
+   completeness, reference mismatches, outdated examples — `file:line`. Perf, when PLAN says
+   "needed": the perf specialist + `coder` commands (suite/case, runs, baseline) → **raw numbers, no
+   verdict**; async/concurrency hot paths + a concurrency specialist; a profiling specialist only with
    ready artifacts; "not needed" → the `file:line` one-time/not-per-row facts.
 2. **Triage (the `check` subagent).** Reads **only the aggregated report**, judges the code audit (real
    defect? severity? fix now vs accepted) and issues the verdict (pass/fail, ranking, loop-back). Do not pull
@@ -921,31 +913,27 @@ from `check`:
 
 Four unconditional streams + one conditional (security) + specialized subagents by trigger. All
 independent: launch **in parallel** (one turn, several Tasks), not in sequence:
-- **Code audit (two-phase)** — `dotnet-code-review-agent` (raw candidates, no verdict) + `coder` commands
-  (build 0 warnings, suppression/slop, smell, public-API/CS1591) = items 3–6, 9–10; judgment in `check`
+- **Code audit (two-phase)** — the code/correctness lens (raw candidates, no verdict) + `coder` commands
+  (build/lint clean, suppression/slop, smell, public-API/doc coverage) = items 3–6, 9–10; judgment in `check`
   beat 2 = items 7–8. Specialized async/concurrency subagents by trigger are part of the gather.
-- **Test lens** — `dotnet-testing-specialist` + `coder` (run, coverage, CRAP) — item 11. It also
-  gathers the `scripts/validate_inner_loop.py report <evidence.json>` exit code; a missing/invalid
-  gate fails the lens **closed** (never a warning).
-- **Doc lens** — `dotnet-docs-generator` (+ `dotnet-api-docs`) — item 12.
-- **Perf lens (two-phase)** — when "needed": measurement (`dotnet-benchmark-designer` + `coder`;
-  `dotnet-performance-analyst` only with artifacts) → **raw numbers + baseline, no verdict**; async hot
-  paths + `dotnet-async-performance-specialist`; "not needed" → `file:line` facts; judgment in `check` — item 13.
+- **Test lens** — the test lens + `coder` (run, coverage, mutation/complexity) — item 11.
+- **Doc lens** — the doc lens — item 12.
+- **Perf lens (two-phase)** — when "needed": measurement (the perf specialist + `coder`;
+  a profiling specialist only with artifacts) → **raw numbers + baseline, no verdict**; async hot
+  paths + a concurrency specialist; "not needed" → `file:line` facts; judgment in `check` — item 13.
 - **Security audit\*** (conditional **gather**) — `security-auditor` if the diff touches
   auth/secrets/external input/crypto; same parallel turn, medium tier, by trigger. It is a gather
   stream: its report **returns into the aggregated report** (report-return: the security result goes
   back to `check`) and is judged by `check` in beat 2. It issues **no independent verdict** and never
   routes a defect around the aggregate triage. The brief carries the diff/area (it may take
   `git diff` itself; read-only `bash`) and it audits without `scout`; `scout` only for facts outside the diff
-  (other occurrences, callers, `appsettings*`/`.gitignore`) via a narrow question — like `escalate` it does
+  (other occurrences, callers, config files) via a narrow question — like `escalate` it does
   not surf (`grep`/`glob`/web denied).
 
 **Specialized subagents by trigger** (cheap, read-only; same parallel turn; output joins the aggregated
-report, verdict still `check`): `dotnet-async-performance-specialist` (async paths — `ValueTask` vs `Task`,
-`ConfigureAwait`, `async void`, sync-over-async, state-machine allocs, `Channel`/`IO.Pipelines`, ThreadPool
-starvation); `dotnet-csharp-concurrency-specialist` (races, deadlocks, `lock`/`SemaphoreSlim`/`Interlocked`,
-lock order); `dotnet-performance-analyst` **only with data** (`dotnet-trace`/heap dumps/benchmark
-comparisons). Each is an additional **gather**, not a new gate.
+report, verdict still `check`): a concurrency/async lens (races, deadlocks, lock ordering, sync-over-async,
+fire-and-forget, resource starvation); a profiling/performance analyst **only with data** (profiles/heap
+dumps/benchmark comparisons). Each is an additional **gather**, not a new gate.
 
 Each stream relies only on the plan/diff and does not wait for another. Results converge in the aggregated
 report; gate 3 passes only with **all green** (four unconditional + security if launched) — "part of them"
@@ -955,10 +943,8 @@ task for `coder` (or a PLAN return via `planner`, if the plan is wrong) and does
 current revision** for the escalation counter (§Escalation); ordinary security findings use the shared
 attempt/defect-history counters, and only a **hard security trade-off** escalates immediately.
 
-Skills (via `skill`): `dotnet-csharp-code-smells`, `slopwatch`, `dotnet-api-surface-validation`, `api-design`,
-`dotnet-test-quality`. On-demand: `dotnet-library-api-compat`, `dotnet-editorconfig`, `dotnet-add-analyzers`,
-`dotnet-api-docs`, `dotnet-csharp-nullable-reference-types`, `dotnet-testing-strategy`, `crap-analysis`,
-`dotnet-integration-testing`, `testcontainers`, `snapshot-testing`, `dotnet-xunit`. Project registries: maintain
+Skills (via `skill`): the project's declared code-quality/API/testing skills; only available/permitted
+ones are named. Project registries: maintain
 on demand — `coder` edits them (only the needed finding/section; do not re-open fixed ones or re-list accepted
 deviations).
 
@@ -971,54 +957,46 @@ reports no numbers is **not a pass**.
 gather, 7–8 judgment.
 1. Load skills (+ on-demand for the audit area).
 2. Read project registries/findings on demand.
-3. Analyzer baseline: build (0 warnings — gate); list active `dotnet_diagnostic.*` severities in `.editorconfig`.
+3. Analyzer baseline: the project's build/lint (clean under its policy — gate); list active analyzer/lint
+   severities in the project's config.
 4. Suppression/slop scan (as above); count suppressed vs justified and report the ratio.
-5. Smell scan (`dotnet-csharp-code-smells`: IDisposable, suppression, async, DI, NRT, optional `= null`), each
-   with its CA rule and fix.
-6. Public-API scan: enumerate public types/members; BCL-conflict/convention rules (`api-design`); XML-doc
-   coverage (CS1591); surface-lock status.
-7. **Judgment (`check`):** classify raw candidates with the project taxonomy (`P0/P1/P2` API, `🔴/🟡/ℹ️` smells
+5. Smell scan (the project's code-smell skill: resource disposal, suppression, async, DI, nullability,
+   optional nullable defaults), each with its rule and fix.
+6. Public-API scan: enumerate public types/members; naming/convention rules; mandated doc
+   coverage; surface-lock status.
+7. **Judgment (`check`):** classify raw candidates with the project taxonomy (`P0/P1/P2` or `🔴/🟡/ℹ️`
    default) — real defect vs noise; do not invent a scale.
-8. **Per-finding (`check`; facts from gather):** exact number, `file:line`, CA/analyzer ID or naming rule, a
+8. **Per-finding (`check`; facts from gather):** exact number, `file:line`, analyzer/lint ID or naming rule, a
    one-line fix; split **fix now** vs **accepted/deviation with justification**.
 9. Registry records (if any) by `coder` in `Was`/`Now`/`Check`; do not rewrite unrelated sections. **Author ≠
    certifier:** an independent read-only stream re-derives each registry/acceptance claim from the cited
    `file:line`; a mismatch or a code-basisless self-assessed `deferred`/`acceptable` is a finding.
 10. Hot-path measurement favors the perf specialist; the code fix is `coder`.
 11. **Test lens** (parallel). New behavior ⇒ a new test from the PLAN test strategy; run green; **coverage not
-    below the project threshold** (or baseline if none), area coverage not dropped; no new 🔴 CRAP hotspots.
+    below the project threshold** (or baseline if none), area coverage not dropped; no new critical
+    complexity/mutation hotspots.
     **Every variant-matrix row is closed** (test / guard / `deferred with a trigger`); CHECK augments the matrix
     with rows from the actual diff and the sibling's edge list — an added uncovered row is a defect. **PASS is
     forbidden while any requirement/class row is open**; iteration count does not prove completeness. Report the
     **branch** delta (not line only); **mutation testing** on changed code was run or untested branches are
     listed. A missing test / coverage drop / open row → a `D:` task, not "good enough".
-    **Inner-loop evidence gate (mandatory, fails closed).** The lens requires the
-    `scripts/validate_inner_loop.py report <evidence.json>` result; if the validator is missing,
-    cannot run, or exits nonzero, CHECK **FAILS** — never warns. It FAILS on any of: the inner loop
-    was the **whole project/solution**; the exact commands/filters/exit codes are missing; a
-    **missing or zero `selected_count`** (`selected_count ≥ 1` per execution — a zero-match run is
-    rejected); a **docs-only scope claiming an `affected` rebuild** (fictitious rebuild); **stale
-    `--no-build` artifacts** after a compiled edit (`source_revision != artifact_revision`, or no
-    prior build with the matching artifact revision); the scope was **widened without a prior
-    validated amendment**; or a boundary is **relabelled/fabricated** — a broad run in `inner`, or
-    more than one comprehensive boundary sweep. A **filtered** integration test run directly at the
-    boundary is legitimate and does not consume the single-sweep cap.
-12. **Doc lens** (parallel). Per PLAN verifies **both**: prose docs (README/guides/DocFX, examples/migration
-    notes) **created** and **matching the implementation** (content, not presence; `dotnet-docs-generator`);
-    and XML-doc comments **only when mandated** (CS1591) or user-requested — generated on every new/changed
-    public member and matching signatures/behavior (`dotnet-api-docs` on-demand). A gap/mismatch → `D:` task
-    for `docfx-specialist`/`coder`.
+12. **Doc lens** (parallel). Per PLAN verifies **both**: prose docs (README/guides/user documentation,
+    examples/migration notes) **created** and **matching the implementation** (content, not presence);
+    and generated/API docs **only when mandated**
+    or user-requested — generated on every new/changed
+    public member and matching signatures/behavior. A gap/mismatch → `D:` task
+    for `coder` (+ the docs specialist).
 13. **Perf lens** (two-phase, parallel). Gather: measurement done with numbers+baseline, or `file:line`
     one-time facts. Judgment (`check`): against the PLAN perf decision — regression acceptable? plan fulfilled?
     argument convincing? Work in a per-row loop with no measurement → `D:` task (measure) or PLAN return; no
     silent close.
 
-**Optional-`null` smell (`T? x = null`, incl. `= default` for reference/nullable), especially on `*Options`:**
+**Optional-null/default smell (an optional value with a null/default fallback), especially on `*Options`:**
 severity 🟡 by default, 🔴 if it allows silently choosing wrong behavior, ℹ️ for a genuine sentinel. Fix: a pair
-of overloads — a parameterless (`CancellationToken`-only) one with internal `x: null`, plus a required overload
-with `ArgumentNullException.ThrowIfNull(x)`. Constraints: overloads differing only in a nullable annotation are a
-duplicate signature (**CS0111**); with `TreatWarningsAsErrors=true`, `null` in a required parameter is **CS8625**
-(the gate).
+of overloads — a parameterless (or minimal) one with the fallback set internally, plus a required overload
+that rejects the missing value at the boundary (an explicit argument/validation error). Constraints: overloads
+that differ only in nullability are a duplicate signature; under the project's warning policy, a null in a
+required parameter is a gate error.
 
 Boundaries: code and registry edits by `coder` (Do); renames/analyzer policy in Do; do not re-open fixed
 findings; out of scope: profiling, security. Check output: project language, `P0/P1/P2` or `Finding N` with
@@ -1040,7 +1018,7 @@ here the already **merged** tree is re-verified:
     order, resolving conflicts from the subagent reports (`file:line`); do not delete the task
     branches.
 15. **Verify the merged tree.** Rebuild and run the tests (unit + integration)
-    **on the combined code** (0 warnings — gate): independently green branches ≠ a green
+    **on the combined code** (clean under the project's policy — gate): independently green branches ≠ a green
     merge. Divergences from the per-worktree checks — into the report as integration
     regressions/conflicts.
 
@@ -1117,7 +1095,8 @@ only in ACT — loop-backs change `r`/`n`, not `<N>`; §State machine). Examples
 composes content from reports and passes it in the brief.
 Lifecycle (finalization in ACT — see "Lifetime"):
 1. **Creation, last step of PLAN before the go-ahead:** the plan — goal, acceptance criteria, test
-   strategy with the variant and priority matrices, docs plan, perf/recon/unit-mode decisions, DO task
+   strategy with the variant and priority matrices, docs plan, perf/recon/unit-mode decisions, the
+   toolchain/lens selection, DO task
    list, risks — plus the log opened with `PLAN ready — awaiting go`.
 2. **Progress — every event** of DO/CHECK.
 3. **Replan** (CHECK → PLAN / DO → PLAN): a real revised plan bumps `r`, resets `n` to 1; an unchanged
@@ -1175,7 +1154,9 @@ Content — a brief handoff, not a report:
   outcome (pointers, not sensitive logs).
 - **DO units/streams table** — unit | state | criteria covered | `superseded→replacement` (actual
   replacement only); an additive prerequisite keeps the original row active and adds a new active row.
-- **Decisions made** (perf/recon/unit mode, trade-offs) and why.
+- **Decisions made** (perf/recon/unit mode/toolchain/lenses, trade-offs) and why.
+- **Toolchain and lenses** selected by PLAN and the evidence each must return (§PLAN selects the toolchain
+  and lenses).
 - **Risks / known issues** — severity and status.
 - **Perf measurement** — needed (benchmarks/suite, baseline, result) or not needed **with an argument**
   (`file:line`, one-time not per-row); a skip without an argument fails gate 1 (§PLAN "Performance measurement").
@@ -1248,7 +1229,7 @@ cheap orchestrator (§Orchestrator role).
 ## Economics
 
 Roles bind to tiers by the host, not the skill (§Host requirements): `planner` and the `check`
-verdict — medium; orchestration (`build`), the hands (`coder`/`dotnet-*`), the CHECK gather — cheap;
+verdict — medium; orchestration (`build`), the hands (`coder`), the CHECK gather — cheap;
 `escalate` — strong, by trigger only; `security-auditor` — medium, by trigger. A hard security
 trade-off goes on to `escalate`. The code audit and the
 perf lens are two-phase (cheap gather → judgment in the same `check`), so no separate expensive call.
