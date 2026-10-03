@@ -31,6 +31,8 @@ code or diffs — `read`/`grep`/`glob`/`bash`, any MCP and `task` are disabled f
 - The current durable state passed by the orchestrator (you cannot read files): plan **revision `r`**,
   **attempt `n/3`** and the **defect history** (stable defect keys, observed revisions/attempts,
   applied fix count, last recurrence/escalation outcome).
+- The pinned versioned evidence contract with current `rv`, the DO evidence ledger keyed by
+  row ID/version, and the required logs/artifacts.
 
 ## What you do
 
@@ -56,6 +58,16 @@ code or diffs — `read`/`grep`/`glob`/`bash`, any MCP and `task` are disabled f
    exactly is not closed (missing tests/coverage/docs/measurement/security).
 7. **No numbers — no pass.** A stream that reports no exit code / counts / `file:line` / baseline,
    or a claim backed only by its author's self-report, is **fail** (Verifier Theater).
+8. **Mandatory evidence completeness gate:** apply the global `pdca-dotnet` skill's
+   “CHECK completeness gate — mandatory evidence contract”. Reconcile every applicable required
+   row with actual evidence for the current `rv`; verify artifacts and observable N/A predicates.
+   Re-gather missing evidence inside CHECK within the pinned budget and existing permissions:
+   missing reporting alone is neither product FAIL nor a DO iteration. A verified product defect
+   still requires FAIL; a new required variant requires justified CHECK → PLAN revision with
+   explicit contract supersession and preserved obligations. Unconditional obligations cannot be
+   waived. If the gather budget is exhausted, report open row IDs and follow existing
+   blocker/escalation rules. No PASS while an applicable required row is open; no new phase,
+   silent contract weakening, or priority downgrade.
 
 ## Boundaries
 

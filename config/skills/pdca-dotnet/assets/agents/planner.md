@@ -35,6 +35,16 @@ your input is only the gather-stream summary and/or the `check` verdict.
 3. **Decompose**: goal, acceptance criteria (each with a negative case), the DO task list, risks,
    and **"What the statement did not say"** — every gap resolved by evidence, recorded as an
    assumption/risk, or raised as a blocker.
+   **Versioned evidence contract (REQUIRED):** follow the global `pdca-dotnet` skill's
+   “Versioned evidence contract” definition. Pin the contract in the cycle status file before
+   DO. For every row, require stable requirement/row IDs, the required check/scenario, expected
+   evidence kinds and sources, exact command/invocation and exit-code/result/log requirements,
+   artifact expectations, owner stream, observable applicability predicate, and revision `rv`.
+   Only the layout is discretionary; no slot or unconditional obligation may be omitted or
+   weakened. Mark planned sources as planned; never fabricate future test symbols or `file:line`.
+   Pin a finite CHECK re-gather budget and owner. On justified revision, explicitly supersede the
+   previous contract revision, retain existing row IDs and obligations, and add IDs for new
+   variants. Missing reporting alone does not justify a contract revision or a DO iteration.
 4. **Unit mode** — sequential, parallel in one tree, or parallel in separate worktrees — by the
    **footprint** (overlapping files/contracts ⇒ sequential or a shared contract); worktrees only
    for isolation/risk or when the user asks.
@@ -102,5 +112,7 @@ is no go, **no question** and **no waiting**: the plan is written and DO proceed
   trigger 5).
 - **Confidence and gaps**: what is verified, what remains an assumption.
 - **Risks** and open questions.
+- **Versioned evidence contract (REQUIRED):** all mandatory row slots, current `rv`, stable IDs,
+  applicability predicates, CHECK re-gather budget/owner, and explicit supersession on revision.
 
 A missing item is not "implied" — the orchestrator returns an incomplete plan to you.

@@ -883,6 +883,40 @@ on every new/changed public member and matching signatures when mandatory, else 
 Rule: a public contract/behavior change without updated prose docs does not close the cycle; missing CS1591
 blocks closure only when the project mandates XML-doc. On-demand skills: `dotnet-xml-docs`, `dotnet-github-docs`,
 `dotnet-mermaid-diagrams`.
+### Versioned evidence contract
+
+**REQUIRED at PLAN:** pin a versioned evidence contract in the cycle status file before DO.
+This subsection is the single global definition; agent templates and project overlays must
+reference it, not define competing contracts. The status file holds the authoritative contract
+for the cycle.
+
+Every contract row must contain:
+
+- A stable requirement ID and a stable row ID.
+- The required check or scenario.
+- Expected evidence kinds and their sources.
+- The exact command or invocation, required exit-code or invocation-result evidence, and log
+  requirements.
+- Expected artifacts, including their locations, or an explicitly justified N/A.
+- The owner stream responsible for producing the evidence.
+- An observable applicability predicate; unconditional obligations are always applicable.
+- The contract revision `rv`.
+
+**No optional slots:** PLAN may choose the layout, but must not omit slots or weaken required
+checks. Planned artifact locations are expectations, not evidence. Do not fabricate future
+test symbols or `file:line`; use verified existing references or explicitly planned sources.
+PLAN must also pin a finite CHECK re-gather budget and its owner in the status file.
+
+**DO ledger:** record actual evidence against each row ID and `rv`: verified test symbols or
+`file:line`, results, executed commands or invocations, exit codes or invocation results, and
+log/artifact paths. Record failed, not-run, missing, and blocked evidence explicitly. N/A
+requires an observed applicability predicate; it must never waive an unconditional obligation.
+
+**Revision:** a newly discovered required variant must return CHECK → PLAN with a justification.
+PLAN explicitly supersedes the previous contract revision, retains existing row IDs, adds IDs
+for new variants, and preserves all still-required acceptance obligations. Completing evidence
+does not itself revise the contract. Contract supersession does not supersede DO work or discard
+unfinished acceptance criteria; existing plan-revision and attempt rules remain unchanged.
 
 ## CHECK: audit checklist (generic)
 
@@ -1048,6 +1082,26 @@ Statuses — one per task (`<task>-<N>`, see §ACT), the handoff — one per
 task; subagent briefs — §Delegation → "Worktree sub-tasks of one cycle". If the merge or the
 merged check did not pass — return to DO (a `D:` task "resolve the
 conflict/regression"), do not close the cycle.
+### CHECK completeness gate — mandatory evidence contract
+
+**Before PASS:** reconcile the current pinned contract with the DO ledger and inspect the
+required evidence. Every applicable required row must be satisfied by actual evidence for the
+current `rv`. Required artifacts must exist and support the reported result. N/A is valid only
+when its pinned observable predicate is demonstrated; unconditional obligations cannot be waived.
+
+**Missing evidence is not a product defect:** re-gather reports, logs, artifacts, or missing
+check results from the designated owner inside CHECK, within the pinned budget and existing
+permissions. Do not return to DO, count a DO iteration, or issue product FAIL solely because
+reporting is missing. Do not invent evidence or edit the product as part of re-gathering.
+
+A verified product defect still requires FAIL and the existing loop-back. A newly uncovered
+required variant requires a justified CHECK → PLAN contract revision with explicit supersession
+and preserved obligations; CHECK must not silently add, remove, or weaken contract rows.
+
+**Bounded gathering:** if the budget is exhausted with required evidence still open, leave CHECK
+unresolved, report the open row IDs and reasons, and follow the existing blocker/escalation rules.
+Never issue PASS while an applicable required row is open. This gate adds no state-machine phase
+and does not lower existing priorities or replace existing correctness checks.
 
 ## Debugging (loop-back CHECK → DO)
 
