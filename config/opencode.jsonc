@@ -37,7 +37,44 @@
       // Курируемый dotnet-набор + полный пак скиллов: невыбранные скиллы читаются
       // по требованию напрямую из пака (`.config/opencode/skills-deepseek/<name>/SKILL.md`).
       "~/.config/opencode/skills-deepseek/**": "allow",
-      "~/.config/opencode/skills-deepseek-curated/**": "allow"
+      "~/.config/opencode/skills-deepseek-curated/**": "allow",
+      // Весь глобальный конфиг opencode: `AGENTS.md`, скиллы `skills/pdca-*`,
+      // `agents/`, `profiles/`. Субагенты (`scout`/`coder`/`pdca-*`) читают их при
+      // сборе фактов — иначе каждый такой `read` уходит в `ask` и подвешивает
+      // автономный PDCA-цикл (наблюдалось в сессии webpdca). Секреты — исключены.
+      "~/.config/opencode/**": "allow",
+      // Системные пути и корни соседних репозиториев: агенты читают их при сборе
+      // фактов и сборке. Дефолт `ask` вешает автономный цикл на каждом таком чтении
+      // (напр. `cat /etc/timezone` в webpdca), поэтому разрешаем их явно.
+      "/etc/**": "allow",
+      "/proc/**": "allow",
+      "/usr/**": "allow",
+      "/opt/**": "allow",
+      "/snap/**": "allow",
+      "/sys/**": "allow",
+      "/home/alex/sources/**": "allow",
+      "/mnt/c/Users/user/**": "allow",
+      // Собственные логи/tool-output opencode: агенты читают их для провенанса
+      // сессии (напр. scout в nextorm грепал opencode.log). Без allow — `ask` и
+      // стоп. Только эти подкаталоги: `auth.json`, `*.db`, `snapshot/` — под ask.
+      "/home/alex/.local/share/opencode/log/**": "allow",
+      "/home/alex/.local/share/opencode/tool-output/**": "allow",
+      "/home/alex/.local/share/opencode/zen-cache-proxy.log": "allow",
+      // State opencode (model.json, plugin-meta.json, prompt-history.jsonl и т.п.):
+      // агенты грепают его для провенанса (scout в nextorm искал pdca-dotnet).
+      // Секретов там нет.
+      "/home/alex/.local/state/opencode/**": "allow",
+      // Runtime пользователя и VS Code: агенты читают конфиги/расширения при сборе
+      // фактов (тоже стреляло в ask — см. /run/user/1000, .vscode-server, Code/User).
+      "/run/user/1000/**": "allow",
+      "/home/alex/.vscode-server/**": "allow",
+      "/mnt/c/Users/user/AppData/Roaming/Code/User/**": "allow",
+      // Кэш NuGet: агенты читают `.xml`/метаданные пакетов (напр. Npgsql) при сборе
+      // фактов — дефолт `ask` подвесил subagent `coder` в nextorm. Секретов нет.
+      "~/.nuget/packages/**": "allow",
+      // Секреты и ключи — вне доступа (последнее совпавшее правило выигрывает).
+      "~/.config/opencode/secrets.env": "deny",
+      "/mnt/c/Users/user/.ssh/**": "deny"
     },
     // `brainstorming` виден только `architect`: глобально запрещён, а architect
     // перекрывает это своим `skill: allow` (правила агента идут после глобальных).
