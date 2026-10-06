@@ -657,8 +657,8 @@ class GoGateAndFallbackGuardTest(unittest.TestCase):
         self.assertIn(
             "DO starts only on an explicit go/го in the normal mode", self.skill
         )
-        # The state-machine cycle line still names the normal-mode go-ahead.
-        self.assertIn('normal mode: user go-ahead "go"', self.state_machine)
+        # The state-machine cycle line still names the normal-mode plan confirmation.
+        self.assertIn("normal mode: user reviews and confirms the plan", self.state_machine)
 
     def test_autonomous_mode_has_no_go_and_no_pause(self):
         # Autonomous path: no `go`, no confirmation pause. If autonomous began

@@ -112,8 +112,8 @@ to `pdca-executor` via `Task`. Both the initial PLAN and any replan belong to `p
 
 ## State machine
 
-Cycle: `PLAN → (normal mode: explicit user go-ahead "go") → DO → CHECK → ACT → (EXIT | PLAN)`
-(autonomous: no go-ahead, §Autonomous mode), plus a **DO → PLAN** return when DO surfaces a
+Cycle: `PLAN → (normal mode: user reviews and confirms the plan) → DO → CHECK → ACT → (EXIT | PLAN)`
+(autonomous: no confirmation, §Autonomous mode), plus a **DO → PLAN** return when DO surfaces a
 new prerequisite/blocker or changes assumptions/scope.
 
 Progress is recorded in two places with different roles:
@@ -201,8 +201,9 @@ bad plan found by review is a CHECK → PLAN).
    verification method**; decomposition into units with dependencies **or** an explicit
    decision not to split a simple task; means and access; risks and stop conditions. Plus:
    **the plan written to the status file by `pdca-executor`** (last step, before the
-   go-ahead) **and an explicit `go`/`го`** — except in autonomous mode, where DO starts right
-   after PLAN. The orchestrator only checks each item is **present** (§Orchestrator role) and
+   start signal) **and, in normal mode, the user's explicit confirmation of the plan (an
+   explicit `go`/`го` counts)** — except in autonomous mode, where DO starts right after
+   PLAN. The orchestrator only checks each item is **present** (§Orchestrator role) and
    returns an incomplete answer to `pdca-planner`. On DO start: `pdca-executor` logs `DO
    started`, then `todowrite` (`P:`→`completed`, single `D:`→`in_progress`). Normal mode with
    no acceptance criteria → ask the user, do not guess; autonomous → route through
@@ -287,18 +288,29 @@ recorded.
 
 ## Normal and autonomous modes
 
-**Normal mode** requires an explicit `go`/`го` after the plan is on disk (§PLAN → DO gate).
-The plan is written to the status file by `pdca-executor` before the go-ahead; the orchestrator
-then shows the plan gist, gives the status-file path, and asks for `go`/`го` — the **only
-start signal**. "OK"/"yes" without `go` confirms but does not start; ask again. Without `go`
-nothing is created/edited **except the status file** — wait, clarify, or rewrite the plan (via
-`pdca-planner`, same file by `pdca-executor`).
+**Normal mode** requires the user's **explicit confirmation of the plan** after it is on disk
+(§PLAN → DO gate). The plan is written to the status file by `pdca-executor` first; the
+orchestrator then shows the plan gist, gives the status-file path, and asks the user to
+**review the implementation plan and confirm it** — that confirmation is the **only start
+signal** (`go`/`го` counts as an explicit confirmation). A question, a change request or a
+non-committal reply does not start; without confirmation nothing is created/edited **except the
+status file** — wait, clarify, or rewrite the plan (via `pdca-planner`, same file by
+`pdca-executor`).
 
 **Autonomous mode** is the same contract with no pauses and no questions. The cheap primary
 delegates the single cycle to the cheap `pdca-orchestrator` via `Task`; it drives PLAN → DO
 → CHECK → ACT and returns a compact summary. If `pdca-orchestrator` is unavailable, the cheap
 primary drives the cycle itself (flat primary fallback) and records a `Notice:` plus the
 durable reason (§Host requirements).
+
+**Collection caller handoff.** When this cycle is a single task's own PLAN invoked by a
+collection driver (its `COLLECTION TASK PLAN` entry), the collection caller owns the
+PLAN → DO boundary: the cycle finishes PLAN, persists the status file, and yields control
+back to the collection parent with a `plan_handoff` — same task identity, same `N`/`r`/`n` —
+instead of starting DO. The parent later resumes **the same cycle** from DO after an
+applicability check. This is a caller-driven handoff, not a standalone-autonomous pause and
+not a `go`: standalone normal mode still starts only on the explicit confirmation, and
+standalone autonomous still starts DO immediately.
 
 - **Phase transitions** happen in the same turn the gate passes, with no invitations or
   pauses; PLAN → DO immediately, no `go` — but every gate item is still mandatory.
@@ -477,7 +489,7 @@ return to the contract**, not "finish and fix later".
   only `todowrite` is orchestration.
 - I read artefacts/logs/status files myself instead of a `scout`/`pdca-executor` report.
 - I decide the plan or the verdict myself instead of `pdca-planner`/`pdca-check`.
-- I start DO without `go` (normal mode), or ask for `go` before the plan is on disk.
+- I start DO without the user's confirmation (normal mode), or ask for confirmation before the plan is on disk.
 - I skip CHECK or close the cycle without ACT.
 - I silently skipped a mandatory plan field: goal, constraints, assumptions, criteria with
   verification methods, decomposition, means and access, risks/stop conditions.
@@ -488,7 +500,7 @@ return to the contract**, not "finish and fix later".
 - I loaded large artefacts/logs into my context instead of a pointer.
 - I made a next attempt instead of `pdca-escalate` (§Escalation).
 - I declared a blocker without evidence.
-- In autonomous mode I printed the `go` invitation or the next-session message, or stopped at a
+- In autonomous mode I printed the plan-confirmation request or the next-session message, or stopped at a
   "clean checkpoint"/wait state.
 - I edited outside the plan's footprint (Over-Reach), or ran units in parallel with overlapping
   ownership.
@@ -554,9 +566,9 @@ carries both `<task>` (kebab slug) and `<N>` (cycle number within that task; gro
 — loop-backs change `r`/`n`, not `<N>`).
 
 Lifecycle:
-1. **Creation, last step of PLAN before the go-ahead:** the plan — goal, acceptance criteria
+1. **Creation, last step of PLAN before the start signal:** the plan — goal, acceptance criteria
    with verification methods, constraints, assumptions, decomposition and dependencies, means
-   and access, risks and stop conditions — plus the log opened with `PLAN ready — awaiting go`.
+   and access, risks and stop conditions — plus the log opened with `PLAN ready — awaiting confirmation`.
 2. **Progress — every event** of DO/CHECK.
 3. **Replan** (CHECK → PLAN / DO → PLAN): a real revised plan bumps `r`, resets `n` to 1; an
    unchanged plan does not. The **same** file's plan section is rewritten; the outgoing failed
@@ -570,7 +582,7 @@ Lifecycle:
 <UTC time> | <phase> | revision r | iteration n/3 | <event> | <evidence pointer>
 ```
 
-Must log: `PLAN ready — awaiting go`; `go received — DO started`; each `D:` unit state change;
+Must log: `PLAN ready — awaiting confirmation`; `plan confirmed — DO started`; each `D:` unit state change;
 each `D:` closed (exit status + log path); DO → CHECK; each CHECK report; the `pdca-check`
 verdict; each CHECK failure/fix/loop-back with its defect key and applied fix count (pointers,
 not logs); loop-back to DO / `Replanned` (with the outgoing failed attempt); an

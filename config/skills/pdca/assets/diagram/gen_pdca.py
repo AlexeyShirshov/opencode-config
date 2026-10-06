@@ -2,8 +2,9 @@
 """Hand-laid-out SVG for the universal pdca cycle.
 
 The diagram is domain-neutral. It shows the orchestrator strip with the
-per-phase inputs (as in the sibling diagrams), the five phase columns P/D/C/E/A
-with tier-badged cards (fact-gathering is the `Сбор · gather`
+per-phase inputs (as in the sibling diagrams), the four phase columns P/D/C/A
+plus the non-phase escalation column E (dashed, a transition rather than a
+phase) with tier-badged cards (fact-gathering is the `Сбор · gather`
 card inside PLAN, as in the sibling diagrams), the cheap/medium/strong tier
 legend with the pdca-* roles, and finally the cycle state graph (START, P · PLAN, D · DO,
 C · CHECK, A · ACT, EXIT, ЭСКАЛАЦИЯ, STOP) with every side transition.
@@ -43,6 +44,8 @@ COLOR = {"P": "#2563eb", "D": "#7c3aed",
          "C": "#d97706", "E": "#b91c1c", "A": "#059669"}
 NAME = {"P": "P · PLAN", "D": "D · DO",
         "C": "C · CHECK", "E": "E · ESCALATE", "A": "A · ACT"}
+# Small non-phase subtitle shown under an otherwise standard header.
+SUBTITLE = {"E": "переход, не фаза"}
 TIER_COLOR = {"weak": "#0d9488", "medium": "#4f46e5", "strong": "#ea580c"}
 TIER_MODEL = {"weak": "cheap", "medium": "medium", "strong": "strong"}
 
@@ -90,9 +93,9 @@ INPUTS = [
     "PLAN ← «старт» · «реплан от DO / CHECK» · «r+1 от ESCALATE» · «цикл N+1 от ACT»",
     "DO ← «go от PLAN» · «дефект от CHECK» · «r не исчерпан от ESCALATE»",
     "CHECK ← «units done от DO»",
-    "ESCALATE ← «неоднозначность» · «повтор» · «3-й провал CHECK(r)» · «trade-off»",
+    "ESCALATE ← «неоднозначность» · «повтор» · «3-й провал CHECK(r)» · «trade-off» · «рисковый результат перед ACT» · «низкая уверенность PLAN после scout»",
     "ACT ← «все criteria met от CHECK»",
-    "STOP ← «нет выполнимого PLAN r+1»",
+    "STOP ← «нет выполнимого PLAN r+1» · «неразрешимое ограничение» · «отказ в требуемом approval»",
     "EXIT ← «ACT закрыт»",
 ]
 
@@ -182,9 +185,31 @@ def render(P):
                        f'{esc(_fit(sub, (_bx-6)-(x+14), 5.2))}</text>')
         return "\n".join(out)
 
-    def header(x, y, w, h, lbl, col):
-        return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{COLOR[col]}"/>'
-                f'<text x="{x+w/2}" y="{y+h/2+5}" class="h" text-anchor="middle">{esc(lbl)}</text>')
+    def header(x, y, w, h, lbl, col, secondary=False, sub=None):
+        # A secondary header is a transition, not a phase: dashed outline,
+        # low-opacity fill, coloured (not white) label. `sub` is a small
+        # subtitle rendered under the main label, inside the same box.
+        if secondary:
+            _rect = (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" '
+                     f'fill="{COLOR[col]}" fill-opacity="0.10" stroke="{COLOR[col]}" '
+                     f'stroke-width="1.5" stroke-dasharray="5,4"/>')
+            _cls, _fill = "h2", COLOR[col]
+        else:
+            _rect = f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{COLOR[col]}"/>'
+            _cls, _fill = "h", "#ffffff"
+        lines = str(lbl).split("\n")
+        if sub:
+            _main_y, _sub_y = y + h / 2 - 2, y + h / 2 + 13
+        else:
+            _main_y, _sub_y = y + h / 2 + 5, None
+        _txt = "".join(
+            f'<text x="{x+w/2}" y="{_main_y + (k - (len(lines)-1)/2) * 15}" class="{_cls}" '
+            f'fill="{_fill}" text-anchor="middle">{esc(ln)}</text>'
+            for k, ln in enumerate(lines))
+        if sub:
+            _txt += (f'<text x="{x+w/2}" y="{_sub_y}" class="h3" fill="{_fill}" '
+                     f'opacity="0.85" text-anchor="middle">{esc(sub)}</text>')
+        return _rect + _txt
 
     def poly(points, color=None, dash=None, marker="arrow", edge_id=None):
         color = color or P["arrow"]
@@ -231,6 +256,8 @@ def render(P):
              f'.t{{font-size:13px;font-weight:600;fill:{P["title"]}}}\n'
              f'.s{{font-size:10.5px;fill:{P["sub"]}}}\n'
              '.h{font-size:12.5px;font-weight:700;fill:#ffffff}\n'
+             '.h2{font-size:12.5px;font-weight:700}\n'
+             '.h3{font-size:9px;font-weight:600}\n'
              '.g{font-size:10.5px;font-weight:600}\n'
              f'.band{{fill:{P["band"]}}}\n'
              '.bt{fill:#ffffff;font-size:15px;font-weight:700}\n'
@@ -248,7 +275,7 @@ def render(P):
     s.append(f'<rect x="{M}" y="{ORB_Y}" width="{W-M-M}" height="{ORB_H}" rx="10" class="band"/>')
     s.append(f'<text x="{M+18}" y="{ORB_Y+26}" class="bt">'
              f'pdca · оркестратор — входы по фазам · '
-             f'normal: primary · autonomous: pdca-orchestrator</text>')
+             f'normal: primary · autonomous: pdca-orchestrator (только cheap-тир)</text>')
     _oc1 = M + 18
     _oc2 = M + 18 + (W - M - M - 36) / 2
     _rows = max(1, (len(INPUTS) + 1) // 2)
@@ -263,7 +290,8 @@ def render(P):
 
     for c in COLN:
         x, w = COLX[c], WIDTH[c]
-        s.append(header(x, SPINE_Y, w, SPINE_H, NAME[c], c))
+        s.append(header(x, SPINE_Y, w, SPINE_H, NAME[c], c,
+                        secondary=(c == "E"), sub=SUBTITLE.get(c)))
         s.append(poly([(cx(c), SPINE_Y + SPINE_H), (cx(c), COL_Y)]))
         bottom = COL_Y
         for j, (t, sub, tier) in enumerate(BLOCKS[c]):
@@ -275,9 +303,10 @@ def render(P):
                 y1 = COL_Y + j * BOX_STEP + BOX_H
                 y2 = COL_Y + (j + 1) * BOX_STEP
                 s.append(poly([(cx(c), y1), (cx(c), y2)], P["bus"]))
+        _fdash = ' stroke-dasharray="5,4"' if c == "E" else ""
         s.append(f'<rect x="{x-6}" y="{COL_Y-8}" width="{w+12}" height="{bottom-COL_Y+16}" rx="12" '
                  f'fill="none" stroke="{COLOR[c]}" stroke-opacity="{P["frame_op"]}" '
-                 f'stroke-width="{P["frame_w"]}"/>')
+                 f'stroke-width="{P["frame_w"]}"{_fdash}/>')
 
     # ---- dispatch / return arrows between panel and spine ----
     ORB_B = ORB_Y + ORB_H
@@ -323,14 +352,19 @@ def render(P):
     for _k, _v in stx.items():
         s.append(stnode(_v, R1_TOP, NW, NH, st_name[_k], st_sub[_k], stc[_k], _k))
     ym = R1_TOP + NH / 2
-    for _eid, _a, _b, _lab in [("start_plan", "START", "PLAN", "старт"),
-                               ("plan_do", "PLAN", "DO", "go · n=1"),
-                               ("do_check", "DO", "CHECK", "units done"),
-                               ("check_act", "CHECK", "ACT", "criteria met"),
-                               ("act_exit", "ACT", "EXIT", "закрыто")]:
+    # plan_do has both mode paths (normal `go` / autonomous immediate) and the
+    # 3-iteration cap; it is stacked on short lines so it fits the 76px gap.
+    for _eid, _a, _b, _lab in [("start_plan", "START", "PLAN", ["старт"]),
+                               ("plan_do", "PLAN", "DO",
+                                ["go (normal)", "сразу (авто)", "· n=1/3"]),
+                               ("do_check", "DO", "CHECK", ["units done"]),
+                               ("check_act", "CHECK", "ACT", ["criteria met"]),
+                               ("act_exit", "ACT", "EXIT", ["закрыто"])]:
         _x1, _x2 = stx[_a] + NW, stx[_b]
         s.append(poly([(_x1, ym), (_x2, ym)], edge_id=_eid))
-        s.append(label((_x1 + _x2) / 2, ym - 7, _lab, P["label"]))
+        _n = len(_lab)
+        for _k, _ln in enumerate(_lab):
+            s.append(label((_x1 + _x2) / 2, ym - 7 - (_n - 1 - _k) * 13, _ln, P["label"]))
 
     # next cycle: ACT opens a new cycle N+1 (distinct from the terminal act_exit)
     s.append(curve(f"M988,{R1_TOP} C988,{R1_TOP-40} 376,{R1_TOP-40} 376,{R1_TOP}",
@@ -342,10 +376,10 @@ def render(P):
     s.append(label(450, R1_TOP - 76, "новое предусловие", P["label"]))
     s.append(curve(f"M798,{R1_TOP} C798,{R1_TOP-104} 566,{R1_TOP-104} 566,{R1_TOP}",
                    P["arrow"], "check_do_defect"))
-    s.append(label(682, R1_TOP - 108, "дефект · n+1", P["label"]))
+    s.append(label(682, R1_TOP - 108, "дефект · n+1 (n/3)", P["label"]))
     s.append(curve(f"M798,{R1_TOP} C798,{R1_TOP-136} 334,{R1_TOP-136} 334,{R1_TOP}",
                    P["arrow"], "check_plan_replan"))
-    s.append(label(566, R1_TOP - 140, "неверный план · r+1", P["label"]))
+    s.append(label(566, R1_TOP - 140, "неверный план → planner · r+1 при ревизии", P["label"]))
 
     # escalation row
     s.append(stnode(488, R2_TOP, NW, NH, "ЭСКАЛАЦИЯ", "решение", P["escalate"], "ESCALATE"))

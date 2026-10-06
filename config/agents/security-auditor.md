@@ -35,6 +35,24 @@ permission:
     "git ls-files*": allow
   external_directory:
     "/tmp/**": allow
+    "~/.config/opencode/**": allow
+    "/etc/**": allow
+    "/proc/**": allow
+    "/usr/**": allow
+    "/opt/**": allow
+    "/snap/**": allow
+    "/sys/**": allow
+    "/home/alex/sources/**": allow
+    "/mnt/c/Users/user/**": allow
+    "/home/alex/.local/share/opencode/log/**": allow
+    "/home/alex/.local/share/opencode/tool-output/**": allow
+    "/home/alex/.local/share/opencode/zen-cache-proxy.log": allow
+    "/home/alex/.local/state/opencode/**": allow
+    "/run/user/1000/**": allow
+    "/home/alex/.vscode-server/**": allow
+    "/mnt/c/Users/user/AppData/Roaming/Code/User/**": allow
+    "~/.config/opencode/secrets.env": deny
+    "/mnt/c/Users/user/.ssh/**": deny
   # Профильные скиллы: OWASP + секреты + крипта; остальные скрыты правами.
   skill:
     "*": deny

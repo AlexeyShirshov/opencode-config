@@ -12,7 +12,7 @@ M = 24
 GAP = 28
 
 COLN = ["P", "D", "C", "SEC", "E", "S", "A"]
-WIDTH = {"P": 196, "D": 196, "C": 196, "SEC": 200, "E": 168, "S": 196, "A": 196}
+WIDTH = {"P": 196, "D": 232, "C": 220, "SEC": 200, "E": 196, "S": 196, "A": 196}
 COLX = {}
 _x = M
 for _c in COLN:
@@ -43,39 +43,52 @@ BLOCKS = {
         ("Перф-решение", "мерить? · чем · baseline", "medium"),
         ("Разведка (spike)", "нужен ли? · чем · PoC", "medium"),
         ("Юнит-режим", "послед. · дерево · worktrees", "medium"),
+        ("Контракт vN", "evidence · row ID · rv", "medium"),
     ],
     "D": [
         ("DO", "журнал · план до go", "weak"),
+        ("Test scope", "структурир. · affected subset", "medium"),
+        ("Brief-гейт", "validate_inner_loop · fail-closed", "weak"),
         ("Код", "из плана", "weak"),
         ("Тесты", "из плана", "weak"),
         ("Доки · проза", "README · DocFX", "weak"),
+        ("DO ledger", "evidence по row ID/rv", "weak"),
+        ("Build-гейт", "0 warnings · TreatWarningsAsErrors", "weak"),
     ],
     "C": [
-        ("CHECK · gather", "форк 4 потоков + security", "medium"),
+        ("CHECK · gather", "форк 4 потоков + security", "weak"),
         ("Аудит кода", "сбор · кандидаты", "weak"),
         ("Линза тестов", "прогон · покрытие", "weak"),
         ("Линза доков", "проза + XML-doc", "weak"),
         ("Линза перфа", "замер → суждение", "weak"),
+        ("Покрытие", "≥ порога · branch · Stryker.NET", "weak"),
     ],
     "SEC": [
-        ("Скаут", "scout · факты · file:line", "weak"),
-        ("Аудит безопасности", "read-only · отчёт → CHECK", "medium"),
+        ("Аудит · security", "read-only · без scout", "medium"),
+        ("Скаут · опц.", "факты вне diff · если нужно", "weak"),
     ],
     "E": [
-        ("Скаут", "scout · факты · file:line", "weak"),
-        ("Эскалация", "решает · решение → орб", "strong"),
+        ("Скаут", "факты · file:line · до escalate", "weak"),
+        ("Т1 · неоднознач.", "критерий неясен", "strong"),
+        ("Т2 · счётчик", "повтор / 3-й CHECK(r)", "strong"),
+        ("Т3 · trade-off", "арх/API · hard security", "strong"),
+        ("Т4 · risky-diff", "приёмка до ACT", "strong"),
+        ("Т5 · low-conf", "PLAN / классификация DO", "strong"),
+        ("Решение", "→ planner · coder · STOP", "strong"),
     ],
     "S": [
-        ("Статус-файл", "запись · source of truth", "weak"),
-        ("Отчёт", "закрыто / осталось / блокеры", "weak"),
-        ("Сообщение", "commit advice · manual", "weak"),
+        ("Терминал", "нет выполнимого PLAN r+1", "weak"),
+        ("Normal", "спросить пользователя", "weak"),
+        ("Autonomous", "записанный STOP · без вопроса", "weak"),
     ],
     "A": [
         ("ACT", "закрытие цикла", "weak"),
         ("Урок", "→ memory", "weak"),
         ("Правила", "AGENTS.md · оверлей", "weak"),
-        ("Статус", "файл · итог", "weak"),
-        ("Handoff", "→ EXIT · commit advice", "weak"),
+        ("Статус-файл", "финализация · source of truth", "weak"),
+        ("Отчёт", "закрыто / осталось / блокеры", "weak"),
+        ("Сообщение", "commit advice · manual", "weak"),
+        ("Handoff", "→ EXIT · цикл N+1", "weak"),
     ],
 }
 
@@ -84,23 +97,25 @@ TAIL = {"D": [
     ("XML-doc", "после кода · если требует проект", "weak"),
     ("Сборка · тесты", "build-гейт · unit-луп", "weak"),
     ("Интеграц. тесты", "граница DO → CHECK", "weak"),
+    ("Report-гейт", "validate_inner_loop · fail-closed", "weak"),
 ], "C": [
-    ("Триаж · вердикт", "агрегат всех потоков → pass/fail", "medium"),
+    ("Completeness", "evidence contract · перед PASS", "medium"),
+    ("Триаж · вердикт", "агрегат потоков → pass/fail", "medium"),
 ]}
 
 # orchestrator inputs, per phase
 INPUTS = [
-    "PLAN ← «старт» · «реплан от check» · «реплан от DO»",
-    "DO ← «план готов» · «фикс дефекта от check (вкл. security)» · «фикс от escalate при r не исчерпан»",
+    "PLAN ← «старт» · «реплан от check/DO» · «цикл N+1 от ACT»",
+    "DO ← «план готов · go/сразу» · «фикс дефекта от check (вкл. security)» · «фикс от escalate при r не исчерпан»",
     "CHECK ← «потоки закрыты»",
-    "CHECK · security ← «условно: auth / секреты / ввод» · «отчёт → CHECK»",
+    "CHECK · security ← «условно: auth / секреты / ввод / crypto» · «отчёт → CHECK»",
     "ACT ← «check pass»",
-    "ЭСКАЛАЦИЯ ← «повтор дефекта после 1 фикса» · «3-й провал CHECK(r)» · «жёсткий security tradeoff»",
+    "ЭСКАЛАЦИЯ ← «Т1 неоднозначность» · «Т2 счётчик» · «Т3 trade-off» · «Т4 risky-diff» · «Т5 low-confidence»",
     "STOP ← «нет выполнимого PLAN r+1»",
 ]
 # down-arrow (dispatch) label per column
-DISPATCH = {"P": "старт\nреплан от check\nреплан от DO", "D": "план готов\nфикс от check (с security)\nфикс от escalate (r активен)", "C": "потоки закрыты",
-            "SEC": "из CHECK · условно\nсбор (gather)\nотчёт → CHECK", "E": "повтор после 1 фикса\n3-й провал CHECK(r)\nжёсткий tradeoff", "S": "нет плана r+1", "A": "check pass"}
+DISPATCH = {"P": "старт\nреплан check/DO\nцикл N+1", "D": "план готов · go/сразу\nфикс от check (с security)\nфикс от escalate (r активен)", "C": "потоки закрыты",
+            "SEC": "из CHECK · условно\nauth/секр/ввод/crypto\nсбор (gather)\nотчёт → CHECK", "E": "Т1 неоднозначность\nТ2 счётчик · 3-й CHECK(r)\nТ3 trade-off · Т4 risky-diff\nТ5 low-confidence", "S": "нет плана r+1", "A": "check pass"}
 
 # per-phase state-graph node colors (shared by both themes)
 STC = {"START": None, "PLAN": "#2563eb", "DO": "#7c3aed", "CHECK": "#d97706",
@@ -180,12 +195,12 @@ def render(P, title):
     _COL_BOTTOM = COL_Y + (_MAXROWS - 1) * BOX_STEP + BOX_H + 8
     LEG_Y = _COL_BOTTOM + 48
     SG_TITLE_Y = LEG_Y + 74
-    R1_TOP = SG_TITLE_Y + 120
+    R1_TOP = SG_TITLE_Y + 190
     R1_BOT = R1_TOP + 44
     R2_TOP = R1_TOP + 132
     R2_BOT = R2_TOP + 44
     M4 = R2_BOT + 30
-    H = M4 + 40
+    H = M4 + 66
 
     s = []
     s.append(f'<svg viewBox="0 0 {W} {H}" width="{W}" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, system-ui, sans-serif">')
@@ -246,6 +261,16 @@ def render(P, title):
                 s.append(box(x, by, w, BOX_H, t, sub, tier))
                 s.append(f'<path d="M{cx(c)},{_prev} L{cx(c)},{by}" fill="none" stroke="{P["bus"]}" stroke-dasharray="5 4" marker-end="url(#arrow)"/>')
                 _prev, bottom, _row = by + BOX_H, by + BOX_H, _row + 1
+        elif c == "SEC":
+            # security auditor works without scout; scout is an optional side gather
+            # (scout only for facts outside the diff), so no mandatory arrow between them
+            t, sub, tier = blocks[0]
+            s.append(box(x, COL_Y, w, BOX_H, t, sub, tier))
+            t2, sub2, tier2 = blocks[1]
+            by2 = COL_Y + BOX_STEP
+            # optional side gather, not a parallel task/stream: no indent (full width)
+            s.append(box(x, by2, w, BOX_H, t2, sub2, tier2))
+            bottom = by2 + BOX_H
         else:
             for j, (t, sub, tier) in enumerate(blocks):
                 by = COL_Y + j * BOX_STEP
@@ -266,12 +291,16 @@ def render(P, title):
         _lines = DISPATCH[c].split("\n")
         _n = len(_lines)
         for _k, _ln in enumerate(_lines):
-            s.append(label(xc - 24, mid + (_k - (_n - 1) / 2) * 13, _ln, P["arrow"], "end"))
+            _ly = mid + (_k - (_n - 1) / 2) * 13
+            if c == "P":  # leftmost column: anchor start so labels never clip the canvas edge
+                s.append(label(0, _ly, _ln, P["arrow"], "start"))
+            else:
+                s.append(label(xc - 24, _ly, _ln, P["arrow"], "end"))
         if c != "S":
             s.append(poly([(xc + 16, SPINE_Y), (xc + 16, ORB_B)], edge_id=f"return_{c.lower()}"))
 
     legend = [
-        ("#0d9488", "дешёвая ступень", "cheap", "оркестрация · scout · coder · DO · ACT"),
+        ("#0d9488", "дешёвая ступень", "cheap", "оркестрация · scout · coder · CHECK gather"),
         ("#4f46e5", "средняя ступень", "medium", "planner · check · security-auditor"),
         ("#ea580c", "дорогая ступень", "strong", "escalate"),
     ]
@@ -302,19 +331,28 @@ def render(P, title):
         s.append(f'<text x="{_v+NW/2}" y="{R1_TOP+NH/2+5}" class="st" fill="{stc[_k]}" text-anchor="middle">{esc(_k)}</text>')
     _y = R1_TOP + NH / 2
     for _eid, _a, _b, _lab in [("start_plan", "START", "PLAN", "старт"),
-                               ("plan_do", "PLAN", "DO", "go · n=1"),
+                               ("plan_do", "PLAN", "DO", None),
                                ("do_check", "DO", "CHECK", "потоки закрыты"),
                                ("check_act", "CHECK", "ACT", "pass"),
                                ("act_exit", "ACT", "EXIT", "закрыто")]:
         _x1, _x2 = stx[_a] + NW, stx[_b]
         s.append(poly([(_x1, _y), (_x2, _y)], edge_id=_eid))
-        s.append(label((_x1 + _x2) / 2, _y - 7, _lab, P["label"]))
-    s.append(f'<path d="M880,{R1_TOP} C880,{R1_TOP-60} 686,{R1_TOP-60} 686,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_do_defect"/>')
-    s.append(label(786, R1_TOP - 46, "дефект · n+1", P["label"]))
-    s.append(f'<path d="M950,{R1_TOP} C950,{R1_TOP-112} 415,{R1_TOP-112} 415,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_plan_replan"/>')
-    s.append(label(683, R1_TOP - 100, "неверный план · r+1", P["label"]))
-    s.append(f'<path d="M606,{R1_TOP} C606,{R1_TOP-60} 420,{R1_TOP-60} 420,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="do_plan_blocker"/>')
-    s.append(label(513, R1_TOP - 46, "новое предусловие/блокер", P["label"]))
+        if _eid == "plan_do":
+            # stacked in the narrow PLAN→DO gap so the line never overflows the nodes
+            for _k, _ln in enumerate(("go (normal)", "сразу (авто)", "n=1/3")):
+                s.append(label((_x1 + _x2) / 2, _y - 23 + _k * 11, _ln, P["label"]))
+        else:
+            s.append(label((_x1 + _x2) / 2, _y - 7, _lab, P["label"]))
+    # next cycle: ACT opens a new cycle N+1 (distinct from the terminal act_exit)
+    s.append(f'<path d="M1188,{R1_TOP} C1188,{R1_TOP-36} 375,{R1_TOP-36} 375,{R1_TOP}" fill="none" stroke="{P["arrow"]}" stroke-dasharray="5 4" marker-end="url(#arrow)" data-edge-id="act_plan"/>')
+    s.append(label(781, R1_TOP - 40, "следующий цикл · N+1", P["label"]))
+    # loop-backs taken before ACT
+    s.append(f'<path d="M606,{R1_TOP} C606,{R1_TOP-68} 420,{R1_TOP-68} 420,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="do_plan_blocker"/>')
+    s.append(label(513, R1_TOP - 72, "новое предусловие/блокер", P["label"]))
+    s.append(f'<path d="M880,{R1_TOP} C880,{R1_TOP-100} 686,{R1_TOP-100} 686,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_do_defect"/>')
+    s.append(label(786, R1_TOP - 104, "дефект · n+1 (до 3)", P["label"]))
+    s.append(f'<path d="M950,{R1_TOP} C950,{R1_TOP-132} 415,{R1_TOP-132} 415,{R1_TOP}" fill="none" stroke="{P["arrow"]}" marker-end="url(#arrow)" data-edge-id="check_plan_replan"/>')
+    s.append(label(683, R1_TOP - 136, "неверный план · r+1 при ревизии", P["label"]))
     for _nid, _x, _t, _c, _d in [("sec_check", 837, "поток CHECK", "#be123c", True),
                                  ("escalate", 1100, "ESCALATE", "#b91c1c", False),
                                  ("stop", 1360, "STOP", "#b91c1c", False)]:
@@ -324,12 +362,12 @@ def render(P, title):
     _y2 = R2_TOP + NH / 2
     # conditional parallel CHECK stream: CHECK forks, stream reports back into CHECK triage
     s.append(poly([(917, R1_BOT), (917, R2_TOP)], "#be123c", dash="5 4", edge_id="check_security"))
-    s.append(label(907, (R1_BOT + R2_TOP) / 2 - 6, "условно · auth/секр/ввод", "#be123c", "end"))
+    s.append(label(907, (R1_BOT + R2_TOP) / 2 - 6, "условно · auth/секр/ввод/crypto", "#be123c", "end"))
     s.append(poly([(937, R2_TOP), (937, R1_BOT)], "#be123c", edge_id="security_check_report"))
     s.append(label(947, (R1_BOT + R2_TOP) / 2 + 6, "отчёт → CHECK", "#be123c", "start"))
     # CHECK verdict (all streams aggregated) triggers escalation on repeat / 3rd fail(r)
     s.append(poly([(960, R1_BOT), (960, R1_BOT + 30), (1180, R1_BOT + 30), (1180, R2_TOP)], edge_id="check_escalate_trigger"))
-    s.append(label(1070, R1_BOT + 22, "повтор после 1 фикса · 3-й провал CHECK(r)", P["label"]))
+    s.append(label(1070, R1_BOT + 22, "триггеры escalate (Т1–Т5)", P["label"]))
     # ONLY a hard security tradeoff escalates directly (no ordinary security fail bypass)
     s.append(poly([(997, _y2), (1100, _y2)], "#b91c1c", edge_id="security_escalate_tradeoff"))
     s.append(label(1048, _y2 - 7, "жёсткий tradeoff", P["label"]))
@@ -343,6 +381,12 @@ def render(P, title):
     _m4 = M4 + 14
     s.append(poly([(1200, R2_BOT), (1200, _m4), (375, _m4), (375, R1_BOT)], edge_id="escalate_plan_exhausted"))
     s.append(label(760, _m4 + 13, "исчерпан r → PLAN r+1", P["label"]))
+    # arrow-type legend (mirrors the universal diagram)
+    _fin = M4 + 44
+    s.append(label(24, _fin, "сплошная стрелка — переход", P["sub"], "start"))
+    s.append(label(300, _fin, "дуга — loop-back до ACT", P["sub"], "start"))
+    s.append(label(620, _fin, "пунктир — следующий цикл", P["sub"], "start"))
+    s.append(label(900, _fin, "нижний ряд — эскалация и STOP", P["sub"], "start"))
     s.append('</svg>')
     return "\n".join(s)
 

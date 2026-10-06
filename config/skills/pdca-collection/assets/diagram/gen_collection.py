@@ -85,6 +85,10 @@ STATE_EDGES = [
     ("A", "EXIT", "finalized"),
     ("MERGE", "ESCALATE", "merge-конфликт"),
     ("ESCALATE", "MERGE", "решено/переставить/пометить incomplete"),
+    # repeat of the same defect after one fix escalates before the second fix
+    # (base r/n, independent of task id/session): the corrective cycle routes
+    # into the strong escalation instead of taking a second fix.
+    ("REPAIR", "ESCALATE", "повтор дефекта после 1 фикса"),
     ("REPAIR", "STOP", "ревизия исчерпана · нет плана"),
 ]
 
@@ -94,7 +98,7 @@ STATE_EDGES = [
 # truth and are never rewritten here.
 EDGE_LABELS = {
     ("START", "P", "старт"): "START: список задач",
-    ("P", "DO", "группы"): "PLAN: группы зафиксированы",
+    ("P", "DO", "группы"): "PLAN: все планы готовы · группы/порядок зафиксированы",
     ("DO", "MERGE", "≥2 · all-lanes-terminal"): "все группы завершены",
     ("DO", "C", "одна группа · без merge"): "одна группа: без MERGE",
     ("MERGE", "C", "интеграция завершена"): "MERGE завершён",
@@ -105,6 +109,7 @@ EDGE_LABELS = {
     ("A", "EXIT", "finalized"): "финализация",
     ("MERGE", "ESCALATE", "merge-конфликт"): "MERGE fail",
     ("ESCALATE", "MERGE", "решено/переставить/пометить incomplete"): "ESCALATE: повтор MERGE или incomplete skip",
+    ("REPAIR", "ESCALATE", "повтор дефекта после 1 фикса"): "повтор дефекта после 1 фикса",
     ("REPAIR", "STOP", "ревизия исчерпана · нет плана"): "STOP: нет пересмотренного плана",
 }
 
@@ -176,8 +181,13 @@ COLOR = {"P": "#2563eb", "DO": "#7c3aed", "MERGE": "#475569",
 NAME = {"P": "PLAN", "DO": "DO · ПОДГОТОВКА + ЛЕЙНЫ",
         "MERGE": "MERGE", "C": "CHECK", "REPAIR": "REPAIR",
         "E": "ESCALATE", "A": "ACT"}
-TIER_COLOR = {"weak": "#0d9488", "medium": "#4f46e5", "strong": "#ea580c", "mixed": "#8b5cf6"}
-TIER_MODEL = {"weak": "cheap", "medium": "medium", "strong": "strong", "mixed": "mixed"}
+TIER_COLOR = {"weak": "#0d9488", "medium": "#4f46e5", "strong": "#ea580c"}
+TIER_MODEL = {"weak": "cheap", "medium": "medium", "strong": "strong"}
+# workflow composition is a separate axis, never a fourth model tier: the
+# `composite` badge reads `составной` in the purple composition colour and is
+# grouped apart from the cheap/medium/strong tiers in the legend.
+COMPOSITE_COLOR = "#8b5cf6"
+COMPOSITE_BADGE = "составной"
 # descriptive name of the strong block (body card / band input); the header
 # and the lower state-graph node keep the uppercase id `ESCALATE`.
 E_BLOCK_NAME = ["Разрешение", "конфликтов слияния"]
@@ -188,20 +198,25 @@ DISPLAY_PREFIX = {"P": "PLAN", "C": "CHECK", "E": " ".join(E_BLOCK_NAME), "A": "
 BLOCKS = {
     "P": [
         ("Вход", "список задач · от пользователя", "weak"),
-        ("Footprint", "scout · затронутые файлы/модули", "weak"),
-        ("DAG · группы", "planner · связные компоненты", "medium"),
-        ("Статус-файл", "groups/tasks · source of truth", "weak"),
+        # own PLAN of EVERY task runs first, then the all-plans barrier, and only
+        # then clustering (DAG/groups); the three planning sub-steps are the
+        # semantic `data-step` anchors below.
+        ("Свой PLAN задачи", "scout + planner · каждой задачи", "medium"),
+        ("ALL-barrier", "все планы готовы · до DAG", "weak"),
+        ("DAG · группы", "planner · после барьера", "medium"),
+        ("Статус-файл", "plan_state + groups/tasks", "weak"),
     ],
     "DO": [
         ("Worktree + ветки", "coder · на группу", "weak"),
         ("Запуск лейнов", "параллельно · ≤ cap (4)", "weak"),
         ("Лейн · группа", "один Task · оркеструет, не решает", "weak"),
         ("Ветка задачи", "от tip предыдущей · coder", "weak"),
-        ("pdca-цикл", "PLAN→DO→CHECK→ACT · руки cheap, решения medium", "mixed"),
-        # autocommit is MANDATORY inside the explicitly authorized collection
-        # mode (otherwise the next task cannot branch from a committed tip); the
-        # card never grants that permission by itself.
-        ("Коммит · обязателен", "при явно разрешённом автокоммите · только файлы задачи", "weak"),
+        (("pdca-цикл · continue from saved PLAN", "DO→CHECK→ACT"), "руки cheap · решения medium · эскалация strong", "composite"),
+        # autocommit is only available inside the explicitly authorized
+        # collection mode (otherwise the next task cannot branch from a committed
+        # tip) and the card never grants that permission by itself; without it the
+        # results are preserved as a patch.
+        ("Коммит · если разрешён автокоммит", "иначе patch · только файлы задачи", "weak"),
     ],
     "MERGE": [
         ("merge --no-ff", "coder · в текущий бранч", "weak"),
@@ -219,11 +234,11 @@ BLOCKS = {
         ("Review-линзы", "риск · регресс · соответствие", "weak"),
     ],
     "REPAIR": [
-        # the orchestrator-launched corrective standard PDCA
-        # composition; `mixed` marks the workflow composition, not a model tier.
+        # the orchestrator-launched corrective standard PDCA composition;
+        # `composite` marks the workflow composition, not a model tier.
         # the long title is wrapped so it clears the tier badge instead of
         # running underneath it (a single line is wider than REPAIR's column).
-        (("PDCA", "исправления"), "стандартный PDCA · оркестратор", "mixed"),
+        (("PDCA", "исправления"), "стандартный PDCA · оркестратор", "composite"),
     ],
     "E": [
         ("Скаут", "scout · факты · file:line", "weak"),
@@ -238,9 +253,21 @@ BLOCKS = {
     ],
 }
 
+# Planning sub-steps of the P column, exposed as `data-step` so the rendered
+# order (own PLAN of every task -> all-plans barrier -> clustering) is machine
+# checkable and cannot silently collapse back into a pre-DAG footprint pass.
+P_SUBSTEP = {
+    "Свой PLAN задачи": "task-plan",
+    "ALL-barrier": "all-plans-barrier",
+    "DAG · группы": "collection-scheduling",
+}
+
 # columns that apply only when the collection has >=2 groups; with a single group
 # there is nothing to merge (work happens on the current branch).
-CONDITIONAL = {"MERGE": "только при ≥2 группах", "REPAIR": "по FAIL от check"}
+CONDITIONAL = {"MERGE": "только при ≥2 группах", "REPAIR": "по FAIL от check",
+               # per-task cycle variant chosen by the orchestrator
+               "DO": ("цикл: .NET/C# → pdca-dotnet · другой код → pdca-coder",
+                      "иначе → pdca (по умолчанию)")}
 
 # post-fan sequential steps (after the parallel streams)
 TAIL = {}
@@ -272,7 +299,7 @@ INPUTS = [
 # stages.  The verification node is the semantic id `C` (the standard CHECK
 # owned by `check`/medium); `A` is the parent collection ACT (report /
 # authorized cleanup / finalize), a real reachable node.  `REPAIR` is the
-# standard corrective PDCA composition (mixed), triggered by the
+# standard corrective PDCA composition (composite), triggered by the
 # orchestrator on FAIL.  `MERGE` is the explicit integration node (`coder`
 # cheap): lanes reach it at their terminal barrier, it hands the integrated
 # tree to `C`, and a merge conflict routes through it to `ESCALATE`.
@@ -333,13 +360,13 @@ R3_TOP = R2_BOT + 76
 R3_BOT = R3_TOP + NH
 M4 = R3_BOT + 34
 NOTE_Y = M4 + 28
-# five footnote lines (single-group/no-rollback, autocommit, merge barrier,
-# STOP/cleanup, lane definition) with a bottom margin.
-H = NOTE_Y + 16 * 4 + 40
+# six footnote lines (single-group/no-rollback, autocommit, merge barrier,
+# STOP/cleanup, lane definition, flat primary fallback) with a bottom margin.
+H = NOTE_Y + 16 * 5 + 40
 
-# x/y are generator-owned absolute layout; `tier` is the visible workflow role
-# ("mixed" is workflow composition, not a fourth model tier).  `annotation` is a
-# small local visible note rendered under the node.
+# x/y are generator-owned absolute layout; `tier` is the visible model tier
+# (cheap/medium/strong); `composite` marks the workflow composition, not a fourth
+# model tier.  `annotation` is a small local visible note rendered under the node.
 STATE_NODES = {
     "START":      {"x": GX["START"], "y": R1_TOP, "label": "START",        "tier": None},
     "P":          {"x": GX["P"],     "y": R1_TOP, "label": "PLAN",          "tier": None},
@@ -350,9 +377,15 @@ STATE_NODES = {
                    "owner": "check · medium"},
     "A":          {"x": GX["A"],     "y": R1_TOP, "label": "ACT",           "tier": None},
     "EXIT":       {"x": GX["EXIT"],  "y": R1_TOP, "label": "EXIT",          "tier": None},
-    "REPAIR":     {"x": GX["C"],     "y": R2_TOP, "label": "REPAIR",         "tier": "mixed",
-                   "owner": "pdca · mixed"},
-    "ESCALATE":   {"x": GX["MERGE"], "y": R2_TOP, "label": "ESCALATE",      "tier": "strong"},
+    "REPAIR":     {"x": GX["C"],     "y": R2_TOP, "label": "REPAIR",         "composite": True,
+                   "owner": "pdca · составной"},
+    "ESCALATE":   {"x": GX["MERGE"], "y": R2_TOP, "label": "ESCALATE",      "tier": "strong",
+                   # the escalated decision is only routed by the orchestrator:
+                   # a revised plan goes to planner, implementation/STOP to coder.
+                   # kept left of the node so it clears the REPAIR->ESCALATE route.
+                   "annotation": ["решение → planner (план)",
+                                  "или coder (реализация, STOP)"],
+                   "annotation_x": GX["MERGE"] - 12, "annotation_anchor": "end"},
     "STOP":       {"x": GX["C"],     "y": R3_TOP, "label": "STOP",          "tier": None,
                    "annotation": "unverified · без ACT/cleanup"},
 }
@@ -414,6 +447,17 @@ ROUTES = {
     ("ESCALATE", "MERGE"): {"points": [(_GMC + 15, R2_TOP), (_GMC + 15, R1_BOT)],
                             "caption": [],
                             "dispatched_by": "orchestrator"},
+    # repeat of the same defect after one fix -> escalate before the second fix;
+    # routed through the clear band below the corrective row (no crossing of the
+    # dispatch/return pair above).
+    ("REPAIR", "ESCALATE"): {"points": [(GX["C"] + 40, R2_BOT),
+                                        (GX["C"] + 40, R2_BOT + 36),
+                                        (GX["MERGE"] + NW / 2, R2_BOT + 36),
+                                        (GX["MERGE"] + NW / 2, R2_BOT)],
+                             "caption": _wrap_label(
+                                 EDGE_LABELS[("REPAIR", "ESCALATE", "повтор дефекта после 1 фикса")],
+                                 92),
+                             "label": ((GX["C"] + 40 + GX["MERGE"] + NW / 2) / 2, R2_BOT + 12)},
     # unrecoverable corrective outcome: the standard corrective revision is
     # exhausted and there is no actionable revised plan -> STOP, a distinct
     # terminal (never a successful EXIT), preserving evidence with no ACT.
@@ -462,8 +506,10 @@ def _fit(text, maxpx, cw):
 
 def render(P, title):
     def box(x, y, w, h, _title, sub, tier):
-        col = TIER_COLOR[tier]
-        _bw, _bh = 50, 18
+        _composite = tier == "composite"
+        col = COMPOSITE_COLOR if _composite else TIER_COLOR[tier]
+        _label = COMPOSITE_BADGE if _composite else TIER_MODEL[tier]
+        _bw, _bh = (78, 18) if _composite else (50, 18)
         _bx, _by = x + w - _bw - 8, y + 7
         if P["tint"]:
             _badge = f'<rect x="{_bx}" y="{_by}" width="{_bw}" height="{_bh}" rx="6" fill="{col}" fill-opacity="{P["badge_op"]}" stroke="{col}" stroke-opacity="0.7"/>'
@@ -474,7 +520,7 @@ def render(P, title):
         out = [f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{P["box"]}" stroke="{P["box_stroke"]}" stroke-width="{P["box_stroke_w"]}"/>',
                f'<rect x="{x+1}" y="{y+7}" width="3" height="{h-14}" rx="1.5" fill="{col}"/>',
                _badge,
-               f'<text x="{_bx+_bw/2}" y="{_by+_bh/2+3.5}" class="bm" fill="{_btxt}" text-anchor="middle">{TIER_MODEL[tier]}</text>']
+               f'<text x="{_bx+_bw/2}" y="{_by+_bh/2+3.5}" class="bm" fill="{_btxt}" text-anchor="middle">{_label}</text>']
         # local wrapped-title support for the long descriptive card names; a
         # single line keeps the historical baselines, two lines fit the same
         # 50px card (title lines y+20/y+34, subtitle y+47) so no card grows.
@@ -560,7 +606,7 @@ def render(P, title):
         elif c == "REPAIR":
             _cattrs += (' data-main-recovery="corrective-pdca"'
                         ' data-dispatched-by="orchestrator"'
-                        ' data-composition="mixed"')
+                        ' data-composition="composite"')
         s.append(f'<g {_cattrs}>')
         # the real header background rect, addressable for peer-baseline checks
         s.append(f'<g data-peer-header="{c}">')
@@ -606,7 +652,12 @@ def render(P, title):
         else:
             for j, (t, sub, tier) in enumerate(blocks):
                 by = COL_Y + j * BOX_STEP
+                step = P_SUBSTEP.get(t) if c == "P" else None
+                if step is not None:
+                    s.append(f'<g data-step="{step}">')
                 s.append(box(x, by, w, BOX_H, t, sub, tier))
+                if step is not None:
+                    s.append('</g>')
                 bottom = by + BOX_H
             if len(blocks) > 1:
                 for j in range(len(blocks) - 1):
@@ -640,7 +691,10 @@ def render(P, title):
         else:
             s.append(_frame)
             if c in CONDITIONAL:
-                s.append(f'<text x="{cx(c)}" y="{bottom + 25}" class="g" fill="{P["label"]}" text-anchor="middle">{esc(CONDITIONAL[c])}</text>')
+                _cond = CONDITIONAL[c]
+                _cond_lines = _cond if isinstance(_cond, (list, tuple)) else [_cond]
+                for _ci, _cline in enumerate(_cond_lines):
+                    s.append(f'<text x="{cx(c)}" y="{bottom + 25 + _ci*15}" class="g" fill="{P["label"]}" text-anchor="middle">{esc(_cline)}</text>')
         s.append('</g>')
 
     # ---- second row: the corrective blocks under their triggers -------------
@@ -654,7 +708,7 @@ def render(P, title):
                    ' data-dispatched-by="orchestrator"')
         if _child == "REPAIR":
             _cattrs += (' data-main-recovery="corrective-pdca"'
-                        ' data-composition="mixed"')
+                        ' data-composition="composite"')
         s.append(f'<g {_cattrs}>')
         s.append(f'<g data-peer-header="{_child}">')
         s.append(header(x, _spine, w, SPINE_H, NAME[_child], _child))
@@ -670,7 +724,10 @@ def render(P, title):
                 s.append(poly([(_ccx, y1), (_ccx, by)], P["bus"]))
         s.append(f'<rect x="{x-6}" y="{_cy-8}" width="{w+12}" height="{_bottom-_cy+16}" rx="12" fill="none" stroke="{COLOR[_child]}" stroke-opacity="{P["frame_op"]}" stroke-width="{P["frame_w"]}" data-frame="{_child}"/>')
         if _child in CONDITIONAL:
-            s.append(f'<text x="{_ccx}" y="{_bottom + 25}" class="g" fill="{P["label"]}" text-anchor="middle">{esc(CONDITIONAL[_child])}</text>')
+            _cond = CONDITIONAL[_child]
+            _cond_lines = _cond if isinstance(_cond, (list, tuple)) else [_cond]
+            for _ci, _cline in enumerate(_cond_lines):
+                s.append(f'<text x="{_ccx}" y="{_bottom + 25 + _ci*15}" class="g" fill="{P["label"]}" text-anchor="middle">{esc(_cline)}</text>')
         s.append('</g>')
 
         # parent->child connector: down = trigger dispatch, up = return.  The
@@ -679,20 +736,22 @@ def render(P, title):
         _pb = _PARENT_BOTTOM[_parent]
         _cstate = MAIN_COLUMN_TO_STATE[_child]
         _pstate = MAIN_COLUMN_TO_STATE[_parent]
-        _incoming = next(t for t in STATE_EDGES if t[1] == _cstate)
-        _return = next(
-            t for t in STATE_EDGES if t[0] == _cstate and t[1] == _pstate
-        )
+        # enumerate EVERY incoming event of the child (its own dispatch path is
+        # one physical arrow; the event labels are grouped, wrapped to the column)
+        _incomings = [t for t in STATE_EDGES if t[1] == _cstate]
         _down_x, _up_x = _pcx - 15, _pcx + 15
         s.append(f'<g data-bus="dispatch" data-origin="{_parent}" '
                  f'data-target="{_child}" data-kind="dispatch">')
         s.append(poly([(_down_x, _pb), (_down_x, _spine)]))
-        s.append(f'<g data-entry-from="{esc(_incoming[0])}" '
-                 f'data-entry-to="{esc(_incoming[1])}" '
-                 f'data-entry-condition="{esc(_incoming[2])}">')
-        s.append(label(_down_x - 8, _spine - 30,
-                       EDGE_LABELS[_incoming], P["label"], "end"))
-        s.append('</g>')
+        _ly = _spine - 30
+        for _incoming in _incomings:
+            s.append(f'<g data-entry-from="{esc(_incoming[0])}" '
+                     f'data-entry-to="{esc(_incoming[1])}" '
+                     f'data-entry-condition="{esc(_incoming[2])}">')
+            for _ln in _wrap_label(EDGE_LABELS[_incoming], 104):
+                s.append(label(_down_x - 8, _ly, _ln, P["label"], "end"))
+                _ly += 12
+            s.append('</g>')
         s.append('</g>')
         s.append(f'<g data-bus="result" data-origin="{_child}" '
                  f'data-target="{_parent}" data-kind="result">')
@@ -742,7 +801,6 @@ def render(P, title):
         ("#0d9488", "дешёвая ступень", "cheap", "pdca-orchestrator · scout · coder"),
         ("#4f46e5", "средняя ступень", "medium", "planner · check · security-auditor"),
         ("#ea580c", "дорогая ступень", "strong", "escalate"),
-        ("#8b5cf6", "составной PDCA", "mixed", "pdca-цикл · руки cheap, решения medium"),
     ]
     ly = LEG_Y
     _titles_y = ly - 22
@@ -778,12 +836,14 @@ def render(P, title):
     # divider: composition is a different axis, not a fourth model tier
     s.append(f'<line x1="{_div_x}" y1="{ly-26}" x2="{_div_x}" y2="{ly+34}" stroke="{P["sub"]}" stroke-opacity="0.5"/>')
 
-    # composition: mixed workflow notation (purple swatch and `mixed` badge kept)
-    _col, _t, _model, _roles = legend[3]
+    # composition is a different axis, not a fourth model tier: a dashed
+    # outline chip (never a tier badge/swatch) plus the composition wording.
     s.append('<g data-legend="composition">')
     s.append(f'<text x="{_comp_x}" y="{_titles_y}" class="lt">Композиция PDCA</text>')
-    s.append(f'<text x="{_comp_x+22}" y="{ly}" class="lt">{esc(_t)}</text>')
-    s.extend(_legend_swatch(_comp_x, _col, _model, _roles))
+    s.append(f'<rect x="{_comp_x}" y="{ly-12}" width="15" height="15" rx="4" '
+             f'fill="none" stroke="{COMPOSITE_COLOR}" stroke-dasharray="3 2"/>')
+    s.append(f'<text x="{_comp_x+22}" y="{ly+3}" class="ls" fill="{P["label"]}">'
+             'составной: руки cheap · решения medium · эскалация strong</text>')
     s.append('</g>')
 
     # ---- state graph (below the legend): nodes and routes from the model ----
@@ -792,8 +852,9 @@ def render(P, title):
     for _k, _n in STATE_NODES.items():
         _c = STATE_COLOR[_k] or neutral
         _da = ''
-        _tier = f' data-tier="{_n["tier"]}"' if _n["tier"] else ''
-        s.append(f'<g data-node="{_k}"{_tier}>')
+        _tier = f' data-tier="{_n["tier"]}"' if _n.get("tier") else ''
+        _comp = ' data-composition="composite"' if _n.get("composite") else ''
+        s.append(f'<g data-node="{_k}"{_tier}{_comp}>')
         s.append(f'<rect x="{_n["x"]}" y="{_n["y"]}" width="{NW}" height="{NH}" rx="10" fill="{_c}" fill-opacity="0.08" stroke="{_c}" stroke-width="1.6"{_da}/>')
         if _n.get("owner"):
             # visible owner label on the actual node (e.g. `check · medium`)
@@ -808,9 +869,17 @@ def render(P, title):
                 _y0 = _n["y"] + 17
                 for _i, _line in enumerate(_lines):
                     s.append(f'<text x="{_n["x"]+NW/2}" y="{_y0 + _i*14}" class="st" fill="{_c}" text-anchor="middle">{esc(_line)}</text>')
-        if _n.get("annotation"):
-            s.append(f'<text x="{_n["x"]+NW/2}" y="{_n["y"]+NH+16}" class="nt" text-anchor="middle">{esc(_n["annotation"])}</text>')
         s.append('</g>')
+        # local note rendered *outside* the `data-node` group: it is not part of
+        # the node's name text (tests read the node's exact visible label).
+        if _n.get("annotation"):
+            _ann = _n["annotation"] if isinstance(_n["annotation"], (list, tuple)) else [_n["annotation"]]
+            _ax = _n.get("annotation_x", _n["x"] + NW / 2)
+            _aanchor = _n.get("annotation_anchor", "middle")
+            s.append(f'<g data-annotation="{_k}">')
+            for _ai, _aline in enumerate(_ann):
+                s.append(f'<text x="{_ax}" y="{_n["y"]+NH+16 + _ai*13}" class="nt" text-anchor="{_aanchor}">{esc(_aline)}</text>')
+            s.append('</g>')
     for _a, _b, _cond in STATE_EDGES:
         _route = ROUTES[(_a, _b)]
         _disp = (
@@ -837,8 +906,8 @@ def render(P, title):
         "Одна группа — деградация: worktree и ветки не создаются, работа в текущем бранче, "
         "merge --no-ff не нужен; сделанные ранее коммиты остаются, автоотката нет · push — никогда",
         # explicit authorized-autocommit prerequisite (the card never grants it)
-        "Автокоммит обязателен только в явно разрешённом режиме коллекции; без разрешения/при запрете — "
-        "patch сохраняется, коммитов и цепочки незакоммиченных веток нет (исключение задаётся overlay проекта, не глобально)",
+        "Коммит — только в явно разрешённом режиме автокоммита коллекции; иначе/при запрете — patch сохраняется, "
+        "коммитов и цепочки незакоммиченных веток нет (исключение задаётся overlay проекта, не глобально)",
         # merge barrier: terminal = readiness; only successful (done) tips merge
         "≥2: барьер ждёт терминальности ВСЕХ лейнов (done | incomplete) — это готовность, не успех; "
         "MERGE только успешных (done) tip, incomplete пропускается; конфликт → abort → escalate",
@@ -850,6 +919,9 @@ def render(P, title):
         # lane definition
         "Лейн (work stream) — один параллельный поток работ на группу: отдельный субагент, свой worktree и ветка, "
         "задачи строго по одной, полный pdca-цикл на каждую; параллельно идут группы (≤ cap), не задачи внутри лейна.",
+        # flat primary fallback when a nested `Task` is unavailable
+        "Fallback: pdca-orchestrator недоступен (нет агента / subagent_depth < 2 / Task запрещён) → "
+        "primary ведёт цикл сам · autonomous: Notice: + summary · normal: сообщение пользователю",
     ]
     for _i, _ntext in enumerate(_notes):
         s.append(f'<text x="{M}" y="{NOTE_Y + _i * 16}" class="nt">{esc(_ntext)}</text>')

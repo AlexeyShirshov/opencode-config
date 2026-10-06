@@ -299,13 +299,13 @@ class RuntimeContractEvidenceTest(unittest.TestCase):
 
     # --- K3: normal-mode explicit start signal ---------------------------
 
-    def test_normal_mode_requires_explicit_go_or_го(self):
+    def test_normal_mode_requires_explicit_plan_confirmation(self):
         self.assertIn(
-            "Normal mode requires an explicit go/го after the plan is on disk",
+            "Normal mode requires the user's explicit confirmation of the plan after it is on disk",
             self.skill,
         )
         self.assertIn("the only start signal", self.skill)
-        self.assertIn("without go confirms but does not start", self.skill)
+        self.assertIn("non-committal reply does not start", self.skill)
 
     # --- K9: four generic operating constraints --------------------------
 

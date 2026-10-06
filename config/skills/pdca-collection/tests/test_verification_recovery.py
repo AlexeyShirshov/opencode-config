@@ -70,7 +70,7 @@ EXPECTED_NODE_IDS = {
     "STOP",
 }
 RECOVERY_NODE_IDS = {"REPAIR", "STOP"}
-KNOWN_TIERS = {"cheap", "medium", "strong", "mixed"}
+KNOWN_TIERS = {"cheap", "medium", "strong"}
 
 # Fix round 1: every in-scope text file must be whitespace-clean.  `git diff
 # --check` does not cover untracked files (the whole diagram asset dir and the
@@ -384,15 +384,15 @@ def main_peer_repair_problems(assets: dict[str, str]) -> list[str]:
             problems.append(f"{theme}: REPAIR missing data-main-recovery=corrective-pdca")
         if repair.get("data-dispatched-by") != "orchestrator":
             problems.append(f"{theme}: REPAIR missing data-dispatched-by=orchestrator")
-        if repair.get("data-composition") != "mixed":
-            problems.append(f"{theme}: REPAIR missing data-composition=mixed")
+        if repair.get("data-composition") != "composite":
+            problems.append(f"{theme}: REPAIR missing data-composition=composite")
 
-        # 2. visible card: named PDCA, mixed composition badge, named caller
+        # 2. visible card: named PDCA, composite composition badge, named caller
         rtext = group_visible_text(repair)
         if "PDCA исправления" not in rtext:
             problems.append(f"{theme}: REPAIR has no visible 'PDCA исправления' card")
-        if "mixed" not in _texts_with_class(repair, "bm"):
-            problems.append(f"{theme}: REPAIR card has no visible 'mixed' badge")
+        if "составной" not in _texts_with_class(repair, "bm"):
+            problems.append(f"{theme}: REPAIR card has no visible 'составной' badge")
         if "оркестратор" not in rtext.lower():
             problems.append(f"{theme}: REPAIR does not visibly name the orchestrator")
 
@@ -675,9 +675,9 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                     self.assertIsNotNone(p_head, f"{parent} header rect missing")
                     assert c_head is not None and p_head is not None
                     self.assertGreater(_fnum(c_head, "y"), _fnum(p_head, "y"))
-                # visible named PDCA card: mixed composition badge + caller
+                # visible named PDCA card: composite composition badge + caller
                 self.assertIn("PDCA исправления", group_visible_text(repair))
-                self.assertIn("mixed", _texts_with_class(repair, "bm"))
+                self.assertIn("составной", _texts_with_class(repair, "bm"))
                 self.assertIn("оркестратор", group_visible_text(repair).lower())
                 # parent->child connector: C->REPAIR dispatch + REPAIR->C return
                 h_top = _fnum(r_head, "y")
@@ -819,7 +819,7 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                     d["tier"] for d in nodes.values() if d["tier"] is not None
                 }
                 self.assertTrue(tiers <= KNOWN_TIERS, f"invented tier: {tiers}")
-                self.assertLessEqual({"cheap", "medium", "mixed"}, tiers)
+                self.assertLessEqual({"cheap", "medium", "strong"}, tiers)
                 # the verification owner keeps its visible medium tier on the
                 # real C node (no separate TRIAGE node any more)
                 self.assertEqual("medium", nodes["C"]["tier"])
@@ -910,8 +910,9 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                 comp_low = group_visible_text(legends["composition"]).lower()
                 for tier in ("cheap", "medium", "strong"):
                     self.assertIn(tier, model_low)
-                # mixed is composition, never an enumerated model tier
+                # the composition marker is never an enumerated model tier
                 self.assertNotIn("mixed", model_low)
+                self.assertNotIn("составн", model_low)
                 self.assertNotIn("композиц", model_low)
                 self.assertIn("ступени модели", model_low)
                 # the composition group is visibly labelled as composition
@@ -921,8 +922,8 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                 )
                 self.assertIn("pdca", comp_low)
                 self.assertNotIn("ступень", comp_low)
-                # the purple mixed swatch / badge survives
-                self.assertIn("mixed", comp_low)
+                # the purple composition marker survives (non-tier wording)
+                self.assertIn("составной", comp_low)
                 for key in ("model-tiers", "composition"):
                     self.assertTrue(
                         any(_local(c.tag) == "rect" for c in legends[key]),
@@ -956,8 +957,9 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
 # `coder`.  The main diagram must show two real incoming MERGE dispatch routes
 # (initial all-lanes-terminal + post-escalate retry/skip) and a labelled
 # `E -> orchestrator` decision result; the lower state graph must expose an
-# explicit MERGE node (10 nodes / 13 edges, including the terminal corrective
-# STOP) that both the conflict and the incomplete return flow through instead of
+# explicit MERGE node (10 nodes / 14 edges, including the terminal corrective
+# STOP and the repeat-defect escalation) that both the conflict and the
+# incomplete return flow through instead of
 # jumping straight to `C`.
 #
 # These tests are written against the real rendered artefacts and the normative
@@ -975,7 +977,7 @@ MERGE_GRAPH_NODE_IDS = {
     "START", "P", "DO", "MERGE", "C", "A", "EXIT",
     "REPAIR", "ESCALATE", "STOP",
 }
-MERGE_GRAPH_EDGE_COUNT = 13
+MERGE_GRAPH_EDGE_COUNT = 14
 
 # Tolerant condition/event-word families: the contract fixes the semantics, the
 # implementation owns the exact prose.
@@ -1150,7 +1152,7 @@ class MergeRetryContractTest(unittest.TestCase):
 
     # --- lower state graph: explicit MERGE node and mediated return ----------
 
-    def test_lower_graph_exposes_merge_node_with_ten_nodes_thirteen_edges(self):
+    def test_lower_graph_exposes_merge_node_with_ten_nodes_fourteen_edges(self):
         for theme, stem in THEME_STEMS.items():
             with self.subTest(theme=theme):
                 root = parse_svg(self.assets[stem + ".svg"])
@@ -1165,7 +1167,7 @@ class MergeRetryContractTest(unittest.TestCase):
                 self.assertEqual(
                     MERGE_GRAPH_EDGE_COUNT,
                     len(edges),
-                    f"{theme}: expected 13 lower edges, got {len(edges)}",
+                    f"{theme}: expected 14 lower edges, got {len(edges)}",
                 )
                 pairs = edge_pairs(root)
                 self.assertIn(("DO", "MERGE"), pairs)
@@ -1290,8 +1292,9 @@ class MergeRetryContractTest(unittest.TestCase):
 #   * `P` has no invented `re-plan` event (there is no such lower edge).
 #
 # These tests read the real rendered artefacts and the independent literal alias
-# map below; the lower graph stays at ten nodes / thirteen edges (STOP included)
-# and the main entries must not pollute the `data-from` lower-edge selector.
+# map below; the lower graph stays at ten nodes / fourteen edges (STOP and the
+# repeat-defect escalation included) and the main entries must not pollute the
+# `data-from` lower-edge selector.
 # ---------------------------------------------------------------------------
 
 # Independent MAIN -> LOWER alias map (written out; never imported from gen).
@@ -1308,7 +1311,7 @@ for _main, _lower in MAIN_TO_LOWER.items():
     _LOWER_TO_MAIN.setdefault(_lower, []).append(_main)
 
 # Literal expected lower STATE_EDGES triples per main peer block.  Hand-derived
-# from the thirteen canonical edges; the terminal `REPAIR -> STOP` edge and the
+# from the fourteen canonical edges; the terminal `REPAIR -> STOP` edge and the
 # only edge whose target is not a peer block (`A -> EXIT finalized`) are not
 # incoming main events.
 EXPECTED_INCOMING = {
@@ -1325,7 +1328,10 @@ EXPECTED_INCOMING = {
         ("C", "C", "re-gather"),
     },
     "REPAIR": {("C", "REPAIR", "FAIL")},
-    "E": {("MERGE", "ESCALATE", "merge-конфликт")},
+    "E": {
+        ("MERGE", "ESCALATE", "merge-конфликт"),
+        ("REPAIR", "ESCALATE", "повтор дефекта после 1 фикса"),
+    },
     "A": {("C", "A", "PASS")},
 }
 
@@ -1676,7 +1682,12 @@ def do_lane_subblock_problems(assets: dict[str, str]) -> list[str]:
     """DO: 3 top-level cards + 3 nested lane sub-blocks shifted right + loop label."""
     problems: list[str] = []
     top_titles = ("Worktree + ветки", "Запуск лейнов", "Лейн · группа")
-    child_titles = ("Ветка задачи", "pdca-цикл", "Коммит · обязателен")
+    child_titles = (
+        "Ветка задачи",
+        "pdca-цикл · continue from saved PLAN",
+        "DO→CHECK→ACT",
+        "Коммит · если разрешён автокоммит",
+    )
     expected_titles = set(top_titles + child_titles)
     for theme, stem in THEME_STEMS.items():
         root = parse_svg(assets[stem + ".svg"])
@@ -1797,7 +1808,7 @@ class DispatchLabelConsistencyTest(unittest.TestCase):
     def test_no_stale_replan_or_resource_shadow_labels(self):
         self.assertEqual([], shadow_label_problems(self.assets))
 
-    def test_lower_graph_stays_ten_nodes_thirteen_edges_without_pollution(self):
+    def test_lower_graph_stays_ten_nodes_fourteen_edges_without_pollution(self):
         for theme, stem in THEME_STEMS.items():
             with self.subTest(theme=theme):
                 root = parse_svg(self.assets[stem + ".svg"])
@@ -2341,6 +2352,21 @@ class CollectionContractSemanticsTest(unittest.TestCase):
             r"в режиме одной группы ветки/worktree группы и задач не создаются",
         )
 
+    # --- sidebar todo mirrors groups, or tasks when single ----------------
+
+    def test_sidebar_todo_lists_groups_or_all_tasks_when_single(self):
+        p = self._skill_plain("### P —", "### D —")
+        self.assertRegex(p, re.compile(r"туду|todo", re.I))
+        # multi-group: one sidebar item per group
+        self.assertRegex(p, re.compile(r"по одному пункту на группу", re.I))
+        # single group (could not split): one item per task, no group item
+        self.assertRegex(
+            p, re.compile(r"одн\w+ группа.*по одному пункту на каждую задачу", re.I)
+        )
+        self.assertRegex(p, re.compile(r"пункта-«группы».*нет", re.I))
+        # parallel lanes may hold several in_progress items at once
+        self.assertRegex(p, re.compile(r"параллельные лейны дают.*in_progress", re.I))
+
     # --- merge policy -----------------------------------------------------
 
     def test_merge_only_done_never_incomplete_tip(self):
@@ -2578,6 +2604,76 @@ class MeasuredTextFitTest(unittest.TestCase):
 
     def test_measured_text_fits_its_container(self):
         self.assertEqual([], measured_fit_problems(self.assets))
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-06 own-PLAN barrier (P1 RED contract).
+#
+# P4 will render the collection planning phase as three explicit ordered
+# substeps (`task-plan` -> `all-plans-barrier` -> `collection-scheduling`) and
+# make the P->DO guard express "all plans ready AND persisted schedule valid"
+# instead of the bare old "groups fixed" wording.  These assertions are RED
+# until that render change; they do not add/rename any diagram node or edge.
+# ---------------------------------------------------------------------------
+
+
+def _data_step_values(root: ET.Element) -> set[str]:
+    return {
+        value
+        for g in _groups(root)
+        if (value := g.get("data-step")) is not None
+    }
+
+
+_P_TO_DO_READY = re.compile(r"all\s+plans|планы\s+готовы", re.I)
+
+
+class CollectionPlanBarrierDiagramTest(unittest.TestCase):
+    """Rendered P shows task-plan -> all-plans-barrier -> collection-scheduling."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.assets = render_assets()
+
+    def test_p_phase_exposes_task_plan_barrier_and_scheduling_steps(self):
+        expected = ("task-plan", "all-plans-barrier", "collection-scheduling")
+        for theme, stem in THEME_STEMS.items():
+            with self.subTest(theme=theme):
+                root = parse_svg(self.assets[stem + ".svg"])
+                steps = _data_step_values(root)
+                for step in expected:
+                    self.assertIn(
+                        step,
+                        steps,
+                        f"{theme}: rendered P lacks data-step={step!r}; "
+                        f"got {sorted(steps)}",
+                    )
+
+    def test_p_to_do_guard_reflects_all_plans_ready(self):
+        # The P->DO guard is rendered as the p->DO main event entry (its visible
+        # label derives from the canonical edge label); the lower edge itself is
+        # uncaptioned.  Locate the entry, not a line or a global keyword count.
+        for theme, stem in THEME_STEMS.items():
+            with self.subTest(theme=theme):
+                root = parse_svg(self.assets[stem + ".svg"])
+                entries = [
+                    g
+                    for g in _groups(root)
+                    if g.get("data-entry-from") == "P"
+                    and g.get("data-entry-to") == "DO"
+                ]
+                self.assertEqual(
+                    1,
+                    len(entries),
+                    f"{theme}: expected exactly one P->DO guard entry, "
+                    f"got {len(entries)}",
+                )
+                guard = group_visible_text(entries[0])
+                self.assertRegex(
+                    guard,
+                    _P_TO_DO_READY,
+                    f"{theme}: P->DO guard {guard!r} must reflect all-plans-ready",
+                )
 
 
 if __name__ == "__main__":
