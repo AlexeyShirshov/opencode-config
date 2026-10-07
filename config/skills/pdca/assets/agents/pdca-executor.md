@@ -7,6 +7,7 @@ steps: 60
 permission:
   edit: allow
   bash: allow
+  doom_loop: allow
   external_directory:
     "/mnt/c/Users/user/source/**": allow
     "/mnt/c/Users/user/Pictures/Screenshots/**": allow

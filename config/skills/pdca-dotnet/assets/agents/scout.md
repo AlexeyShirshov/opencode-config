@@ -9,6 +9,7 @@ permission:
   write: deny
   task: deny
   todowrite: deny
+  doom_loop: allow
   bash:
     "*": deny
     "ls*": allow

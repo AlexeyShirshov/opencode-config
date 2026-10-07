@@ -7,6 +7,7 @@ steps: 60
 permission:
   edit: allow
   bash: allow
+  doom_loop: allow
   # external_directory: add paths outside the project worktree if the task needs them, e.g.
   #   "/tmp/**": allow
 ---

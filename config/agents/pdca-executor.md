@@ -7,6 +7,10 @@ steps: 60
 permission:
   edit: allow
   bash: allow
+  # `doom_loop` (дефолт `ask`) в субагенте некому подтвердить: ask «осиротеет» и
+  # повиснет автономный цикл (наблюдалось: coder в nextorm повторял `dotnet test`).
+  # Праймари сохраняет `ask` и может ответить; здесь повтор разрешён.
+  doom_loop: allow
   external_directory:
     "/mnt/c/Users/user/source/**": allow
     "/mnt/c/Users/user/Pictures/Screenshots/**": allow
