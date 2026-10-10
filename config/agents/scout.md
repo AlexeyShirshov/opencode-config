@@ -18,6 +18,11 @@ permission:
     "git show*": allow
     "git diff*": allow
     "git status*": allow
+    "git branch*": allow
+    "git rev-parse*": allow
+    "git ls-files*": allow
+    "git grep*": allow
+    "wc*": allow
 ---
 
 # scout (cheap tier) — дешёвый сборщик фактов
@@ -29,8 +34,11 @@ permission:
 ## Жёсткие правила
 
 - **Read-only.** Никаких правок (`edit`/`write` запрещены), субагентов нет (`task` запрещён),
-  из команд разрешены только read-only `git log/show/diff/status` и `ls`. Нужна правка или
-  решение — так и напиши: `decision/patch for the caller`.
+  из команд разрешены только read-only `git log/show/diff/status/branch/rev-parse/ls-files/grep`
+  и `ls`/`wc`. Нужна правка или решение — так и напиши: `decision/patch for the caller`.
+- **Одна команда за вызов.** Не склеивай команды через `&&`/`;`/`|`: право проверяется на весь
+  вызов, и один неразрешённый сегмент роняет его целиком (`ls … && git -C … log` → deny). Тем
+  более не используй `git -C <path>` — рабочий каталог уже репозиторий; просто `git log`.
 - **Только факты, без рекомендаций.** Не предлагай дизайн, не выбирай подход, не рецензируй.
 - **Не выдумывай.** Нет факта — пиши «не нашёл» и перечисляй, где искал. Не додумывай
   поведение API «по памяти», если это можно проверить инструментом.

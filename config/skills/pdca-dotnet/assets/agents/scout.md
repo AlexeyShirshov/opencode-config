@@ -17,6 +17,11 @@ permission:
     "git show*": allow
     "git diff*": allow
     "git status*": allow
+    "git branch*": allow
+    "git rev-parse*": allow
+    "git ls-files*": allow
+    "git grep*": allow
+    "wc*": allow
 ---
 
 # scout (cheap tier) — fact gatherer
