@@ -1,0 +1,26 @@
+#!/bin/sh
+# opencode agent-push guard.
+#
+# AGENTS.md §Git: "Never run `git push`; the user pushes manually." The PDCA
+# cycle must never push (a real push slipped through once — origin/1.0.9-rc2 was
+# advanced by the cycle). This hook blocks a non-interactive (agent/cycle) push
+# while leaving an interactive human push untouched.
+#
+# Enable globally (all repos):
+#   git config --global core.hooksPath ~/.config/opencode/git-hooks
+# Per repo (tracked-tree opt-in that does not rely on .git/hooks):
+#   git config core.hooksPath ~/.config/opencode/git-hooks
+# Override a single push (scripts, GUI, CI):
+#   GIT_ALLOW_PUSH=1 git push ...
+
+[ "${GIT_ALLOW_PUSH:-}" = "1" ] && exit 0
+
+# A human at a terminal has a controlling tty; the agent/cycle does not.
+if [ -t 0 ] || [ -t 2 ]; then
+  exit 0
+fi
+
+echo "pre-push: BLOCKED — non-interactive push (agent/cycle context)." >&2
+echo "  The cycle must not push (AGENTS.md 'Git', the user pushes manually)." >&2
+echo "  Push from your shell, or override with: GIT_ALLOW_PUSH=1 git push ..." >&2
+exit 1
