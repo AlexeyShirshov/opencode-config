@@ -47,6 +47,7 @@ permission:
     "/snap/**": allow
     "/sys/**": allow
     "/home/alex/sources/**": allow
+    "/home/alex/tests/**": allow
     "/mnt/c/Users/user/**": allow
     "/home/alex/.local/share/opencode/log/**": allow
     "/home/alex/.local/share/opencode/tool-output/**": allow

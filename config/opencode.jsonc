@@ -53,6 +53,10 @@
       "/snap/**": "allow",
       "/sys/**": "allow",
       "/home/alex/sources/**": "allow",
+      // Coverage/benchmark-отчёты рядом с репо (`dotnet test` кладёт их в
+      // `/home/alex/tests/coverage/report`): subagent `coder` ушёл в ask на этом
+      // пути и подвесил лейн R175. Секретов нет.
+      "/home/alex/tests/**": "allow",
       "/mnt/c/Users/user/**": "allow",
       // Собственные логи/tool-output opencode: агенты читают их для провенанса
       // сессии (напр. scout в nextorm грепал opencode.log). Без allow — `ask` и
