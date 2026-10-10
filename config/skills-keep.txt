@@ -44,10 +44,13 @@ dotnet-minimal-apis
 dotnet-architecture-patterns
 validation-patterns
 dotnet-http-client
+api-design
+dotnet-api-surface-validation
 
 # security / performance / observability
 dotnet-security-owasp
 dotnet-performance-patterns
+dotnet-benchmarkdotnet
 dotnet-observability
 dotnet-modernize
 
