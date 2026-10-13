@@ -3,23 +3,24 @@ name: check
 description: "CHECK Triage verdict. Reads the aggregated gather report and may open the cycle's evidence artifacts directly (scoped read) to reconcile the contract rows; returns pass/fail, ranking and loop-back. Use for the Check-phase triage."
 mode: subagent
 # tier: medium
-steps: 12
+steps: 40
 permission:
   "*": deny
   read:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
+    "StrykerOutput/**": allow
   glob:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
+    "StrykerOutput/**": allow
   list:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
-  # external_directory: add paths outside the project worktree if the task needs them, e.g.
-  #   "/tmp/**": allow
+    "StrykerOutput/**": allow
 ---
 
 # check — CHECK Triage

@@ -3,29 +3,33 @@ name: check
 description: "CHECK Triage-вердикт на medium-тире. Читает сводный отчёт gather-потоков и может напрямую открывать evidence-артефакты цикла (scoped read) для сверки строк контракта; возвращает pass/fail, ранжирование и loop-back. Use for the Check-phase triage."
 mode: subagent
 # tier: medium
-steps: 12
+steps: 40
 permission:
   # Default-deny: любой MCP-инструмент любого сервера (`<server>_<tool>`), а также
   # grep/bash/webfetch/websearch/edit/write/task/roslyn. Бриф поставляет оркестратор;
   # `read`/`glob`/`list` открыты ТОЛЬКО на evidence-артефакты цикла — чтобы сверять
   # row-level факты контракта по файлам, а не дособирать их сверх бюджета досбора.
   # Портативный набор корней: `docs/specs/status/**` (дефолтный каталог статуса базового
-  # скилла pdca-dotnet), `artifacts/**`, `TestResults/**`. Проектные дополнительные корни
-  # (например scratch вне worktree) — через `external_directory` на стороне проекта.
+  # скилла pdca-dotnet), `artifacts/**`, `TestResults/**`, `StrykerOutput/**` (сырое
+  # мутационное evidence). Проектные дополнительные корни (например scratch вне worktree) —
+  # через `external_directory` на стороне проекта.
   # Код/диффы по-прежнему недоступны. Перечислять MCP-серверы не нужно.
   "*": deny
   read:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
+    "StrykerOutput/**": allow
   glob:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
+    "StrykerOutput/**": allow
   list:
     "docs/specs/status/**": allow
     "artifacts/**": allow
     "TestResults/**": allow
+    "StrykerOutput/**": allow
 ---
 
 # check (medium tier) — CHECK Triage
@@ -35,7 +39,7 @@ permission:
 **только сводный отчёт** gather-потоков (аудит кода + линзы тестов/доков/перфа). Код и
 диффы ты **не читаешь**: `grep`/`bash` по коду, любой MCP и `task` у тебя отключены.
 Читать напрямую (`read`/`glob`/`list`) можно **только evidence-артефакты цикла** —
-`docs/specs/status/**`, `artifacts/**`, `TestResults/**` (+ проектные корни из
+`docs/specs/status/**`, `artifacts/**`, `TestResults/**`, `StrykerOutput/**` (+ проектные корни из
 `external_directory`) — чтобы сверить обязательные строки контракта с фактическими файлами,
 вместо досбора сверх закреплённого бюджета.
 
@@ -103,7 +107,7 @@ permission:
 ## Границы
 
 - Не читаешь код и не правишь файлы; из чтения доступны только evidence-артефакты цикла
-  (`docs/specs/status/**`, `artifacts/**`, `TestResults/**` + проектные корни из
+  (`docs/specs/status/**`, `artifacts/**`, `TestResults/**`, `StrykerOutput/**` + проектные корни из
   `external_directory`). Субагентов не спавнишь (отключено).
 - Не выдумывай findings вне отчёта; сомневаешься в кандидате — скажи, каких данных
   не хватает, и оркестратор дозакажет сбор.

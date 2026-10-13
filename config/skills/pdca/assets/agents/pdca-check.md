@@ -3,7 +3,7 @@ name: pdca-check
 description: "CHECK independent verdict on the medium tier for the domain-neutral `pdca` cycle. Reads the aggregated brief and may open the cycle's evidence artifacts directly (scoped read) to reconcile the contract rows; returns a verdict, a per-criterion matrix (met/unmet/unverified), findings with severity and correction routing. Use for the Check phase."
 mode: subagent
 # tier: medium
-steps: 12
+steps: 40
 permission:
   # Default-deny: any MCP tool of any server (`<server>_<tool>`), plus
   # grep/lsp/webfetch/websearch/edit/write/task/bash. The check judges the supplied brief,
