@@ -52,6 +52,9 @@
       "/opt/**": "allow",
       "/snap/**": "allow",
       "/sys/**": "allow",
+      // `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+      // (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+      "/dev/**": "allow",
       "/home/alex/sources/**": "allow",
       // Coverage/benchmark-отчёты рядом с репо (`dotnet test` кладёт их в
       // `/home/alex/tests/coverage/report`): subagent `coder` ушёл в ask на этом

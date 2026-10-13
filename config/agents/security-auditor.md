@@ -42,6 +42,9 @@ permission:
     "/opt/**": allow
     "/snap/**": allow
     "/sys/**": allow
+    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+    "/dev/**": allow
     "/home/alex/sources/**": allow
     "/home/alex/tests/**": allow
     "/mnt/c/Users/user/**": allow

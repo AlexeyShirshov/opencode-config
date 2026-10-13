@@ -3,7 +3,7 @@ name: coder
 description: "Исполнитель на дешёвом (cheap) тире. Пишет и правит код, запускает команды. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
 mode: subagent
 # tier: cheap
-steps: 60
+steps: 90
 tools:
   "deepwiki_*": false
   "gitmcp_*": false
@@ -28,6 +28,9 @@ permission:
     "/opt/**": allow
     "/snap/**": allow
     "/sys/**": allow
+    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+    "/dev/**": allow
     "/home/alex/sources/**": allow
     "/home/alex/tests/**": allow
     "/mnt/c/Users/user/**": allow

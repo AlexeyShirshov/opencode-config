@@ -3,7 +3,7 @@ name: pdca-executor
 description: "Executor on the cheap tier for the domain-neutral `pdca` cycle. Carries out only the plan's actions (edits files, runs commands) and is the single writer of the cycle status file. Use for the Do phase: carrying out the planned work, applying fixes, and recording events."
 mode: subagent
 # tier: cheap
-steps: 60
+steps: 90
 permission:
   edit: allow
   bash: allow
@@ -24,6 +24,9 @@ permission:
     "/opt/**": allow
     "/snap/**": allow
     "/sys/**": allow
+    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+    "/dev/**": allow
     "/home/alex/sources/**": allow
     "/home/alex/tests/**": allow
     "/mnt/c/Users/user/**": allow
