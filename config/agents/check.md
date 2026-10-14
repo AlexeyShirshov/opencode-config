@@ -1,35 +1,46 @@
 ---
-name: check
 description: "CHECK Triage-вердикт на medium-тире. Читает сводный отчёт gather-потоков и может напрямую открывать evidence-артефакты цикла (scoped read) для сверки строк контракта; возвращает pass/fail, ранжирование и loop-back. Use for the Check-phase triage."
 mode: subagent
 # tier: medium
 steps: 40
-permission:
+permissions:
   # Default-deny: любой MCP-инструмент любого сервера (`<server>_<tool>`), а также
-  # grep/bash/webfetch/websearch/edit/write/task/roslyn. Бриф поставляет оркестратор;
-  # `read`/`glob`/`list` открыты ТОЛЬКО на evidence-артефакты цикла — чтобы сверять
+  # grep/shell/webfetch/websearch/edit/subagent/roslyn. Бриф поставляет оркестратор;
+  # `read`/`glob` открыты ТОЛЬКО на evidence-артефакты цикла — чтобы сверять
   # row-level факты контракта по файлам, а не дособирать их сверх бюджета досбора.
+  # (V2: отдельного действия `list` нет — `read` отдаёт и листинг каталога.)
   # Портативный набор корней: `docs/specs/status/**` (дефолтный каталог статуса базового
   # скилла pdca-dotnet), `artifacts/**`, `TestResults/**`, `StrykerOutput/**` (сырое
   # мутационное evidence). Проектные дополнительные корни (например scratch вне worktree) —
   # через `external_directory` на стороне проекта.
   # Код/диффы по-прежнему недоступны. Перечислять MCP-серверы не нужно.
-  "*": deny
-  read:
-    "docs/specs/status/**": allow
-    "artifacts/**": allow
-    "TestResults/**": allow
-    "StrykerOutput/**": allow
-  glob:
-    "docs/specs/status/**": allow
-    "artifacts/**": allow
-    "TestResults/**": allow
-    "StrykerOutput/**": allow
-  list:
-    "docs/specs/status/**": allow
-    "artifacts/**": allow
-    "TestResults/**": allow
-    "StrykerOutput/**": allow
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "docs/specs/status/**"
+    effect: allow
+  - action: read
+    resource: "artifacts/**"
+    effect: allow
+  - action: read
+    resource: "TestResults/**"
+    effect: allow
+  - action: read
+    resource: "StrykerOutput/**"
+    effect: allow
+  - action: glob
+    resource: "docs/specs/status/**"
+    effect: allow
+  - action: glob
+    resource: "artifacts/**"
+    effect: allow
+  - action: glob
+    resource: "TestResults/**"
+    effect: allow
+  - action: glob
+    resource: "StrykerOutput/**"
+    effect: allow
 ---
 
 # check (medium tier) — CHECK Triage

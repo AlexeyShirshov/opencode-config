@@ -11,6 +11,16 @@
 - `rg`/`grep` are only for non-symbol text: string literals, comments, docs/markdown, configs, non-`.cs` files, or as a last resort when `roslyn` cannot load a solution / there is no `.cs`. If you fall back, say so and never present it as a resolved symbol.
 - Discover with `roslyn structure`/`types`/`members`, answer with `refs`/`callers`/`implementations`, edit with `roslyn rename`; never rename via `sed` or infer a symbol from text search.
 - `roslyn` is daemon-backed (first call loads the solution, later calls are ms); "rg is faster" is never a valid reason.
+- **In V2 there is no top-level `roslyn` tool — call it inside `execute`:** `const r = await tools.roslyn({ action: "refs", target: "Ns.Type.Member" }); return r`. "I don't see a `roslyn` tool" is never a reason to fall back to `rg`/`grep`. If it is missing from the Code Mode catalog, run `search({ query: "roslyn" })` first — the catalog is partial while MCP servers reconnect, but the tool itself is always registered.
+- Batch several `tools.roslyn(...)` calls in ONE `execute` (`Promise.all([...])`): one round-trip instead of many, the daemon keeps the solution loaded.
+- Pass `solution: "/abs/path/to/X.slnx"` when the session directory has no `.sln`/`.slnx` (e.g. you are in a docs/config repo and the solution lives elsewhere).
+
+## Issues: search for duplicates before filing
+
+- Before creating **any** issue (`gh issue create` on any repo, and the built-in `report` skill), first search for existing tickets — that search is step 0 of the workflow and the `report` skill does **not** contain it, so add it yourself.
+- Search several keyword variants over `--state open` and closed: the symptom, the component/area name, and the likely underlying cause (e.g. for a TUI audio bug: `attention sound`, `alsa`, `stderr corrupt tui`). Also check `gh search issues --author @me` and the "related issues" list of the closest match.
+- If a matching issue exists, **do not open a new one** — post the new evidence (repro, versions, environment, workarounds) as a comment on the existing ticket and link the related ones. Open a new issue only when nothing covers it, and then link the neighbours explicitly.
+- Applies equally to PRs linked from issue text: cite the tracking issue, not a duplicate.
 
 ## Skills: spine and triggers
 

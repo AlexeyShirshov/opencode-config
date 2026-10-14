@@ -1,48 +1,99 @@
 ---
-name: coder
 description: "Исполнитель на дешёвом (cheap) тире. Пишет и правит код, запускает команды. Use for the Do-phase: applying a plan, generating code/tests, bug fixes, refactoring — anything that changes files or runs shells."
 mode: subagent
 # tier: cheap
 steps: 90
-tools:
-  "deepwiki_*": false
-  "gitmcp_*": false
-  "memory_*": false
-permission:
-  edit: allow
-  bash: allow
-  # `doom_loop` (дефолт `ask`) в субагенте некому подтвердить: ask «осиротеет» и
-  # повиснет автономный цикл (наблюдалось: coder в nextorm повторял `dotnet test`).
-  # Праймари сохраняет `ask` и может ответить; здесь повтор разрешён.
-  doom_loop: allow
-  external_directory:
-    "/mnt/c/Users/user/source/**": allow
-    "/mnt/c/Users/user/Pictures/Screenshots/**": allow
-    "/tmp/**": allow
-    # Глобальный конфиг opencode (AGENTS.md, skills/pdca-*, agents, profiles) —
-    # субагенты читают его при сборе фактов; иначе read уходит в ask и вешает цикл.
-    "~/.config/opencode/**": allow
-    "/etc/**": allow
-    "/proc/**": allow
-    "/usr/**": allow
-    "/opt/**": allow
-    "/snap/**": allow
-    "/sys/**": allow
-    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
-    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
-    "/dev/**": allow
-    "/home/alex/sources/**": allow
-    "/home/alex/tests/**": allow
-    "/mnt/c/Users/user/**": allow
-    "/home/alex/.local/share/opencode/log/**": allow
-    "/home/alex/.local/share/opencode/tool-output/**": allow
-    "/home/alex/.local/share/opencode/zen-cache-proxy.log": allow
-    "/home/alex/.local/state/opencode/**": allow
-    "/run/user/1000/**": allow
-    "/home/alex/.vscode-server/**": allow
-    "/mnt/c/Users/user/AppData/Roaming/Code/User/**": allow
-    "~/.config/opencode/secrets.env": deny
-    "/mnt/c/Users/user/.ssh/**": deny
+permissions:
+  # MCP-инструменты адресуются как `<server>_<tool>`; `*` в шаблоне покрывает все
+  # тулы сервера (V1 `tools: {"deepwiki_*": false}`).
+  - action: deepwiki_*
+    resource: "*"
+    effect: deny
+  - action: gitmcp_*
+    resource: "*"
+    effect: deny
+  - action: memory_*
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/source/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/Pictures/Screenshots/**"
+    effect: allow
+  - action: external_directory
+    resource: "/tmp/**"
+    effect: allow
+  # Глобальный конфиг opencode (AGENTS.md, skills/pdca-*, agents, profiles) —
+  # субагенты читают его при сборе фактов; иначе read уходит в ask и вешает цикл.
+  - action: external_directory
+    resource: "~/.config/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/etc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/proc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/usr/**"
+    effect: allow
+  - action: external_directory
+    resource: "/opt/**"
+    effect: allow
+  - action: external_directory
+    resource: "/snap/**"
+    effect: allow
+  - action: external_directory
+    resource: "/sys/**"
+    effect: allow
+  # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+  # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+  - action: external_directory
+    resource: "/dev/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/sources/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/tests/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/log/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/tool-output/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/zen-cache-proxy.log"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/state/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/run/user/1000/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.vscode-server/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/AppData/Roaming/Code/User/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/secrets.env"
+    effect: deny
+  - action: external_directory
+    resource: "/mnt/c/Users/user/.ssh/**"
+    effect: deny
 ---
 
 Ты — исполнитель («руки») основного агента. Получаешь конкретную задачу и выполняешь
@@ -52,6 +103,10 @@ permission:
 вопрос заменит STOP с записанным итогом, §Autonomous mode), а не догадку. Делай минимально
 достаточные правки.
 
+- **Символы C# — только `roslyn`** (никогда `rg`/`grep`/`sed`): в V2 вызов идёт **внутри
+  `execute`** — `const r = await tools.roslyn({ action: "members", target: "Ns.Type" }); return r`;
+  несколько запросов — одним `execute` (`Promise.all`); нет в каталоге — сначала
+  `search({ query: "roslyn" })`; чужое решение — `solution: "/abs/path.slnx"`.
 - **Никакого TDD-порядка.** В фазе DO PDCA-цикла код, тесты и доки — отдельные
   параллельные потоки по плану: делай только выданный тебе поток и не жди остальных.
   Единственное требование red→green — **регрессионный тест при фиксе бага**: покажи, что

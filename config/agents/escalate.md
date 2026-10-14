@@ -1,71 +1,161 @@
 ---
-name: escalate
 description: "WHEN the orchestrator wants a second opinion beyond the routine cheap subagents: ambiguous requirements, the same defect back after one fix, or different defects over the third failed CHECK of the same plan revision, non-obvious root cause, architecture/public-API/concurrency/data-migration tradeoffs, or acceptance of a risky diff. Returns a decision, not code. Triggers on: escalate, second opinion, hard decision, stuck, root cause, tradeoff, acceptance, ambiguous requirement, why does this fail."
 mode: subagent
 # tier: strong
-permission:
+permissions:
   # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`)
-  # и все прямые тулзы (grep/glob/list/lsp/webfetch/websearch/edit/write).
+  # и все прямые тулзы (grep/glob/shell/webfetch/websearch/edit).
   # Перечислять MCP-серверы (context7_*, mslearn_*, …) не нужно. Ниже — разрешения.
-  "*": deny
-  read:
-    "*": allow
-    "*.env": deny
-    "*.env.*": deny
-    "*.env.example": allow
-  task:
-    "*": deny
-    scout: allow
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: read
+    resource: "*.env.*"
+    effect: deny
+  - action: read
+    resource: "*.env.example"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: scout
+    effect: allow
   # read-only inspection only; no build/test (run by coder/check), no repo-wide search
-  bash:
-    "*": deny
-    "cd *": allow
-    "ls*": allow
-    "cat *": allow
-    "sed -n *": allow
-    "head *": allow
-    "tail *": allow
-    "wc *": allow
-    "stat *": allow
-    "file *": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git blame*": allow
-    "git ls-files*": allow
-  external_directory:
-    "/mnt/c/Users/user/source/**": allow
-    "/mnt/c/Users/user/Pictures/Screenshots/**": allow
-    "/tmp/**": allow
-    "/home/alex/sources/nextorm-worktrees/**": allow
-    "~/.config/opencode/**": allow
-    "/etc/**": allow
-    "/proc/**": allow
-    "/usr/**": allow
-    "/opt/**": allow
-    "/snap/**": allow
-    "/sys/**": allow
-    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
-    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
-    "/dev/**": allow
-    "/home/alex/sources/**": allow
-    "/home/alex/tests/**": allow
-    "/mnt/c/Users/user/**": allow
-    "/home/alex/.local/share/opencode/log/**": allow
-    "/home/alex/.local/share/opencode/tool-output/**": allow
-    "/home/alex/.local/share/opencode/zen-cache-proxy.log": allow
-    "/home/alex/.local/state/opencode/**": allow
-    "/run/user/1000/**": allow
-    "/home/alex/.vscode-server/**": allow
-    "/mnt/c/Users/user/AppData/Roaming/Code/User/**": allow
-    "~/.config/opencode/secrets.env": deny
-    "/mnt/c/Users/user/.ssh/**": deny
-  skill:
-    "*": deny
-  question: allow
-  todowrite: allow
-  doom_loop: ask
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cd *"
+    effect: allow
+  - action: shell
+    resource: "ls*"
+    effect: allow
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "sed -n *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "stat *"
+    effect: allow
+  - action: shell
+    resource: "file *"
+    effect: allow
+  - action: shell
+    resource: "git status*"
+    effect: allow
+  - action: shell
+    resource: "git log*"
+    effect: allow
+  - action: shell
+    resource: "git diff*"
+    effect: allow
+  - action: shell
+    resource: "git show*"
+    effect: allow
+  - action: shell
+    resource: "git blame*"
+    effect: allow
+  - action: shell
+    resource: "git ls-files*"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/source/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/Pictures/Screenshots/**"
+    effect: allow
+  - action: external_directory
+    resource: "/tmp/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/sources/nextorm-worktrees/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/etc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/proc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/usr/**"
+    effect: allow
+  - action: external_directory
+    resource: "/opt/**"
+    effect: allow
+  - action: external_directory
+    resource: "/snap/**"
+    effect: allow
+  - action: external_directory
+    resource: "/sys/**"
+    effect: allow
+  # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+  # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+  - action: external_directory
+    resource: "/dev/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/sources/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/tests/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/log/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/tool-output/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/zen-cache-proxy.log"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/state/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/run/user/1000/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.vscode-server/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/AppData/Roaming/Code/User/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/secrets.env"
+    effect: deny
+  - action: external_directory
+    resource: "/mnt/c/Users/user/.ssh/**"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: deny
+  - action: question
+    resource: "*"
+    effect: allow
 ---
 
 # escalate (strong tier)

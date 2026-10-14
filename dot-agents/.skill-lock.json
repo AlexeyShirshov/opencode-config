@@ -1,16 +1,6 @@
 {
   "version": 3,
   "skills": {
-    "mcp-builder": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/anthropics/skills.git",
-      "skillPath": "skills/mcp-builder/SKILL.md",
-      "skillFolderHash": "b866bcfb57b780c10b587c7b543e871a91661ce0",
-      "pluginName": "example-skills",
-      "installedAt": "2026-09-15T18:14:02.857Z",
-      "updatedAt": "2026-09-15T18:14:02.857Z"
-    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",
@@ -29,15 +19,6 @@
       "installedAt": "2026-09-16T13:50:48.900Z",
       "updatedAt": "2026-09-16T13:50:48.900Z"
     },
-    "dotnet-trace-collect": {
-      "source": "dotnet/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/dotnet/skills.git",
-      "skillPath": "plugins/dotnet-diag/skills/dotnet-trace-collect/SKILL.md",
-      "skillFolderHash": "b9e409a930132aa09de5f9daa79a147f0231d12e",
-      "installedAt": "2026-09-16T13:50:59.125Z",
-      "updatedAt": "2026-09-16T13:50:59.125Z"
-    },
     "microbenchmarking": {
       "source": "dotnet/skills",
       "sourceType": "github",
@@ -47,24 +28,6 @@
       "installedAt": "2026-09-16T13:51:03.432Z",
       "updatedAt": "2026-09-16T13:51:03.432Z"
     },
-    "optimizing-ef-core-queries": {
-      "source": "dotnet/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/dotnet/skills.git",
-      "skillPath": "plugins/dotnet-data/skills/optimizing-ef-core-queries/SKILL.md",
-      "skillFolderHash": "383e204cd6d3fd44730dc1ef86c014f930270b89",
-      "installedAt": "2026-09-16T13:51:07.937Z",
-      "updatedAt": "2026-09-16T13:51:07.937Z"
-    },
-    "eval-performance": {
-      "source": "dotnet/skills",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/dotnet/skills.git",
-      "skillPath": "plugins/dotnet-msbuild/skills/eval-performance/SKILL.md",
-      "skillFolderHash": "0088510afa16bafa2aa822fbb2b5ced928703a4c",
-      "installedAt": "2026-09-16T13:51:12.507Z",
-      "updatedAt": "2026-09-16T13:51:12.507Z"
-    },
     "archify": {
       "source": "tt-a1i/archify",
       "sourceType": "github",
@@ -73,6 +36,15 @@
       "skillFolderHash": "ffb8258f653b66f5afb8340bf8eb61c7309830ff",
       "installedAt": "2026-09-19T18:56:18.211Z",
       "updatedAt": "2026-09-19T18:56:54.484Z"
+    },
+    "copy-editing": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/coreyhaines31/marketingskills.git",
+      "skillPath": "skills/copy-editing/SKILL.md",
+      "skillFolderHash": "ceed583c7a2aea7b0c517dae816ccf4b560259e9",
+      "installedAt": "2026-10-03T13:43:14.321Z",
+      "updatedAt": "2026-10-03T13:43:14.321Z"
     }
   },
   "dismissed": {

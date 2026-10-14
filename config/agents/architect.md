@@ -2,26 +2,37 @@
 description: "WHEN making decisions rather than gathering facts: requirements interviews, design, decomposition, specs, implementation plans,   tradeoffs, architecture/public-API/concurrency calls — the medium-tier primary for superpowers work and ad-hoc decisions. Triggers on: brainstorm, design, plan, spec, architecture, tradeoff, requirements, побрейншторми, дизайн, план, требования."
 mode: primary
 # tier: medium
-permission:
+permissions:
   # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`),
-  # а также read/grep/glob/list/bash/edit/lsp/webfetch/websearch. Перечислять
+  # а также read/grep/glob/shell/edit/webfetch/websearch. Перечислять
   # серверы (context7_*, mslearn_*, deepwiki_*, gitmcp_*, …) не нужно — новые
   # MCP автоматически попадают под `*`. Ниже — только явные разрешения.
-  "*": deny
+  - action: "*"
+    resource: "*"
+    effect: deny
   # Allowlist: диспатчить можно только роли разведки/исполнения; всё прочее
   # (в т.ч. `general`/`explore` и `dotnet-*`-линзы) запрещено и НЕ попадает в
-  # контекст (permission.task фильтрует рекламируемый список `task`).
-  task:
-    "*": deny
-    scout: allow
-    coder: allow
-  question: allow
+  # контекст (permission.subagent фильтрует рекламируемый список `subagent`).
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: scout
+    effect: allow
+  - action: subagent
+    resource: coder
+    effect: allow
+  - action: question
+    resource: "*"
+    effect: allow
   # Из 38 скиллов каталога архитектору нужен только `brainstorming` — остальные
   # запрещены и не занимают контекст.
-  skill:
-    "*": deny
-    brainstorming: allow
-  todowrite: allow
+  - action: skill
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: brainstorming
+    effect: allow
 ---
 
 # architect (medium tier) — решения на средней модели

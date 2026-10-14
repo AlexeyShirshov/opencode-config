@@ -131,6 +131,9 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 
+# editor for opencode /editor and /export (VS Code on Windows via WSL)
+export EDITOR="code --wait"
+
 # ===== Ported from PowerShell profile =====
 
 # user-local bin (oh-my-posh, fzf, ...)
@@ -164,6 +167,12 @@ fi
 
 # DeepSeek API key for opencode profile (kept out of git)
 [ -f "$HOME/.config/opencode/secrets.env" ] && . "$HOME/.config/opencode/secrets.env"
+
+# Cap turbo/tsgo parallelism so `bun turbo typecheck` (incl. the git pre-push
+# hook) does not oversubscribe CPU/disk and hang WSL.
+# turbo honours TURBO_CONCURRENCY; tsgo (typescript-go) is a Go binary -> GOMAXPROCS.
+export TURBO_CONCURRENCY="${TURBO_CONCURRENCY:-2}"
+export GOMAXPROCS="${GOMAXPROCS:-4}"
 
 # Attach ble.sh (must be the last line of .bashrc)
 [[ ! ${BLE_VERSION-} ]] || ble-attach

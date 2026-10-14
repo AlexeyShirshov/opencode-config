@@ -1,7 +1,11 @@
 {
   "$schema": "https://opencode.ai/config.json",
   // Вложенные субагенты (primary → pdca-orchestrator → роли). Дефолт 1 блокирует `pdca-orchestrator`. Нужен перезапуск.
-  "subagent_depth": 3,
+  // V2: глубина живёт в `experimental.subagent_depth` — top-level `subagent_depth` V2 отбрасывает
+  // с WARN (`omitted unsupported legacy setting`), и субагент теряет право на `Task` (глубина = 1).
+  "experimental": {
+    "subagent_depth": 3
+  },
   "model": "opencode-go/kimi-k3",
   // ── Привязка ролей: одномодельный хост. У oc-gp нет провайдера medium/strong-тира,
   // поэтому все роли идут на единственную модель профиля (её id — в блоке ниже и в
@@ -19,6 +23,7 @@
     "security-auditor": { "model": "opencode-go/kimi-k3" },
     "coder": { "model": "opencode-go/kimi-k3" },
     "scout": { "model": "opencode-go/kimi-k3" },
+    "btw": { "model": "opencode-go/kimi-k3" },
     "pdca-orchestrator": { "model": "opencode-go/kimi-k3" }
   },
   "skills": {

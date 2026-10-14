@@ -2,26 +2,58 @@
 description: PDCA orchestrator (cheap tier) for one `pdca-collection` group, a single autonomous cycle, **or a collection task's own PLAN (COLLECTION TASK PLAN)** — first picks the cycle variant for the task (`pdca-dotnet` for .NET/C#, `pdca-coder` for other code, `pdca` otherwise; default `pdca`), then drives a full PLAN→DO→CHECK→ACT child cycle via `Task`; for a collection task's own PLAN it runs only that task's PLAN and yields at the PLAN→DO boundary with a `plan_handoff` to the collection parent; invoked via `Task` by a cheap primary. Do not drive interactive (`go`-gated) cycles.
 mode: subagent
 # tier: cheap
-permission:
-  task:
-    "*": deny
-    planner: allow
-    coder: allow
-    check: allow
-    escalate: allow
-    scout: allow
-    security-auditor: allow
-    docfx-specialist: allow
-    "dotnet-*": allow
-    pdca-planner: allow
-    pdca-executor: allow
-    pdca-check: allow
-    pdca-escalate: allow
-  edit: deny
-  bash: deny
-  skill:
-    "*": allow
-    brainstorming: deny
+permissions:
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: planner
+    effect: allow
+  - action: subagent
+    resource: coder
+    effect: allow
+  - action: subagent
+    resource: check
+    effect: allow
+  - action: subagent
+    resource: escalate
+    effect: allow
+  - action: subagent
+    resource: scout
+    effect: allow
+  - action: subagent
+    resource: security-auditor
+    effect: allow
+  - action: subagent
+    resource: docfx-specialist
+    effect: allow
+  - action: subagent
+    resource: "dotnet-*"
+    effect: allow
+  - action: subagent
+    resource: pdca-planner
+    effect: allow
+  - action: subagent
+    resource: pdca-executor
+    effect: allow
+  - action: subagent
+    resource: pdca-check
+    effect: allow
+  - action: subagent
+    resource: pdca-escalate
+    effect: allow
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: "*"
+    effect: allow
+  - action: skill
+    resource: brainstorming
+    effect: deny
 ---
 
 Ты ведёшь дочерние PDCA-циклы. Возможны три входа.

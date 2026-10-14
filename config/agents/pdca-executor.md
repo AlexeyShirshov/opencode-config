@@ -1,44 +1,88 @@
 ---
-name: pdca-executor
 description: "Executor on the cheap tier for the domain-neutral `pdca` cycle. Carries out only the plan's actions (edits files, runs commands) and is the single writer of the cycle status file. Use for the Do phase: carrying out the planned work, applying fixes, and recording events."
 mode: subagent
 # tier: cheap
 steps: 90
-permission:
-  edit: allow
-  bash: allow
-  # `doom_loop` (дефолт `ask`) в субагенте некому подтвердить: ask «осиротеет» и
-  # повиснет автономный цикл (наблюдалось: coder в nextorm повторял `dotnet test`).
-  # Праймари сохраняет `ask` и может ответить; здесь повтор разрешён.
-  doom_loop: allow
-  external_directory:
-    "/mnt/c/Users/user/source/**": allow
-    "/mnt/c/Users/user/Pictures/Screenshots/**": allow
-    "/tmp/**": allow
-    # Глобальный конфиг opencode (AGENTS.md, skills/pdca-*, agents, profiles) —
-    # субагенты читают его при сборе фактов; иначе read уходит в ask и вешает цикл.
-    "~/.config/opencode/**": allow
-    "/etc/**": allow
-    "/proc/**": allow
-    "/usr/**": allow
-    "/opt/**": allow
-    "/snap/**": allow
-    "/sys/**": allow
-    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
-    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
-    "/dev/**": allow
-    "/home/alex/sources/**": allow
-    "/home/alex/tests/**": allow
-    "/mnt/c/Users/user/**": allow
-    "/home/alex/.local/share/opencode/log/**": allow
-    "/home/alex/.local/share/opencode/tool-output/**": allow
-    "/home/alex/.local/share/opencode/zen-cache-proxy.log": allow
-    "/home/alex/.local/state/opencode/**": allow
-    "/run/user/1000/**": allow
-    "/home/alex/.vscode-server/**": allow
-    "/mnt/c/Users/user/AppData/Roaming/Code/User/**": allow
-    "~/.config/opencode/secrets.env": deny
-    "/mnt/c/Users/user/.ssh/**": deny
+permissions:
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/source/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/Pictures/Screenshots/**"
+    effect: allow
+  - action: external_directory
+    resource: "/tmp/**"
+    effect: allow
+  # Глобальный конфиг opencode (AGENTS.md, skills/pdca-*, agents, profiles) —
+  # субагенты читают его при сборе фактов; иначе read уходит в ask и вешает цикл.
+  - action: external_directory
+    resource: "~/.config/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/etc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/proc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/usr/**"
+    effect: allow
+  - action: external_directory
+    resource: "/opt/**"
+    effect: allow
+  - action: external_directory
+    resource: "/snap/**"
+    effect: allow
+  - action: external_directory
+    resource: "/sys/**"
+    effect: allow
+  # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+  # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+  - action: external_directory
+    resource: "/dev/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/sources/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/tests/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/log/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/tool-output/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/zen-cache-proxy.log"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/state/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/run/user/1000/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.vscode-server/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/AppData/Roaming/Code/User/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/secrets.env"
+    effect: deny
+  - action: external_directory
+    resource: "/mnt/c/Users/user/.ssh/**"
+    effect: deny
 ---
 
 # pdca-executor (cheap tier) — DO hands

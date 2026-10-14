@@ -118,7 +118,7 @@ Is this a diagnostic scenario?
 - **Does NOT handle Blazor or Razor components** -- Blazor Server/WASM rendering, component lifecycle, and Razor syntax are the domain of `dotnet-blazor-specialist`
 - **Does NOT handle security auditing** -- OWASP compliance, vulnerability scanning, and cryptographic assessment belong to `dotnet-security-reviewer`
 - **Does NOT handle async performance internals** -- ValueTask correctness, ConfigureAwait decisions, IO.Pipelines, and ThreadPool tuning are the domain of `dotnet-async-performance-specialist`
-- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only) only; produces findings and recommendations
+- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only), plus `roslyn` for C# symbols only (never symbol-hunting with `grep`/`rg`); in V2 `roslyn` is called inside `execute` — `await tools.roslyn({ action: "refs", target: "Ns.Type.Member" })`; produces findings and recommendations
 
 ## Trigger Lexicon
 

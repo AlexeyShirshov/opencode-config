@@ -95,7 +95,7 @@ Is the question about infrastructure-as-code?
 - **Does NOT handle container image optimization** -- Multi-stage build tuning, base image selection, and layer caching are covered in [skill:dotnet-containers]
 - **Does NOT handle security auditing** -- Secret exposure, OWASP compliance, and authentication configuration belong to `dotnet-security-reviewer`
 - **Does NOT handle performance profiling** -- Runtime performance analysis and benchmark interpretation belong to `dotnet-performance-analyst`
-- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only) only; produces findings and recommendations
+- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only), plus `roslyn` for C# symbols only (never symbol-hunting with `grep`/`rg`); in V2 `roslyn` is called inside `execute` — `await tools.roslyn({ action: "refs", target: "Ns.Type.Member" })`; produces findings and recommendations
 
 ## Trigger Lexicon
 

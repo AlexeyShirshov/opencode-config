@@ -1,28 +1,70 @@
 ---
-name: scout
 description: "WHEN facts must be gathered from the codebase, docs, the web, or wikis — code search, reading files for discovery, official docs (context7), Microsoft/Azure docs (mslearn), repo wikis (deepwiki/gitmcp) — and a distilled evidence report is wanted. Read-only: no edits, no recommendations. Use for every research request from an expensive primary (`architect`) and for pdca gather streams; triggers on: find, where is, search, look up, check the docs, research, gather, посмотри, найди, собери факты."
 mode: subagent
 # tier: cheap
 steps: 40
-permission:
-  edit: deny
-  write: deny
-  task: deny
-  todowrite: deny
-  # `doom_loop` (дефолт `ask`) в субагенте некому подтвердить — ask повиснет.
-  doom_loop: allow
-  bash:
-    "*": deny
-    "ls*": allow
-    "git log*": allow
-    "git show*": allow
-    "git diff*": allow
-    "git status*": allow
-    "git branch*": allow
-    "git rev-parse*": allow
-    "git ls-files*": allow
-    "git grep*": allow
-    "wc*": allow
+permissions:
+  # `write` в V2 — часть действия `edit`; отдельного действия нет.
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "ls*"
+    effect: allow
+  - action: shell
+    resource: "git log*"
+    effect: allow
+  - action: shell
+    resource: "git show*"
+    effect: allow
+  - action: shell
+    resource: "git diff*"
+    effect: allow
+  - action: shell
+    resource: "git status*"
+    effect: allow
+  - action: shell
+    resource: "git branch*"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse*"
+    effect: allow
+  - action: shell
+    resource: "git ls-files*"
+    effect: allow
+  - action: shell
+    resource: "git grep*"
+    effect: allow
+  - action: shell
+    resource: "git merge-base*"
+    effect: allow
+  - action: shell
+    resource: "git worktree list*"
+    effect: allow
+  - action: shell
+    resource: "git check-ignore*"
+    effect: allow
+  - action: shell
+    resource: "git cat-file*"
+    effect: allow
+  - action: shell
+    resource: "rg*"
+    effect: allow
+  - action: shell
+    resource: "wc*"
+    effect: allow
+  - action: shell
+    resource: "gh issue view*"
+    effect: allow
+  - action: shell
+    resource: "gh pr view*"
+    effect: allow
 ---
 
 # scout (cheap tier) — дешёвый сборщик фактов
@@ -34,8 +76,9 @@ permission:
 ## Жёсткие правила
 
 - **Read-only.** Никаких правок (`edit`/`write` запрещены), субагентов нет (`task` запрещён),
-  из команд разрешены только read-only `git log/show/diff/status/branch/rev-parse/ls-files/grep`
-  и `ls`/`wc`. Нужна правка или решение — так и напиши: `decision/patch for the caller`.
+  из команд разрешены только read-only: `git log/show/diff/status/branch/rev-parse/ls-files/grep/
+  merge-base/check-ignore/cat-file`, `git worktree list`, `rg`, `gh issue view`/`gh pr view`, `ls`/`wc`.
+  Нужна правка или решение — так и напиши: `decision/patch for the caller`.
 - **Одна команда за вызов.** Не склеивай команды через `&&`/`;`/`|`: право проверяется на весь
   вызов, и один неразрешённый сегмент роняет его целиком (`ls … && git -C … log` → deny). Тем
   более не используй `git -C <path>` — рабочий каталог уже репозиторий; просто `git log`.
@@ -49,7 +92,11 @@ permission:
 ## Инструменты
 
 - Поиск по репо: `grep`/`glob`/`read`. Символы C# (определения, ссылки, вызовы, реализации,
-  члены) — **только `roslyn`** (см. глобальные правила), не текстовый поиск.
+  члены) — **только `roslyn`**, не текстовый поиск. В V2 он не отдельный тул, а вызов **внутри
+  `execute`**: `const r = await tools.roslyn({ action: "refs", target: "Ns.Type.Member" }); return r`.
+  Несколько запросов — одним `execute` (`Promise.all`). Нет в каталоге — сначала
+  `search({ query: "roslyn" })`; в каталоге сессии нет `.sln`/`.slnx` — передай `solution: "/abs/path.slnx"`.
+  «Нет в списке тулов» / «в каталоге его не видно» — **не** повод уходить в `grep`.
 - Веб: `webfetch` по конкретным URL.
 - MCP: `context7` (доки библиотек), `mslearn` (Microsoft/Azure), `deepwiki` (вики GitHub-репо),
   `gitmcp` (доки репо). API/поведение библиотек — сначала туда, потом уже по памяти.

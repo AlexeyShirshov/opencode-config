@@ -1,14 +1,15 @@
 ---
-name: pdca-planner
 description: "PLAN decisions on the medium tier for the domain-neutral `pdca` cycle. Reads only the supplied brief/evidence pack and returns the plan/replan (the new P-task) or a DO→PLAN candidate classification. Use for in-cycle planning and re-planning."
 mode: subagent
 # tier: medium
 steps: 12
-permission:
+permissions:
   # Default-deny: any MCP tool of any server (`<server>_<tool>`), plus
-  # read/grep/glob/list/lsp/webfetch/websearch/edit/write/task/bash. The planner
+  # read/grep/glob/shell/webfetch/websearch/edit/subagent. The planner
   # works only over the supplied brief — tools are not needed; enumerate servers is not needed.
-  "*": deny
+  - action: "*"
+    resource: "*"
+    effect: deny
 ---
 
 # pdca-planner (medium tier) — PLAN decisions

@@ -1,15 +1,16 @@
 ---
-name: planner
 description: "PLAN Decide on the medium tier. Reads only the gather/triage summary and returns the updated plan / new P-task (CHECK→PLAN / DO→PLAN loop-back). Use for in-cycle re-planning."
 mode: subagent
 # tier: medium
 steps: 12
-permission:
+permissions:
   # Default-deny: любой MCP-инструмент любого сервера (`<server>_<tool>`), а также
-  # read/grep/glob/bash/webfetch/websearch/edit/write/task/roslyn. planner работает
+  # read/grep/glob/shell/webfetch/websearch/edit/subagent/roslyn. planner работает
   # только с переданной сводкой — инструменты ему не нужны; перечислять MCP-серверы
   # (context7_*, mslearn_*, …) не нужно.
-  "*": deny
+  - action: "*"
+    resource: "*"
+    effect: deny
 ---
 
 # planner (medium tier) — PLAN Decide

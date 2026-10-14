@@ -97,7 +97,7 @@ Is the question about Channel selection?
 - **Does NOT handle thread synchronization primitives** -- Locks, SemaphoreSlim, Interlocked, concurrent collections, and race condition debugging are the domain of `dotnet-csharp-concurrency-specialist`
 - **Does NOT handle general profiling workflow** -- Interpreting flame graphs, heap dumps, and benchmark regression analysis belong to `dotnet-performance-analyst`
 - **Does NOT design benchmarks** -- Benchmark setup and methodology are handled by `dotnet-benchmark-designer`
-- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only) only; produces findings and recommendations
+- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only), plus `roslyn` for C# symbols only (never symbol-hunting with `grep`/`rg`); in V2 `roslyn` is called inside `execute` — `await tools.roslyn({ action: "refs", target: "Ns.Type.Member" })`; produces findings and recommendations
 
 ## Trigger Lexicon
 

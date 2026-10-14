@@ -1,23 +1,24 @@
 ---
-name: pdca-check
 description: "CHECK independent verdict on the medium tier for the domain-neutral `pdca` cycle. Reads the aggregated brief and may open the cycle's evidence artifacts directly (scoped read) to reconcile the contract rows; returns a verdict, a per-criterion matrix (met/unmet/unverified), findings with severity and correction routing. Use for the Check phase."
 mode: subagent
 # tier: medium
 steps: 40
-permission:
+permissions:
   # Default-deny: any MCP tool of any server (`<server>_<tool>`), plus
-  # grep/lsp/webfetch/websearch/edit/write/task/bash. The check judges the supplied brief,
+  # grep/shell/webfetch/websearch/edit/subagent. The check judges the supplied brief,
   # but may open the cycle's evidence artifacts directly to reconcile the manifest rows.
   # Neutral default: the cycle state dir `.pdca/**` (status `.pdca/status/**` + evidence
   # `.pdca/<task>/rv<k>/**`, §Frozen evidence manifest; the overlay may override). Product
-  # code/diffs stay unavailable.
-  "*": deny
-  read:
-    ".pdca/**": allow
-  glob:
-    ".pdca/**": allow
-  list:
-    ".pdca/**": allow
+  # code/diffs stay unavailable. (V2: no separate `list` action — `read` also lists directories.)
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: ".pdca/**"
+    effect: allow
+  - action: glob
+    resource: ".pdca/**"
+    effect: allow
 ---
 
 # pdca-check (medium tier) — independent CHECK verdict

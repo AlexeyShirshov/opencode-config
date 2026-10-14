@@ -1,71 +1,161 @@
 ---
-name: security-auditor
 description: "WHEN reviewing a diff/code for security: auth, secrets, external input, crypto, OWASP compliance. Read-only (no edits, no commands) and produces findings with severity/location/remediation. Use for the CHECK safety stream or on explicit security review; triggers on: security, OWASP, vulnerability, secrets, auth, crypto, injection."
 mode: subagent
 # tier: medium
-permission:
+permissions:
   # Базово запрещено ВСЁ: любой MCP-инструмент любого сервера (`<server>_<tool>`)
-  # и все прямые тулзы (grep/glob/list/lsp/webfetch/websearch/edit/write).
+  # и все прямые тулзы (grep/glob/shell/webfetch/websearch/edit).
   # Перечислять MCP-серверы (context7_*, mslearn_*, …) не нужно. Ниже — разрешения.
-  "*": deny
-  read:
-    "*": allow
-    "*.env": deny
-    "*.env.*": deny
-    "*.env.example": allow
-  task:
-    "*": deny
-    scout: allow
-  bash:
-    "*": deny
-    "cd *": allow
-    "ls*": allow
-    "cat *": allow
-    "sed -n *": allow
-    "head *": allow
-    "tail *": allow
-    "wc *": allow
-    "stat *": allow
-    "file *": allow
-    "git status*": allow
-    "git log*": allow
-    "git diff*": allow
-    "git show*": allow
-    "git blame*": allow
-    "git ls-files*": allow
-  external_directory:
-    "/tmp/**": allow
-    "~/.config/opencode/**": allow
-    "/etc/**": allow
-    "/proc/**": allow
-    "/usr/**": allow
-    "/opt/**": allow
-    "/snap/**": allow
-    "/sys/**": allow
-    # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
-    # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
-    "/dev/**": allow
-    "/home/alex/sources/**": allow
-    "/home/alex/tests/**": allow
-    "/mnt/c/Users/user/**": allow
-    "/home/alex/.local/share/opencode/log/**": allow
-    "/home/alex/.local/share/opencode/tool-output/**": allow
-    "/home/alex/.local/share/opencode/zen-cache-proxy.log": allow
-    "/home/alex/.local/state/opencode/**": allow
-    "/run/user/1000/**": allow
-    "/home/alex/.vscode-server/**": allow
-    "/mnt/c/Users/user/AppData/Roaming/Code/User/**": allow
-    "~/.config/opencode/secrets.env": deny
-    "/mnt/c/Users/user/.ssh/**": deny
+  - action: "*"
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: read
+    resource: "*.env.*"
+    effect: deny
+  - action: read
+    resource: "*.env.example"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: scout
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cd *"
+    effect: allow
+  - action: shell
+    resource: "ls*"
+    effect: allow
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "sed -n *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "stat *"
+    effect: allow
+  - action: shell
+    resource: "file *"
+    effect: allow
+  - action: shell
+    resource: "git status*"
+    effect: allow
+  - action: shell
+    resource: "git log*"
+    effect: allow
+  - action: shell
+    resource: "git diff*"
+    effect: allow
+  - action: shell
+    resource: "git show*"
+    effect: allow
+  - action: shell
+    resource: "git blame*"
+    effect: allow
+  - action: shell
+    resource: "git ls-files*"
+    effect: allow
+  - action: external_directory
+    resource: "/tmp/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/etc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/proc/**"
+    effect: allow
+  - action: external_directory
+    resource: "/usr/**"
+    effect: allow
+  - action: external_directory
+    resource: "/opt/**"
+    effect: allow
+  - action: external_directory
+    resource: "/snap/**"
+    effect: allow
+  - action: external_directory
+    resource: "/sys/**"
+    effect: allow
+  # `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
+  # (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+  - action: external_directory
+    resource: "/dev/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/sources/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/tests/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/log/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/tool-output/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/share/opencode/zen-cache-proxy.log"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.local/state/opencode/**"
+    effect: allow
+  - action: external_directory
+    resource: "/run/user/1000/**"
+    effect: allow
+  - action: external_directory
+    resource: "/home/alex/.vscode-server/**"
+    effect: allow
+  - action: external_directory
+    resource: "/mnt/c/Users/user/AppData/Roaming/Code/User/**"
+    effect: allow
+  - action: external_directory
+    resource: "~/.config/opencode/secrets.env"
+    effect: deny
+  - action: external_directory
+    resource: "/mnt/c/Users/user/.ssh/**"
+    effect: deny
   # Профильные скиллы: OWASP + секреты + крипта; остальные скрыты правами.
-  skill:
-    "*": deny
-    dotnet-security-owasp: allow
-    dotnet-secrets-management: allow
-    dotnet-cryptography: allow
-  question: allow
-  todowrite: allow
-  doom_loop: ask
+  - action: skill
+    resource: "*"
+    effect: deny
+  - action: skill
+    resource: dotnet-security-owasp
+    effect: allow
+  - action: skill
+    resource: dotnet-secrets-management
+    effect: allow
+  - action: skill
+    resource: dotnet-cryptography
+    effect: allow
+  - action: question
+    resource: "*"
+    effect: allow
 ---
 
 # security-auditor (medium tier)
