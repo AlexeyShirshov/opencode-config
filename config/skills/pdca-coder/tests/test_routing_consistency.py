@@ -5,7 +5,7 @@ role carries a `# tier:` label (no `model:`).  They never execute a model or the
 live PDCA cycle, so they prove structure, not behavior.
 
 Run:
-    python3 -m unittest discover -s config/skills/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -14,10 +14,9 @@ import re
 import unittest
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[4]
-PDCA_DIR = REPO / "config/skills/pdca-coder"
-SKILL = PDCA_DIR / "SKILL.md"
-ASSET_AGENTS = PDCA_DIR / "assets/agents"
+SKILL_DIR = Path(__file__).resolve().parents[1]
+SKILL = SKILL_DIR / "SKILL.md"
+ASSET_AGENTS = SKILL_DIR / "assets/agents"
 
 ROLE_TIER = {
     "planner": "medium",
@@ -116,6 +115,20 @@ class RoleAssetTest(unittest.TestCase):
         allowed = {k for k, v in escalate["task"].items() if v == "allow"}
         self.assertEqual({"scout"}, allowed)
         self.assertEqual("deny", sec.get("*"))
+
+    def test_check_may_read_only_the_cycle_evidence(self):
+        # The description and §CHECK promise a scoped read of the cycle's own evidence
+        # (status + frozen manifest), never product code — the permissions must grant it.
+        check = frontmatter(ASSET_AGENTS / "check.md")["permission"]
+        self.assertEqual("deny", check.get("*"))
+        for tool in ("read", "glob", "list"):
+            with self.subTest(tool=tool):
+                self.assertIn(tool, check)
+                allowed = {k for k, v in check[tool].items() if v == "allow"}
+                self.assertEqual({"docs/specs/status/**", "artifacts/**"}, allowed)
+        self.assertNotIn("bash", check)
+        self.assertNotIn("edit", check)
+        self.assertNotIn("write", check)
 
 
 class LensSelectionWordingTest(unittest.TestCase):

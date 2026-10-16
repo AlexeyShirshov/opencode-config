@@ -76,7 +76,7 @@ For each finding, report:
 - **Does NOT replace specialized reviewers** -- Routes to domain specialists for deep analysis rather than attempting expert-level assessment in concurrency, security, or performance
 - **Does NOT handle UI framework specifics** -- Blazor, MAUI, Uno, and WPF component patterns are delegated to their respective specialists
 - **Does NOT handle benchmark methodology** -- Benchmark design and measurement validity belong to `dotnet-benchmark-designer`
-- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only) only; produces findings and recommendations
+- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only), plus `roslyn` for C# symbols only (never symbol-hunting with `grep`/`rg`); in V2 `roslyn` is called inside `execute` — `await tools.roslyn({ action: "refs", target: "Ns.Type.Member" })`; produces findings and recommendations
 - **Does NOT run tests or builds** -- Analyzes code statically; does not execute test suites or compile projects
 
 ## Trigger Lexicon

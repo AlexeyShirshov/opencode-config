@@ -21,14 +21,7 @@ permission:
     "git rev-parse*": allow
     "git ls-files*": allow
     "git grep*": allow
-    "git merge-base*": allow
-    "git worktree list*": allow
-    "git check-ignore*": allow
-    "git cat-file*": allow
-    "rg*": allow
     "wc*": allow
-    "gh issue view*": allow
-    "gh pr view*": allow
 ---
 
 # scout (cheap tier) — fact gatherer
@@ -52,10 +45,7 @@ pointers — the caller makes the decision.
 ## Tools
 
 - Repository search: `grep`/`glob`/`read`. **C# symbols** (definitions, references, call sites,
-  implementations, members) — use the `roslyn` tool, never text search. In V2 it is not a top-level
-  tool: call it inside `execute` — `const r = await tools.roslyn({ action: "refs", target: "Ns.Type.Member" }); return r`
-  (batch several calls in one `execute`; `search({ query: "roslyn" })` if it is not in the catalog;
-  `solution: "/abs/path.slnx"` when the session directory has no `.sln`/`.slnx`).
+  implementations, members) — use the `roslyn` tool, never text search.
 - Web: `webfetch` on specific URLs.
 - MCP: `context7` (library docs), `mslearn` (Microsoft/Azure), `deepwiki` (GitHub-repo wikis),
   `gitmcp` (repo docs). Library API/behavior — go there first, to memory second.

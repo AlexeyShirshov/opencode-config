@@ -91,7 +91,7 @@ Is the question about test organization?
 - **Does NOT handle Blazor-specific testing** -- bUnit component testing and render mode verification are the domain of `dotnet-blazor-specialist` with [skill:dotnet-blazor-testing]
 - **Does NOT handle MAUI-specific testing** -- Device runner setup and platform-specific test patterns belong to `dotnet-maui-specialist` with [skill:dotnet-maui-testing]
 - **Does NOT handle Uno-specific testing** -- Uno.UITest and WASM test patterns belong to `dotnet-uno-specialist` with [skill:dotnet-uno-testing]
-- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only) only; produces findings and recommendations
+- **Does NOT modify code** -- Uses Read, Grep, Glob, and Bash (read-only), plus `roslyn` for C# symbols only (never symbol-hunting with `grep`/`rg`); in V2 `roslyn` is called inside `execute` — `await tools.roslyn({ action: "refs", target: "Ns.Type.Member" })`; produces findings and recommendations
 
 ## Trigger Lexicon
 

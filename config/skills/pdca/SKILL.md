@@ -23,7 +23,8 @@ These rules are addressed to you as the orchestrator. Subagents (`pdca-planner`,
 `pdca-executor`, `pdca-check`, `pdca-escalate`, `scout`) do NOT apply them: the
 executor must act and run commands; the planner reads the brief and produces a plan; the check
 reads the brief **and may open the cycle's evidence artifacts directly** (its scoped `read` of the
-status/evidence/manifest files — never product code) to reconcile the contract rows, then produces
+status/evidence/manifest files — never the product artefact) to reconcile the contract rows, then
+produces
 a verdict.
 
 **Two paths, one contract.** In **normal mode you drive the cycle yourself, invoking subagents
@@ -60,15 +61,18 @@ A medium/strong primary still neither drives the cycle nor dispatches `pdca-orch
 | RUNNER | `pdca-orchestrator` | cheap dispatcher, `task`-allowlist (shared) | flat cheap primary + `Notice:` |
 
 Ready-made definitions: this skill's `assets/agents/` (the four plan/do/check/escalate role
-files); the RUNNER is the shared host agent `pdca-orchestrator`. Model bindings come from the
+files plus the gatherer `scout`, which is **not** specialized per task and stays the same for every
+cycle); the RUNNER is the shared host agent `pdca-orchestrator`. A host that already ships its own
+`scout` may keep it — this copy exists so the skill is self-contained. Model bindings come from the
 **host profile's `agent` block** (or a project config `agent.<name>.model`) — **never a model-id
 field in the role markdown**. Each asset carries only a `# tier:` label
 (`pdca-executor`/`scout` = cheap; `pdca-planner`/`pdca-check` = medium;
 `pdca-escalate` = strong; `pdca-orchestrator` = cheap). By default a subagent inherits the
 invoking primary's model; bind ids in the profile `agent` block for routing.
 
-**Setup (once):** (1) copy `assets/agents/*.md` into the host's agents directory (the four role
-agents; the RUNNER `pdca-orchestrator` is the shared host agent, not shipped here); (2) restart
+**Setup (once):** (1) copy `assets/agents/*.md` into the host's agents directory (the four `pdca-*`
+role agents **and** `scout`; the RUNNER `pdca-orchestrator` is the shared host agent, not shipped
+here); (2) restart
 the host (agents load at startup); (3) allow the cheap orchestrator's
 `agent.<primary>.permission.task` for `scout`/`pdca-planner`/`pdca-check`/`pdca-executor`/
 `pdca-escalate`, and `pdca-orchestrator` for autonomous delegation. A cheap `pdca-orchestrator`
@@ -114,8 +118,8 @@ to `pdca-executor` via `Task`. Both the initial PLAN and any replan belong to `p
 
 ## State machine
 
-Cycle: `PLAN → (normal mode: user reviews and confirms the plan) → DO → CHECK → ACT → (EXIT | PLAN)`
-(autonomous: no confirmation, §Autonomous mode), plus a **DO → PLAN** return when DO surfaces a
+Cycle: `PLAN → (normal mode: the user reads and approves the plan) → DO → CHECK → ACT → (EXIT | PLAN)`
+(autonomous: no approval, §Autonomous mode), plus a **DO → PLAN** return when DO surfaces a
 new prerequisite/blocker or changes assumptions/scope.
 
 Progress is recorded in two places with different roles:
@@ -202,10 +206,12 @@ bad plan found by review is a CHECK → PLAN).
    goal/expected result; constraints; assumptions; acceptance criteria **each with a
    verification method**; decomposition into units with dependencies **or** an explicit
    decision not to split a simple task; means and access; risks and stop conditions. Plus:
-   **the plan written to the status file by `pdca-executor`** (last step, before the
-   start signal) **and, in normal mode, the user's explicit confirmation of the plan (an
-   explicit `go`/`го` counts)** — except in autonomous mode, where DO starts right after
-   PLAN. The orchestrator only checks each item is **present** (§Orchestrator role) and
+   **the plan written to the status file by `pdca-executor`** (last step of PLAN) **and, in
+   normal mode, the user's approval of the plan** — the orchestrator tells the user that the
+   planner has produced the plan and written it to the status file, asks them to read it and
+   approve it, and starts implementation only after that approval — except in autonomous
+   mode, where no approval is required and DO starts right after PLAN. The orchestrator only
+   checks each item is **present** (§Orchestrator role) and
    returns an incomplete answer to `pdca-planner`. On DO start: `pdca-executor` logs `DO
    started`, then `todowrite` (`P:`→`completed`, single `D:`→`in_progress`). Normal mode with
    no acceptance criteria → ask the user, do not guess; autonomous → route through
@@ -249,8 +255,8 @@ non-obvious trade-off, present 2–3 alternatives with pros/cons and a recommend
 solution minimal and first-principles: reuse what exists before adding anything; an
 abstraction without a second consumer is a PLAN finding. Prefer the existing approach in the
 surrounding context before designing new, with a reason when it does not fit. A binding
-acceptance criterion whose verification is **state-dependent** (e.g. the negative arm of a
-regression) must name a **reproducible** evidence source, and its decisive probe must be
+acceptance criterion whose verification is **state-dependent** (e.g. a negative arm that holds only
+from a particular prior state) must name a **reproducible** evidence source, and its decisive probe must be
 **demonstrated to run** against the declared baseline before gate 1 — a merely declared source
 is not enough; an unprovable criterion is a **gap** (report / re-scope the oracle), never a
 `ready` placeholder. **Re-entry after a terminal `incomplete`/STOP** is a required PLAN input:
@@ -311,7 +317,7 @@ Each entry maps one **required criterion ID** to its evidence **by reference, no
   for `open` a `reason`; for `na` an observed `predicate`.
 Every `required` ID must appear; a criterion without a resolving reference is `open`, never
 dropped, and logs stay references — the manifest is a thin index, not a copy. **No PASS while any
-`required` entry is `open`.** If the project ships a manifest validator, run it (row coverage +
+`required` entry is `open`.** If the project ships a manifest validator, run it (row completeness +
 shape).
 
 **Default evidence dir:** **`.pdca/<task>/rv<k>/`** — `<task>` = kebab-slug, `<k>` = plan/criterion
@@ -321,14 +327,14 @@ overlay may override (the status dir is `.pdca/status/`, §Durable status). The 
 
 ## Normal and autonomous modes
 
-**Normal mode** requires the user's **explicit confirmation of the plan** after it is on disk
+**Normal mode** requires the user's **approval of the plan** after it is on disk
 (§PLAN → DO gate). The plan is written to the status file by `pdca-executor` first; the
-orchestrator then shows the plan gist, gives the status-file path, and asks the user to
-**review the implementation plan and confirm it** — that confirmation is the **only start
-signal** (`go`/`го` counts as an explicit confirmation). A question, a change request or a
-non-committal reply does not start; without confirmation nothing is created/edited **except the
-status file** — wait, clarify, or rewrite the plan (via `pdca-planner`, same file by
-`pdca-executor`).
+orchestrator then tells the user that the planner has produced the plan and written it to the
+status file, gives the status-file path and asks them to **read it and approve it** — that
+approval is the **only start signal** (no keyword is required: any explicit approval of the
+plan counts). A question, a change request or a non-committal reply is not an approval and
+does not start; without approval nothing is created/edited **except the status file** — wait,
+clarify, or rewrite the plan (via `pdca-planner`, same file by `pdca-executor`).
 
 **Autonomous mode** is the same contract with no pauses and no questions. The cheap primary
 delegates the single cycle to the cheap `pdca-orchestrator` via `Task`; it drives PLAN → DO
@@ -342,12 +348,13 @@ PLAN → DO boundary: the cycle finishes PLAN, persists the status file, and yie
 back to the collection parent with a `plan_handoff` — same task identity, same `N`/`r`/`n` —
 instead of starting DO. The parent later resumes **the same cycle** from DO after an
 applicability check. This is a caller-driven handoff, not a standalone-autonomous pause and
-not a `go`: standalone normal mode still starts only on the explicit confirmation, and
-standalone autonomous still starts DO immediately.
+not a user approval: standalone normal mode still starts only after the user approves the
+plan, and standalone autonomous still starts DO immediately.
 
 - **Phase transitions** happen in the same turn the gate passes, with no invitations or
-  pauses; PLAN → DO immediately, no `go` — but every gate item is still mandatory.
-- **Nothing "for the user" is printed:** no `go` invitation, no plan-confirmation question, no
+  pauses; PLAN → DO immediately, no approval and no pause — but every gate item is still
+  mandatory.
+- **Nothing "for the user" is printed:** no approval request, no plan question, no
   next-session message. Everything needed lives in the status file.
 - **Notices go to the status file, not the chat:** a missing role, a detected injection, a
   recovery after compaction, an assumption instead of a question — appended by
@@ -522,7 +529,7 @@ return to the contract**, not "finish and fix later".
   only `todowrite` is orchestration.
 - I read artefacts/logs/status files myself instead of a `scout`/`pdca-executor` report.
 - I decide the plan or the verdict myself instead of `pdca-planner`/`pdca-check`.
-- I start DO without the user's confirmation (normal mode), or ask for confirmation before the plan is on disk.
+- I start DO without the user's approval (normal mode), or ask for approval before the plan is on disk.
 - I skip CHECK or close the cycle without ACT.
 - I silently skipped a mandatory plan field: goal, constraints, assumptions, criteria with
   verification methods, decomposition, means and access, risks/stop conditions.
@@ -533,7 +540,7 @@ return to the contract**, not "finish and fix later".
 - I loaded large artefacts/logs into my context instead of a pointer.
 - I made a next attempt instead of `pdca-escalate` (§Escalation).
 - I declared a blocker without evidence.
-- In autonomous mode I printed the plan-confirmation request or the next-session message, or stopped at a
+- In autonomous mode I printed the plan-approval request or the next-session message, or stopped at a
   "clean checkpoint"/wait state.
 - I edited outside the plan's footprint (Over-Reach), or ran units in parallel with overlapping
   ownership.
@@ -601,7 +608,7 @@ carries both `<task>` (kebab slug) and `<N>` (cycle number within that task; gro
 Lifecycle:
 1. **Creation, last step of PLAN before the start signal:** the plan — goal, acceptance criteria
    with verification methods, constraints, assumptions, decomposition and dependencies, means
-   and access, risks and stop conditions — plus the log opened with `PLAN ready — awaiting confirmation`.
+   and access, risks and stop conditions — plus the log opened with `PLAN ready — awaiting user approval`.
 2. **Progress — every event** of DO/CHECK.
 3. **Replan** (CHECK → PLAN / DO → PLAN): a real revised plan bumps `r`, resets `n` to 1; an
    unchanged plan does not. The **same** file's plan section is rewritten; the outgoing failed
@@ -615,7 +622,7 @@ Lifecycle:
 <UTC time> | <phase> | revision r | iteration n/3 | <event> | <evidence pointer>
 ```
 
-Must log: `PLAN ready — awaiting confirmation`; `plan confirmed — DO started`; each `D:` unit state change;
+Must log: `PLAN ready — awaiting user approval`; `plan approved — DO started`; each `D:` unit state change;
 each `D:` closed (exit status + log path); DO → CHECK; each CHECK report; the `pdca-check`
 verdict; each CHECK failure/fix/loop-back with its defect key and applied fix count (pointers,
 not logs); loop-back to DO / `Replanned` (with the outgoing failed attempt); an

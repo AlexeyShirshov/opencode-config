@@ -17,29 +17,38 @@ At P1 these tests are intentionally RED: the new contract markers do not exist
 yet.  They must fail on the missing NEW contract text, not on syntax/typos.
 
 Run:
-    python3 -m unittest discover -s config/skills/pdca-collection/tests -p 'test_plan_barrier.py' -v
+    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
 
+import os
 import re
 import unittest
 from pathlib import Path
 
-REPO = Path(__file__).resolve().parents[4]
+SKILL_DIR = Path(__file__).resolve().parents[1]
+SKILLS_ROOT = SKILL_DIR.parent
 
-COLLECTION_SKILL = REPO / "config/skills/pdca-collection/SKILL.md"
-ORCHESTRATOR = REPO / "config/agents/pdca-orchestrator.md"
+# Host config (agents/profiles/AGENTS.md) lives in the `opencode-config` repo, not in this one.
+# Point at it with OPENCODE_CONFIG_REPO to enable host-parity checks; they skip by default.
+HOST_REPO = Path(os.environ["OPENCODE_CONFIG_REPO"]) if os.environ.get("OPENCODE_CONFIG_REPO") else None
+CONFIG = (HOST_REPO / "config") if HOST_REPO else None
+HOST_AVAILABLE = bool(CONFIG) and CONFIG.is_dir()
+SKIP_HOST = "host config not available — set OPENCODE_CONFIG_REPO=/path/to/opencode-config"
+
+COLLECTION_SKILL = SKILL_DIR / "SKILL.md"
+ORCHESTRATOR = (CONFIG / "agents/pdca-orchestrator.md") if CONFIG else None
 BASE_VARIANTS = {
-    "pdca": REPO / "config/skills/pdca/SKILL.md",
-    "pdca-coder": REPO / "config/skills/pdca-coder/SKILL.md",
-    "pdca-dotnet": REPO / "config/skills/pdca-dotnet/SKILL.md",
+    "pdca": SKILLS_ROOT / "pdca/SKILL.md",
+    "pdca-coder": SKILLS_ROOT / "pdca-coder/SKILL.md",
+    "pdca-dotnet": SKILLS_ROOT / "pdca-dotnet/SKILL.md",
 }
 
 # The contract fixes the token families, not one exact sentence.
 _OWN_PLAN_TOKENS = ("собственный PLAN", "собственного PLAN")
 _PLAN_STATE_VALUES = ("pending", "running", "ready")
-_GO_CONTEXT = re.compile(r"go\s*/\s*го|го\s*/\s*go", re.I)
+_APPROVAL_CONTEXT = re.compile(r"approv\w*|апрув", re.I)
 
 
 def _plain(text: str) -> str:
@@ -146,11 +155,13 @@ class CollectionOwnPlanBarrierContractTest(unittest.TestCase):
         )
 
 
+@unittest.skipUnless(HOST_AVAILABLE, SKIP_HOST)
 class OrchestratorCollectionPlanHandoffTest(unittest.TestCase):
     """pdca-orchestrator.md: a distinct COLLECTION TASK PLAN entry + plan_handoff."""
 
     @classmethod
     def setUpClass(cls) -> None:
+        assert ORCHESTRATOR is not None
         cls.text = ORCHESTRATOR.read_text(encoding="utf-8")
 
     def test_orchestrator_declares_collection_task_plan_entry(self):
@@ -171,13 +182,13 @@ class OrchestratorCollectionPlanHandoffTest(unittest.TestCase):
 class StandaloneVariantCollectionHandoffTest(unittest.TestCase):
     """Base variants keep standalone semantics AND gain a collection caller note."""
 
-    def test_variants_keep_standalone_go_and_autonomous_immediate(self):
+    def test_variants_keep_standalone_approval_and_autonomous_immediate(self):
         for name, path in BASE_VARIANTS.items():
             with self.subTest(variant=name):
                 low = _plain(path.read_text(encoding="utf-8")).lower()
                 self.assertTrue(
-                    _GO_CONTEXT.search(low),
-                    f"{name}: lost the explicit normal-mode 'go'/'го' confirmation "
+                    _APPROVAL_CONTEXT.search(low),
+                    f"{name}: lost the explicit normal-mode plan-approval "
                     f"context",
                 )
                 self.assertTrue(

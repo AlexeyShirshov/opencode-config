@@ -11,9 +11,17 @@
   // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
   // Triage CHECK `check` — medium-тир, «руки»/сбор — cheap, `security-auditor` — medium,
   // `escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
-  "model": "deepseek/deepseek-flash",
+  // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — бесплатная
+  // zen-модель: человек за пультом, при исчерпании квоты (`Rate limit exceeded`) он
+  // переключается сам (`/models`), поэтому автоподстраховка не нужна.
+  // Плата за бесплатность: окно 200k вместо 1M, ответ 32k вместо 393k, и идёт она
+  // через локальный zen-cache-proxy (127.0.0.1:8787) — без него дефолт не подключится.
+  "model": "opencode/deepseek-v4.1-flash-free",
 
-  // Дешёвая модель для служебных задач (генерация заголовков/резюме).
+  // Служебные задачи (заголовки/резюме) — платный: вызовы неинтерактивные, падение
+  // человек не увидит. Cheap-роли PDCA (`coder`/`scout`/`btw`/`pdca-*`) тоже платные:
+  // 2026-10-15 их fan-out выжег free-квоту за ~2.5 мин, лейны падали в
+  // `idle_outcome=failed` без автоповтора.
   "small_model": "deepseek/deepseek-flash",
 
   // Обычный режим: стартуем в `build` (полные инструменты) — просто выполняем задачу.
@@ -28,12 +36,17 @@
   // мержится после профиля, достаточно указать только изменённые роли (например, `escalate`).
   "agent": {
     "pdca-planner": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
-    "pdca-check": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
+    // Зеркало `check` (routing-consistency требует совпадения модели и variant) — Argon,
+    // другое семейство, чем `pdca-planner`: вердикт CHECK независим от того, кто писал план.
+    "pdca-check": { "model": "opencode/gemini-4-argon", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
     "pdca-executor": { "model": "deepseek/deepseek-flash" },
     "architect": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "planner": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
-    "check": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
+    // CHECK — намеренно на другом семействе (Gemini 4 Argon), чем `planner`/`architect` (Sol):
+    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет); замер: thinking ≈ 3× ответа,
+    // 1.1k токенов выхода ≈ 1.7% лимита 65k, обрезки нет.
+    "check": { "model": "opencode/gemini-4-argon", "variant": "high" },
     "escalate": { "model": "opencode/claude-sonnet-5-5" },
     "security-auditor": { "model": "opencode/gpt-6.1-sol", "variant": "high" },
     "coder": { "model": "deepseek/deepseek-flash" },

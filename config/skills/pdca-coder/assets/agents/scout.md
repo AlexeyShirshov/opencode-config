@@ -60,10 +60,7 @@ pointers — the caller makes the decision.
 
 - Repository search: `grep`/`glob`/`read`. **Language symbols** (definitions, references, call sites,
   implementations, members) — use the project's language-aware/symbol tool when one is available,
-  never text search. For C# that tool is `roslyn`, and in V2 it is not a top-level tool: call it
-  inside `execute` — `const r = await tools.roslyn({ action: "refs", target: "Ns.Type.Member" }); return r`
-  (`search({ query: "roslyn" })` if it is not in the catalog; `solution: "/abs/path.slnx"` when the
-  session directory has no `.sln`/`.slnx`).
+  never text search.
 - Web: `webfetch` on specific URLs.
 - MCP: `context7` (library docs), `mslearn` (Microsoft/Azure), `deepwiki` (GitHub-repo wikis),
   `gitmcp` (repo docs). Library API/behavior — go there first, to memory second.

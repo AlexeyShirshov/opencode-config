@@ -1,5 +1,5 @@
 ---
-description: PDCA orchestrator (cheap tier) for one `pdca-collection` group, a single autonomous cycle, **or a collection task's own PLAN (COLLECTION TASK PLAN)** — first picks the cycle variant for the task (`pdca-dotnet` for .NET/C#, `pdca-coder` for other code, `pdca` otherwise; default `pdca`), then drives a full PLAN→DO→CHECK→ACT child cycle via `Task`; for a collection task's own PLAN it runs only that task's PLAN and yields at the PLAN→DO boundary with a `plan_handoff` to the collection parent; invoked via `Task` by a cheap primary. Do not drive interactive (`go`-gated) cycles.
+description: PDCA orchestrator (cheap tier) for one `pdca-collection` group, a single autonomous cycle, **or a collection task's own PLAN (COLLECTION TASK PLAN)** — first picks the cycle variant for the task (`pdca-dotnet` for .NET/C#, `pdca-coder` for other code, `pdca` otherwise; default `pdca`), then drives a full PLAN→DO→CHECK→ACT child cycle via `Task`; for a collection task's own PLAN it runs only that task's PLAN and yields at the PLAN→DO boundary with a `plan_handoff` to the collection parent; invoked via `Task` by a cheap primary. Do not drive interactive (approval-gated) cycles.
 mode: subagent
 # tier: cheap
 permission:

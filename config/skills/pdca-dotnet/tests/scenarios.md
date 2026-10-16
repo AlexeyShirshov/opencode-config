@@ -4,14 +4,18 @@
 `test_contract_consistency.py`, и она тоже лишь фиксирует наличие правил, а не поведение.
 Поведенческий разбор проходит независимый `escalate` по полным соответствующим контрактам.
 
-Источник правил (действующая норма): `config/skills/pdca-dotnet/SKILL.md` (§State machine,
+Источник правил (действующая норма): `opencode/pdca-dotnet/SKILL.md` (§State machine,
 §Transition gates, §Orchestrator role, §Host requirements), EN-роли
-`config/skills/pdca-dotnet/assets/agents/*.md` с зеркалами `config/agents/*.md` и исходники диаграммы
-`config/skills/pdca-dotnet/assets/diagram/{workflow.json,gen_pdca.py}`. Исторический дизайн
+`opencode/pdca-dotnet/assets/agents/*.md` с зеркалами `config/agents/*.md` и исходники диаграммы
+`opencode/pdca-dotnet/assets/diagram/{workflow.json,gen_pdca.py}`. Исторический дизайн
 `docs/superpowers/specs/2026-10-01-pdca-consistency-design.md` — только контекст, не норма (в нём
 допустим любой primary, включая `architect`; действует cheap-only). Счётчики: цикл `<N>` (растёт
 только в ACT), ревизия плана `r`, попытка `n/3` в пределах
 ревизии; отвергнутый кандидат **без смены плана** не новая ревизия и не сбрасывает ретраи.
+
+Хостовые артефакты (`config/agents/*.md`, `config/AGENTS.md`, `config/profiles/*.jsonc`, хостовый
+`README.md`, спеки в `docs/superpowers/…`) живут в репозитории `opencode-config`; тесты обращаются
+к ним только при `OPENCODE_CONFIG_REPO=<путь к opencode-config>`, иначе эти проверки пропускаются.
 
 | # | Кратко | Требуемый исход |
 | --- | --- | --- |
@@ -21,7 +25,7 @@
 | C | r1: два провала CHECK → реальный replan r2 | `n` сброшен в 1 на r2; повтор того же дефекта после фикса всё равно эскалируется |
 | D | Один план, три провальных CHECK | `escalate`, 4-й попытки нет; `DO → PLAN` — не провальный CHECK |
 | E | `planner` не может классифицировать кандидата | Сначала точечные факты (`scout`), затем `escalate` по низкой уверенности даже без доказанной внешности |
-| F | Автономно: нет критерия / недоступен ресурс | Без вопроса; сбор/решение, затем blocked STOP с записанным итогом; обычный режим сохраняет вопросы и `go` |
+| F | Автономно: нет критерия / недоступен ресурс | Без вопроса; сбор/решение, затем blocked STOP с записанным итогом; обычный режим сохраняет вопросы и апрув плана |
 | G | Три параллельных потока DO | Ровно один активный агрегированный `D:` todo; правдивые состояния каждого потока в статус-файле |
 | H | Cheap-only оркестрация; `architect` — решения вне цикла | Цикл ведёт только cheap-tier primary (эффективный тир, не имя агента); начальный PLAN/replan — `planner`; в ролях только `# tier`, без `model:` |
 | I | Security-триггер red | Conditional gather возвращается в агрегат `check` (своего независимого вердикта нет); обычный security-провал — провальный CHECK ревизии по общим счётчикам; немедленная эскалация — только жёсткий security-tradeoff |
@@ -30,12 +34,12 @@
 | L | Fallback: `pdca-orchestrator` недоступен | Flat primary ведёт цикл сам, fallback зафиксирован (`Notice:`); гейты/no-4th/scope/security не отменяются |
 
 Общая оперативная база (применяется ко всем кейсам, если ниже не уточнено):
-`config/skills/pdca-dotnet/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
+`opencode/pdca-dotnet/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
 §Phase todo tracker, §Escalation (`escalate`) (триггеры, в т.ч. 5), §Autonomous mode,
 §Cycle status file, §Parallel CHECK streams, §Host requirements (roles → agents),
-§Orchestrator role; `config/skills/pdca-dotnet/assets/agents/*.md` и зеркала
+§Orchestrator role; `opencode/pdca-dotnet/assets/agents/*.md` и зеркала
 `config/agents/*.md` (`planner`, `coder`, `check`, `escalate`, `scout`, `security-auditor`,
-`architect`); `README.md`; метки диаграммы `config/skills/pdca-dotnet/assets/diagram/{workflow.json,gen_pdca.py}`.
+`architect`); `README.md`; метки диаграммы `opencode/pdca-dotnet/assets/diagram/{workflow.json,gen_pdca.py}`.
 
 ---
 
@@ -114,16 +118,16 @@ classification, insufficient evidence); `assets/agents/scout.md`.
 
 **Вход:** автономный прогон; отсутствует критерий приёмки / недоступен ресурс; ветка
 заблокирована или неоднозначна и неразрешима в цикле. Отдельно — обычный режим.
-**Требуемый исход:** в автономном режиме **вообще нет вопросов** пользователю, подтверждений,
-`go` или приглашений начать сессию (включая missing acceptance criteria и unavailable resource);
+**Требуемый исход:** в автономном режиме **вообще нет вопросов** пользователю, апрувов,
+приглашений начать сессию (включая missing acceptance criteria и unavailable resource);
 проблема проходит через `planner`/`escalate`, затем **STOP** с записанным итогом
 (закрыто/осталось/блокеры) и без вопроса. STOP **условен**: если эскалация разрешает вопрос и есть
 actionable пересмотренный план (`r+1`) — работа продолжается; остановка **не** автоматическая после
 каждой успешной эскалации, а только когда эскалация не разрешает вопрос и actionable плана нет.
 `Notice:` и финальный итог допустимы; автономность — не разрешение авто-коммита. В обычном режиме
-сохраняются необходимые вопросы и явный PLAN `go`.
+сохраняются необходимые вопросы и явный апрув плана.
 **Оперативные источники:** SKILL §Autonomous mode, §Transition gates (gate 1: normal mode
-go-ahead), §State machine; `assets/agents/planner.md` (plan-disk paragraph).
+plan approval), §State machine; `assets/agents/planner.md` (plan-disk paragraph).
 
 ## G. Один агрегированный активный `D:` при параллельных потоках
 
