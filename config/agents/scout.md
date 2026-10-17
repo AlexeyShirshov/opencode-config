@@ -75,7 +75,7 @@ permissions:
 
 ## Жёсткие правила
 
-- **Read-only.** Никаких правок (`edit`/`write` запрещены), субагентов нет (`task` запрещён),
+- **Read-only.** Никаких правок (`edit`/`write` запрещены), субагентов нет (делегирование запрещено),
   из команд разрешены только read-only: `git log/show/diff/status/branch/rev-parse/ls-files/grep/
   merge-base/check-ignore/cat-file`, `git worktree list`, `rg`, `gh issue view`/`gh pr view`, `ls`/`wc`.
   Нужна правка или решение — так и напиши: `decision/patch for the caller`.
