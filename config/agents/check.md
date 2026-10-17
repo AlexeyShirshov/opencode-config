@@ -9,14 +9,18 @@ permissions:
   # `read`/`glob` открыты ТОЛЬКО на evidence-артефакты цикла — чтобы сверять
   # row-level факты контракта по файлам, а не дособирать их сверх бюджета досбора.
   # (V2: отдельного действия `list` нет — `read` отдаёт и листинг каталога.)
-  # Портативный набор корней: `docs/specs/status/**` (дефолтный каталог статуса базового
-  # скилла pdca-dotnet), `artifacts/**`, `TestResults/**`, `StrykerOutput/**` (сырое
+  # Портативный набор корней: `.pdca/**` (фиксированный workspace-корень скиллов:
+  # статусы + evidence; §Skill workspace в базовом `pdca`), исторические
+  # `docs/specs/status/**` и `artifacts/**`, плюс `TestResults/**`, `StrykerOutput/**` (сырое
   # мутационное evidence). Проектные дополнительные корни (например scratch вне worktree) —
   # через `external_directory` на стороне проекта.
   # Код/диффы по-прежнему недоступны. Перечислять MCP-серверы не нужно.
   - action: "*"
     resource: "*"
     effect: deny
+  - action: read
+    resource: ".pdca/**"
+    effect: allow
   - action: read
     resource: "docs/specs/status/**"
     effect: allow
