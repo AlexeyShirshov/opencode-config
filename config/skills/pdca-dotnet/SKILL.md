@@ -1007,7 +1007,8 @@ log/artifact paths. Record failed, not-run, missing, and blocked evidence explic
 requires an observed applicability predicate; it must never waive an unconditional obligation.
 
 **Frozen evidence manifest (one per task — the single object CHECK reconciles):** DO writes one
-machine-readable manifest at the path PLAN pins in the status file, and CHECK reads it first. It
+machine-readable manifest at the path PLAN pins in the status file (the default path is the
+`generate` output of §Mechanical evidence pipeline), and CHECK reads it first. It
 is **frozen at the DO→CHECK boundary** (after the boundary sweep), bound to the frozen tree
 revision (`commit`/sha) and the contract revision `rv` under CHECK. During CHECK it is
 **append-only**: re-gather adds evidence or an `open` reason to existing rows; it never rewrites a
@@ -1023,8 +1024,36 @@ Every `required_rows` entry must appear; a row without a resolving reference is 
 silently dropped. Logs stay references — the manifest is a thin index, not a copy of artifacts.
 **No PASS while any BINDING/APPLICABLE `required_rows` entry is `open`;** CHECK resolves a row by
 opening its `path`, not by re-deriving it from the brief, and records the applicability
-disposition of a non-binding audit row (below). Validate the manifest with
-`scripts/validate_inner_loop.py manifest <manifest.json>` (row coverage + row/evidence shape).
+disposition of a non-binding audit row (below). The manifest passes the mechanical gate only when
+**both** tracked helpers exit `0`:
+- `scripts/validate_inner_loop.py manifest <manifest.json>` — row/evidence shape plus two-way
+  `required_rows` ↔ `rows[]` coverage;
+- `scripts/pdca_evidence.py lint --repo <root> --manifest <manifest.json>` — frozen-tree binding
+  (§Mechanical evidence pipeline below).
+Neither substitutes for the other; a nonzero exit is a failed evidence gate, never a warning.
+
+**Mechanical evidence pipeline (`scripts/pdca_evidence.py`, stdlib only).** The plan may opt into
+the atomic generator; DO then materialises the pinned contract as a JSON object that mirrors the
+status file (e.g. `<evidence-dir>/inputs/contract.json`) and runs:
+- `generate --repo <root> --contract <contract.json> --output <evidence-dir>` — resolves the frozen
+  synthetic tree from `base_ref` + `footprint` (paths under `exclusions` are overlaid out, not
+  removed from the base tree), writes one immutable receipt per required row under
+  `generations/<digest>/results/<row-id>.json`, and replaces `<evidence-dir>/manifest.json` last and
+  atomically (default `<evidence-dir>`: `artifacts/pdca/<task>/rv<k>/`). A preflight lint refuses
+  to regenerate over stale or inconsistent evidence, and a held lock refuses a concurrent writer —
+  it never silently repairs, never invents an execution and never turns `open` into `met`. DO runs
+  it at the DO→CHECK boundary.
+- `lint --repo <root> --manifest <manifest.json> [--scope-root <dir>]` — recomputes the frozen tree
+  with the same recipe and fails (`exit 2`) unless `manifest.tree == recomputed == every receipt's
+  tree == every receipt's tree_binding`, every referenced path resolves under the repo, row IDs are
+  unique, and `required_rows` ↔ `rows[]` cover each other exactly. It scans exactly one selected
+  revision directory (default: the manifest's own); unrelated historical revisions are untouched.
+Contract fields: `task`, `issue`, `status_file`, `path`, `base_ref`, `collection_baseline_ref`,
+`footprint`, `exclusions`, `contract_rv`, `supersedes`, `required_rows`, `rows[]` — the same row
+schema as the manifest (`id`, `status`, `requirements`, `predicate`, and by status `evidence` /
+`reason`; `open` rows are valid input). Exit codes: `0` ok, `2` violation (the diagnostic names the
+path + field), `1` usage/operational error. The CLI only mechanises provenance: the frozen manifest
+stays the single object CHECK reconciles, and re-gathering stays append-only.
 
 **Binding/applicability disposition (append-only).** The frozen manifest is never rewritten and no
 row is ever deleted: a pre-existing, self-imposed extra *audit* row stays in place with its
@@ -1088,7 +1117,8 @@ not a move** — the originals are preserved.
 
 This is **source-copy fidelity**: it reuses the existing source binding and digests and introduces
 no second competing evidence contract. It is **not** a proof of execution-time `committed == tested`
-and **not** the atomic evidence generator.
+and **not** the atomic evidence generator (`scripts/pdca_evidence.py`; §Versioned evidence
+contract → "Mechanical evidence pipeline").
 
 ## CHECK: audit checklist (generic)
 
@@ -1269,6 +1299,14 @@ row that is **binding/applicable** forbids PASS. A retained audit row carrying a
 (§Versioned evidence contract → "Binding/applicability disposition"); genuine required checks are
 never waived. Required artifacts must exist and support the reported result. N/A is valid only
 when its pinned observable predicate is demonstrated; unconditional obligations cannot be waived.
+
+**Mandatory mechanical gate before reading rows.** CHECK runs both tracked helpers on the frozen
+manifest and treats a nonzero exit as **evidence FAIL** (re-gather/STOP, never PASS):
+`scripts/validate_inner_loop.py manifest <manifest.json>` (row/evidence shape + two-way
+`required_rows` ↔ `rows[]` coverage) and `scripts/pdca_evidence.py lint --repo <root> --manifest
+<manifest.json>` (frozen-tree binding, recomputed independently, plus the same coverage). A
+manifest whose tree does not reconcile, a missing required row, an undeclared row, or a dangling
+evidence reference is an open evidence gate — never a reason to reclassify the row.
 
 **Missing evidence is not a product defect:** re-gather reports, logs, artifacts, or missing
 check results from the designated owner inside CHECK, within the pinned budget and existing
