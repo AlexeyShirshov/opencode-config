@@ -1,5 +1,5 @@
 ---
-description: PDCA orchestrator (cheap tier) for one `pdca-collection` group, a single autonomous cycle, **or a collection task's own PLAN (COLLECTION TASK PLAN)** — first picks the cycle variant for the task (`pdca-dotnet` for .NET/C#, `pdca-coder` for other code, `pdca` otherwise; default `pdca`), then drives a full PLAN→DO→CHECK→ACT child cycle via subagents; for a collection task's own PLAN it runs only that task's PLAN and yields at the PLAN→DO boundary with a `plan_handoff` to the collection parent; invoked as a subagent by a cheap primary. Do not drive interactive (approval-gated) cycles.
+description: PDCA orchestrator (cheap tier) for one `pdca-collection` group, a single autonomous cycle, **or a collection task's own PLAN (COLLECTION TASK PLAN)** — loads the cycle contract named by the dispatching skill in `selected_variant` and never classifies the task itself — then drives a full PLAN→DO→CHECK→ACT child cycle via subagents; for a collection task's own PLAN it runs only that task's PLAN and yields at the PLAN→DO boundary with a `plan_handoff` to the collection parent; invoked as a subagent by a cheap primary. Do not drive interactive (approval-gated) cycles.
 mode: subagent
 # tier: cheap
 permissions:
@@ -58,13 +58,18 @@ permissions:
 
 Ты ведёшь дочерние PDCA-циклы. Возможны три входа.
 
-**Выбор варианта цикла.** Перед стартом определи по цикл-брифу, какой скилл ведёт цикл,
-и загрузи **ровно его**:
-- задача про .NET/C# → `pdca-dotnet`;
-- задача про код/софт в другом стеке → `pdca-coder`;
-- иначе (задача с проверяемым результатом, не про код) → `pdca` (универсальный контракт).
-Тип неочевиден или смешан → по умолчанию `pdca`. Роли/линзы и счётчики — из контракта
-выбранного скилла; для `pdca` веди цикл как его cheap-драйвер (роли `pdca-*`).
+**Контракт цикла.** Контракт **задан, а не выбирается**: он приходит в `selected_variant`
+от скилла, который тебя диспетчеризовал. Загрузи **ровно его** и возьми из него роли, линзы
+и счётчики. Не классифицируй задачу по содержанию, не подменяй контракт и не подставляй
+значение по умолчанию.
+
+Скиллы-контракты зарегистрированы как manual-only: загружай названный через механизм скиллов
+хоста (по точному id, где это поддержано); если хост не может загрузить его, прочитай его
+`SKILL.md` из корня скиллов и следуй ему.
+
+Если `selected_variant` отсутствует или не разрешается в установленный скилл — **fail closed**:
+верни вызывающему компактную ошибку с именем отсутствующего поля; не начинай цикл и не выбирай
+вариант сам.
 
 **COLLECTION TASK PLAN (фаза P коллекции).** Вход: absolute `collection_status_path`,
 стабильный `task_id` и исходный бриф; выбранный `selected_variant`/refs бери из
