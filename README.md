@@ -83,7 +83,8 @@ JSON побеждает (`packages/opencode/src/agent/agent.ts`, `if (value.mode
 | `config/cli.json` | installed `~/.config/opencode/cli.json` (`cp` + `diff -q` = SYNC-OK). Клиентские настройки V2 — theme/keybinds/attention и **список CLI-плагинов** (порядок = порядок загрузки, `-<id>`/`-team.*` отключает, объект `{ package, options }` передаёт опции). Файл добавлен в снимок вместе с `plugins/sidebar-plugins`; изменение списка подхватывается только новым запуском opencode |
 | `config/tools/sync-roles.mjs` | гейт/генератор синхронизации `config/agents/*.md` → `config/skills/pdca-dotnet/assets/agents/*.md`. `bun config/tools/sync-roles.mjs --check` (exit 1 при расхождении настроек или структуры тел), `--fix` переписывает frontmatter assets (name/mode/steps/`# tier`/permission) из агентов, вырезая host-специфичный `external_directory` (вместо него — коммент-плейсхолдер). Описания и тела остаются ru/en и **правятся вручную** (перевод не генерируется); тул проверяет только совпадение структуры заголовков |
 | `config/AGENTS.md` | installed `~/.config/opencode/AGENTS.md` (`cp` + `diff -q` = SYNC-OK) |
-| `config/profiles/*.jsonc` | installed профиль; раздел профилей в README; алиас в `home/.bash_aliases` |
+| `config/profiles/*.jsonc` | installed профиль; **синхронизировать только через `config/tools/sync-profiles.mjs`**, не `cp`/`rsync` (иначе installed-правки теряются молча); раздел профилей в README; алиас в `home/.bash_aliases` |
+| `config/tools/sync-profiles.mjs` | безопасная синхронизация `config/profiles/*.jsonc` → `~/.config/opencode/profiles/`. Помнит sha256 последнего успешного sync в `~/.local/state/opencode/sync-profiles.json` (для нестандартного `--target` — `<target>/.sync-profiles.json`): `--check` (exit 1 — дрейф, 2 — локальная правка), `--fix` копирует только безопасные файлы, `--fix --force` перезаписывает локальную правку. Если installed разошёлся с последним sync, печатает diff `agent`-ролей и отказывается копировать — так был бы пойман откат Sol на `opencode/*` 18.10. Источник по умолчанию — `config/profiles` рядом со скриптом, target — `$OPENCODE_CONFIG_DIR`/`~/.config/opencode` |
 | `config/skills-keep.txt` | курируемый список always-on dotnet-скиллов профиля `deepseek`; installed `~/.config/opencode/skills-keep.txt`. Регаются только они (симлинки в `~/.config/opencode/skills-deepseek-curated` — это `skills.paths` профиля); остальные скиллы пака остаются в `~/.config/opencode/skills-deepseek` (opencode их не метёт → описания не стоят контекста) и читаются по требованию напрямую. Применение — `bun ~/.config/opencode/tools/curate-skills.mjs` (`--check` = exit 1 при дрейфе, `--fix` = пересобрать симлинки); перезапуск opencode обязателен |
 | `config/tools/*` | installed `~/.config/opencode/tools/*`; README |
 | `config/superpowers-skills-keep.txt` | курируемый список superpowers-скиллов; installed `~/.config/opencode/superpowers-skills-keep.txt`. Регается только он (симлинки в `~/.config/opencode/superpowers-skills-curated`); остальные скиллы плагина не метутся и читаются по требованию из `<plugin>/node_modules/superpowers/skills/<name>/SKILL.md`. `using-superpowers` в списке **не держать**: bootstrap плагин читает из полного пака и инъектит как раньше (см. строку про `patch-superpowers.mjs`). Применение — `bun ~/.config/opencode/tools/curate-skills.mjs --fix --pack superpowers`; перезапуск opencode обязателен |
@@ -92,16 +93,19 @@ JSON побеждает (`packages/opencode/src/agent/agent.ts`, `if (value.mode
 | `home/.bash_aliases`, `home/.bashrc` | `~/.bash_aliases`, `~/.bashrc`; `bash -n` |
 | переименование скилла/агента/профиля | старый `rg`-ом в репозитории и в installed; `OPENCODE_CONFIG=… opencode debug skill\|agent\|config` |
 
-Проверка после правки: `cp` в installed + `diff -q` (должно быть пусто) и, если менялся
-скилл/агент/профиль, `opencode debug …` из нужного профиля. **opencode читает конфиг при
-старте процесса** — открытая сессия правки не подхватит, нужен новый запуск. Полное
-восстановление снимка — `rsync` (см. ниже).
+Проверка после правки профиля: `bun config/tools/sync-profiles.mjs --fix` (копирует только
+безопасное; локальную installed-правку он откажется затирать и покажет diff ролей), затем
+`bun config/tools/sync-profiles.mjs --check` (exit 0). Если менялся скилл/агент/профиль —
+`opencode debug …` из нужного профиля. Конфиг и привязки ролей подхватывает `opencode reload`
+(или новый запуск), но **модель уже открытой сессии остаётся прежней** — её меняет `/models`.
+Полное восстановление снимка — `rsync` + `sync-profiles` (см. ниже).
 
 ## Восстановление
 
 ```bash
-# конфиг opencode
-rsync -a --delete config/ ~/.config/opencode/ --exclude node_modules
+# конфиг opencode (профили — отдельно, через guard: см. следующую строку)
+rsync -a --delete config/ ~/.config/opencode/ --exclude node_modules --exclude /profiles/
+bun config/tools/sync-profiles.mjs --fix
 
 # скиллы агентов
 rsync -a dot-agents/ ~/.agents/
