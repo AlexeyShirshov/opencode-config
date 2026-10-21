@@ -1,20 +1,37 @@
 #!/bin/sh
-# opencode agent-push guard.
+# opencode push guard + source-drift gate.
 #
-# AGENTS.md §Git: "Never run `git push`; the user pushes manually." The PDCA
-# cycle must never push (a real push slipped through once — origin/1.0.9-rc2 was
-# advanced by the cycle). This hook blocks a non-interactive (agent/cycle) push
-# while leaving an interactive human push untouched.
+# 1) Drift gate (AGENTS.md §Источник истины): in a repo that vendors skills/plugins
+#    (has config/tools/vendor-skills.mjs and a ../skills checkout), refuse to push
+#    while the snapshot differs from the committed, pushed skills repo.
+# 2) Agent-push guard: a non-interactive (agent/cycle) push is blocked; the user
+#    pushes manually. Override a single push: GIT_ALLOW_PUSH=1 git push ...
 #
-# Enable globally (all repos):
-#   git config --global core.hooksPath ~/.config/opencode/git-hooks
-# Per repo (tracked-tree opt-in that does not rely on .git/hooks):
-#   git config core.hooksPath ~/.config/opencode/git-hooks
-# Override a single push (scripts, GUI, CI):
-#   GIT_ALLOW_PUSH=1 git push ...
+# Enable (all repos):  git config --global core.hooksPath ~/.config/opencode/git-hooks
+# Per repo:            cp ~/.config/opencode/git-hooks/pre-push .git/hooks/pre-push
+
+set -u
 
 [ "${GIT_ALLOW_PUSH:-}" = "1" ] && exit 0
 
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+
+# --- 1) skills/plugins snapshot must match the source -----------------------
+if [ -f "$root/config/tools/vendor-skills.mjs" ] && [ -d "$root/../skills" ]; then
+  if command -v bun >/dev/null 2>&1; then
+    if ! (cd "$root" && bun config/tools/vendor-skills.mjs --check); then
+      echo "pre-push: BLOCKED — skills/plugins snapshot drifted from the skills repo." >&2
+      echo "  Fix the source in ../skills (test, commit, push), then:" >&2
+      echo "    bun config/tools/vendor-skills.mjs --fix" >&2
+      echo "    git add -A && git commit" >&2
+      exit 1
+    fi
+  else
+    echo "pre-push: bun not found — vendor-skills gate SKIPPED" >&2
+  fi
+fi
+
+# --- 2) the agent/cycle must not push --------------------------------------
 # A human at a terminal has a controlling tty; the agent/cycle does not.
 if [ -t 0 ] || [ -t 2 ]; then
   exit 0
