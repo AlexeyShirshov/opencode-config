@@ -8,7 +8,11 @@
   // Настройки (нужны редко, дефолты рабочие) — объектной формой:
   // { "package": "wsl-notify", "options": { "graceMs": 500, "minTurnMs": 500 } }.
   // Отключить плагин обратно — директивой `-wsl-notify`.
-  "plugins": ["superpowers@git+https://github.com/obra/superpowers.git", "wsl-notify"],
+  "plugins": [
+    "superpowers@git+https://github.com/obra/superpowers.git",
+    "wsl-notify",
+    "opencode-roslyn"
+  ],
   "agents": {
     // `plan` (встроенный primary) — как `architect`: default-deny.
     // `*` запрещает всё, включая любой MCP (`<server>_<tool>`) и

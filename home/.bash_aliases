@@ -129,7 +129,7 @@ filter-package() {
 }
 
 # opencode profiles (oc-ds определяется ниже как функция — поднимает zen-cache-proxy)
-alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode -c'
+alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode'
 
 # zen-cache-proxy: добавляет cache_control ttl="1h" к Anthropic-запросам (escalate,
 # security-auditor) к OpenCode Zen. Иначе prompt-cache живёт 5 мин и перезаписывается
@@ -154,16 +154,15 @@ _oc_zen_proxy_ensure() {
 }
 
 # oc-ds — основной профиль (обычная работа + PDCA-скилл); поднимает zen-cache-proxy
-# (нужен для Opus/Sol). У oc-ds -c (продолжить последнюю сессию); на пустом проекте -c
-# даёт "Unexpected server error" из placeholder sessionID "dummy"; новый сеанс —
-# `OPENCODE_CONFIG=$HOME/.config/opencode/profiles/deepseek.jsonc opencode` без -c.
+# (нужен для Opus/Sol). Всегда новый сеанс: `-c` (продолжить последнюю) не используем —
+# на пустом проекте он даёт "Unexpected server error" из placeholder sessionID "dummy".
 # Снимаем устаревшие алиасы, если остались в открытом шелле: иначе
 # при следующем source интерактивный bash разворачивает алиас в строке `oc-ds() {`
 # и падает с "syntax error near unexpected token `('".
 unalias oc-ds 2>/dev/null || true
 oc-ds() {
   _oc_zen_proxy_ensure
-  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" opencode -c "$@"
+  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" opencode "$@"
 }
 # isolated sandbox for experiments (own config + sessions DB)
 alias oc-sandbox='$HOME/sources/opencode-config-sandbox/bin/oc-sandbox'

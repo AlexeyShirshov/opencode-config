@@ -24,18 +24,19 @@
 
 ## Skills: spine and triggers
 
-- superpowers is installed but curated to the single skill `brainstorming`, exposed **only to `architect`** (Tab); its `using-superpowers` bootstrap still fires in every **primary** session, sub-agents get none.
+- superpowers is installed but curated to the single skill `brainstorming`, exposed **only to `architect`** (switch agents with `shift+tab` or the agent list `<leader>a`); its `using-superpowers` bootstrap still fires in every **primary** session, sub-agents get none.
+- **Grilling / brainstorming runs only under the `architect` agent.** Before starting a grilling, switch to `architect` — `shift+tab` (next agent, the `agent.cycle` command) or the agent list `<leader>a` (`ctrl+x`, then `a`/`ф`). In V2 a bare `tab` does NOT switch agents: it triggers autocomplete (`prompt.autocomplete.complete`). In `build`/`plan` and any other agent the skill is denied by permissions (`opencode.jsonc`: global `skill: brainstorming → deny`), and `skill brainstorming` returns `permission denied` — do not start a grilling from another agent and do not substitute hand-rolled questions for it.
 - Invoke skills **by name** via the `skill` tool; a bare Russian phrase depends on the model matching the English description.
 - **Universal cycle (`pdca`)** — the domain-neutral PDCA contract for tasks with a verifiable result — is invoked **explicitly by name**: `skill pdca` / `@pdca`. The family entry point is `pdca-entry`: it is the only skill advertised for automatic selection; the other contracts load only by explicit ID (`@pdca-dotnet`) or through its handoff. Its roles/tiers: `pdca-planner`/`pdca-check` — **medium**, `pdca-escalate` — **strong**, `pdca-executor` — **cheap**, а автономный драйвер — общий `pdca-orchestrator` (**cheap**); fact-gathering reuses `scout` (**cheap**). Role→model ids live only in the profile `agent` block (§Tier routing below).
 
 | Want | Say |
 | --- | --- |
-| Pre-feature interview | из `architect`: «используй скилл `brainstorming`: <тема>» |
+| Pre-feature interview | switch to `architect` (`shift+tab` / `<leader>a`), then say: «используй скилл `brainstorming`: <тема>» |
 | Install check | «расскажи про свои superpowers» |
 
 ### Tier routing: decisions on medium, facts on cheap
 
-- **Decisions** (requirements, design, decomposition, specs, plans, tradeoffs) → primary `architect` (medium, Tab); run it from `oc-ds`, where the medium/strong providers are configured (`oc-gp` falls back to its default).
+- **Decisions** (requirements, design, decomposition, specs, plans, tradeoffs) → primary `architect` (medium; switch with `shift+tab`); run it from `oc-ds`, where the medium/strong providers are configured (`oc-gp` falls back to its default).
 - **PDCA-цикл ведёт cheap-оркестратор** — по **эффективному тиру профиля**, не по имени агента. В autonomous-режиме cheap-primary **делегирует** одиночный цикл cheap-`pdca-orchestrator` через субагента, а normal-режим сохраняет интерактивный апрув плана (пользователь знакомится с планом и
 утверждает его); при недоступности `pdca-orchestrator` (нет агента / `subagent_depth` < 2 / делегирование запрещено) в autonomous применяется flat primary fallback (cheap-primary ведёт цикл сам) с пометкой `Notice:` и записанным summary, а в normal — сообщение пользователю. Medium/strong primary (в т.ч. `architect`) цикл не диспетчеризует; вне цикла решения остаются за `architect`. Внутри цикла решения PLAN/replan — `planner`, вердикт CHECK — `check`, эскалация — `escalate` (её **решение** оркестратор только **роутит**: revised plan → `planner`, реализация/STOP → `coder`; семантически не перевыбирает, гейты/no-4th/scope/security не отменяет). Права дорогих ролей не расширяются. Вариант цикла называет диспетчеризующий скилл (`pdca-entry` / `pdca-collection` / `pdca-incremental`) и передаёт драйверу как `selected_variant`; сам драйвер задачу не классифицирует.
 - **Facts** (code search, reading for discovery, web, library/MS docs, repo wikis) → `scout` (cheap, read-only, `file:line`/URLs only, no recommendations). This is enforced by permissions, not advice: `architect` denies read/grep/glob/webfetch/websearch, all MCP and shell/edit, and limits subagent launches to scout/coder; `plan` denies the same tools and forbids subagent launches of `general`/`explore`; `escalate` likewise denies search/MCP, limits subagent launches to `scout`, and narrows `bash` to read-only inspection (no build/test — `coder`/`check` run them).
