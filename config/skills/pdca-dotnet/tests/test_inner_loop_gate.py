@@ -32,7 +32,7 @@ CONFIG_AGENTS = (CONFIG / "agents") if CONFIG else None
 
 SCRIPT = SKILL_DIR / "scripts/validate_inner_loop.py"
 SKILL = SKILL_DIR / "SKILL.md"
-EN_CODER = SKILL_DIR / "assets/agents/coder.md"
+EN_CODER = SKILL_DIR / "assets/agents/pdca-executor.md"
 # The RU coder brief is a host artifact (config/agents) and needs the host repo.
 RU_CODER = CONFIG_AGENTS / "coder.md" if CONFIG_AGENTS else None
 
@@ -1509,6 +1509,36 @@ class ArchivedPackTests(unittest.TestCase):
             )
         self.assertEqual(proc.returncode, 2)
         self.assertIn("rewritten after cleanup", output(proc))
+
+
+class SkillBriefExampleTest(unittest.TestCase):
+    """The brief example in SKILL.md must itself pass the gate.
+
+    The planner builds the DO brief from this example; a doc/schema drift here
+    surfaces only at DO start, as a fail-closed STOP.  The guard below closes
+    the loop: extract the example and run it through the real validator.
+    """
+
+    @staticmethod
+    def _example() -> dict:
+        text = SKILL.read_text(encoding="utf-8")
+        section = text.index("### DO brief: mandatory `test scope`")
+        start = text.index("```json", section)
+        body_start = text.index("\n", start) + 1
+        end = text.index("```", body_start)
+        return json.loads(text[body_start:end])
+
+    def test_example_is_a_brief_not_a_bare_scope(self):
+        payload = self._example()
+        self.assertIn("unit", payload)
+        self.assertIn("scope", payload)
+        self.assertNotIn("projects", payload, "scope fields must be nested under `scope`")
+
+    def test_example_passes_the_brief_gate(self):
+        payload = self._example()
+        proc = run_gate("brief", payload)
+        self.assertEqual(0, proc.returncode, output(proc))
+        self.assertNotIn("FAIL:", output(proc))
 
 
 if __name__ == "__main__":

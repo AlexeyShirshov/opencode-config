@@ -47,9 +47,9 @@ ROLE_TIER = {
     "pdca-escalate": "strong",
     "pdca-executor": "cheap",
 }
-# The skill also ships the shared gatherer `scout` as a portable asset (flat name,
-# cheap tier) alongside the four cycle roles.
-ASSET_TIER = dict(ROLE_TIER, scout="cheap")
+# The skill also ships the shared gatherer (`pdca-scout`) and the runner
+# (`pdca-orchestrator`) as portable assets, both on the cheap tier.
+ASSET_TIER = dict(ROLE_TIER, **{"pdca-scout": "cheap", "pdca-orchestrator": "cheap"})
 
 # The universal roles mirror the host roles' routing: `pdca-<role>` binds the
 # same model/variant as its host counterpart. Asserted against the profiles
@@ -64,10 +64,32 @@ HOST_ROLES = (
     "architect", "planner", "check", "escalate", "security-auditor",
     "coder", "scout", "pdca-orchestrator",
 )
+# The host copy of the shared gatherer is spelled `scout`; the skill ships it
+# prefixed (`pdca-scout`). Host/asset comparisons normalise both sides.
+ALIASES = {
+    "scout": "pdca-scout", "planner": "pdca-planner", "coder": "pdca-executor",
+    "check": "pdca-check", "escalate": "pdca-escalate",
+    "security-auditor": "pdca-security-auditor",
+}
+
+
+def canon(text: str) -> str:
+    """Rename bare host role names to the prefixed asset names (idempotent)."""
+    for bare, prefixed in ALIASES.items():
+        text = re.sub(r"(?<![\w-])%s(?![\w-])" % re.escape(bare), prefixed, text)
+    return text
+
+
+def canon_resources(resources: set) -> set:
+    return {canon(res) for res in resources}
 
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def norm(text: str) -> str:
+    return " ".join(text.split())
 
 
 def _parse_block(block: str) -> dict:
@@ -251,7 +273,7 @@ class RoleParityTest(unittest.TestCase):
                 self.assertRegex(raw, r"(?m)^# tier: %s\s*$" % tier)
                 self.assertNotRegex(raw, r"(?m)^\s*model\s*:")
 
-    def test_assets_are_the_four_roles_plus_scout(self):
+    def test_assets_are_the_roles_plus_gatherer_and_runner(self):
         assets = sorted(p.name for p in ASSET_AGENTS.glob("*.md"))
         expected = sorted("%s.md" % n for n in ASSET_TIER)
         self.assertEqual(expected, assets)
@@ -286,8 +308,8 @@ class RoleParityTest(unittest.TestCase):
                 host = read(HOST_DIR / ("%s.md" % name))
                 asset = read(ASSET_AGENTS / ("%s.md" % name))
                 self.assertEqual(
-                    host.split("\n---\n", 1)[1],
-                    asset.split("\n---\n", 1)[1],
+                    canon(host.split("\n---\n", 1)[1]),
+                    canon(asset.split("\n---\n", 1)[1]),
                     "%s host/asset body differ" % name,
                 )
                 hperm = permission_rules(HOST_DIR / ("%s.md" % name))
@@ -304,8 +326,8 @@ class RoleParityTest(unittest.TestCase):
                 for action in ("read", "glob", "shell", "subagent", "skill", "question"):
                     with self.subTest(role=name, action=action):
                         self.assertEqual(
-                            allowed_resources(hperm, action),
-                            legacy_allowed(aperm, action),
+                            canon_resources(allowed_resources(hperm, action)),
+                            canon_resources(legacy_allowed(aperm, action)),
                             "%s: %s allowlist differs host vs asset" % (name, action),
                         )
 
@@ -321,7 +343,7 @@ class PermissionRoutingTest(unittest.TestCase):
     def test_escalate_only_allows_scout(self):
         rules = permission_rules(HOST_DIR / "pdca-escalate.md")
         self.assertEqual("deny", effective(rules, "subagent", "*"))
-        self.assertEqual({"scout"}, allowed_resources(rules, "subagent"))
+        self.assertEqual({"pdca-scout"}, canon_resources(allowed_resources(rules, "subagent")))
 
 
 @unittest.skipUnless(HOST_AVAILABLE, SKIP_HOST)
@@ -362,16 +384,18 @@ class AdditiveIntegrationTest(unittest.TestCase):
             with self.subTest(skill=name):
                 self.assertNotIn(name, lines)
 
-    def test_agents_md_has_explicit_pdca_and_keeps_old_triggers(self):
+    def test_agents_md_points_to_the_entry_without_a_phrase_table(self):
         text = read(AGENTS_MD)
+        self.assertIn("pdca-entry", text)
         self.assertIn("skill pdca", text)
-        self.assertIn("pdca-coder", text)
-        self.assertIn("pdca-dotnet", text)
+        self.assertNotIn("Trigger phrases «по циклу»", text)
+        self.assertNotIn("«по циклу» / «через PDCA» → `pdca-coder`", text)
+        self.assertNotIn("picks the cycle variant", text)
 
 
 @unittest.skipUnless(HOST_AVAILABLE, SKIP_HOST)
 class OrchestratorVariantSelectionTest(unittest.TestCase):
-    """The shared cheap driver `pdca-orchestrator` picks the cycle variant per task."""
+    """The shared cheap driver obeys the contract named by the dispatching skill."""
 
     UNIVERSAL_ROLES = ("pdca-planner", "pdca-executor", "pdca-check", "pdca-escalate")
 
@@ -393,6 +417,85 @@ class SkillFrontmatterTest(unittest.TestCase):
         end = text.find("\n---", 3)
         data = _parse_block(text[3:end])
         self.assertEqual("pdca", data.get("name"))
+
+
+RUNNER_ASSET = ASSET_AGENTS / "pdca-orchestrator.md"
+FAMILY_SKILLS = ("pdca-entry", "pdca", "pdca-coder", "pdca-dotnet", "pdca-collection", "pdca-incremental")
+# Repo root: <repo>/opencode/pdca/tests/<this file>.
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
+class RunnerMetadataBoundaryTest(unittest.TestCase):
+    """The runner learns state from tool outputs and reads durable files only in scope."""
+
+    @staticmethod
+    def _body() -> str:
+        return norm(read(RUNNER_ASSET)).lower()
+
+    def test_runner_receives_metadata_from_tool_outputs(self):
+        self.assertRegex(self._body(), r"\btool outputs?\b")
+
+    def test_runner_reads_durable_state_only_in_scope(self):
+        text = self._body()
+        self.assertTrue(
+            "scoped" in text or "host-permitted" in text,
+            "runner must bound durable reads to a scoped/host-permitted boundary",
+        )
+        self.assertIn("read", text)
+
+    def test_runner_does_not_search_the_workspace_or_shell_out(self):
+        negations = re.compile(r"\b(?:never|not|no|cannot|don't)\b|не\b")
+        for line in read(RUNNER_ASSET).splitlines():
+            low = line.lower()
+            flagged = [p for p in ("workspace discovery",) if p in low]
+            if re.search(r"\b(?:rg|grep)\b", low):
+                flagged.append("rg/grep")
+            for phrase in flagged:
+                with self.subTest(phrase=phrase, line=line):
+                    self.assertRegex(
+                        low, negations,
+                        "runner must not instruct a workspace search or a shell grep: %r" % line,
+                    )
+
+
+class RunnerAssetTest(unittest.TestCase):
+    """The runner ships as a portable asset in every skill of the family."""
+
+    def test_runner_asset_is_shipped_here(self):
+        self.assertTrue(RUNNER_ASSET.is_file(), "assets/agents/pdca-orchestrator.md missing")
+        data = frontmatter(RUNNER_ASSET)
+        self.assertEqual("pdca-orchestrator", data.get("name"))
+        self.assertEqual("subagent", data.get("mode"))
+
+    def test_runner_is_cheap_and_carries_no_model(self):
+        raw = read(RUNNER_ASSET)
+        self.assertRegex(raw, r"(?m)^# tier: cheap\s*$")
+        self.assertNotRegex(raw, r"(?m)^\s*model\s*:")
+
+    def test_runner_is_a_dispatcher_not_a_worker(self):
+        perm = legacy_permission(RUNNER_ASSET)
+        self.assertEqual("deny", perm.get("edit"), "runner must not edit")
+        self.assertEqual("deny", perm.get("bash"), "runner must not run commands")
+        self.assertEqual("deny", perm.get("write"))
+        self.assertEqual("deny", perm["task"].get("*"))
+
+    def test_runner_dispatches_the_family_roles(self):
+        perm = legacy_permission(RUNNER_ASSET)
+        allowed = {k for k, v in perm["task"].items() if v == "allow"}
+        self.assertEqual(
+            {"pdca-planner", "pdca-executor", "pdca-check", "pdca-escalate",
+             "pdca-scout", "pdca-security-auditor", "docfx-specialist", "dotnet-*"},
+            allowed,
+        )
+
+    def test_runner_asset_is_identical_in_every_skill(self):
+        copies = {s: (REPO_ROOT / "opencode" / s / "assets/agents/pdca-orchestrator.md")
+                  for s in FAMILY_SKILLS}
+        expected = copies["pdca"].read_bytes()
+        for skill, path in copies.items():
+            with self.subTest(skill=skill):
+                self.assertTrue(path.is_file(), "%s: runner asset missing" % skill)
+                self.assertEqual(expected, path.read_bytes(), "%s: runner copy drifted" % skill)
 
 
 if __name__ == "__main__":

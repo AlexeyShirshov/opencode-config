@@ -12,7 +12,7 @@ command's name or the presence of ``--filter``:
 
 This helper validates the JSON artifacts that make that enforceable:
 
-  * a **brief** scope, produced before dispatch to `coder`;
+  * a **brief** scope, produced before dispatch to `pdca-executor`;
   * a **journal** — the raw, append-only execution capture (a `start` event at
     launch, the result appended on completion) that the report is projected from;
   * a **report** (brief + `executions`), produced before CHECK passes; with
@@ -96,7 +96,7 @@ Examples
   validate_inner_loop.py project /tmp/journal.json
 
   # validate the frozen evidence manifest (row coverage + row/evidence shape)
-  validate_inner_loop.py manifest artifacts/pdca/<task>/rv1/manifest.json
+  validate_inner_loop.py manifest .pdca/<task>/rv1/manifest.json
 
   # exit 0 = valid, 2 = violation(s), 1 = usage / unreadable / malformed JSON
   validate_inner_loop.py report /tmp/evidence.json; echo $?
@@ -998,7 +998,7 @@ def validate_cleanup(data):
     if not _is_int(rv) or rv < 1:
         violations.append("cleanup.rv must be an integer >= 1")
         rv = 0
-    evidence_root = data.get("evidence_root", "artifacts/pdca")
+    evidence_root = data.get("evidence_root", ".pdca")
     if not _nonempty_str(evidence_root):
         violations.append("cleanup.evidence_root must be a nonempty string")
     if not _nonempty_str(data.get("at")):

@@ -2,7 +2,7 @@
 
 These tests read the skill directory (`opencode/pdca-coder/`) as *text* and assert the
 retained PDCA rules are present in the operative sections (state machine, counters, gates,
-todo tracker, autonomous mode, escalation, evidence/recovery/injection, status
+the status file as the only progress mirror, autonomous mode, escalation, evidence/recovery/injection, status
 file, parallel DO streams, worktree template).  They are rule-presence guards,
 not behavioral proof.
 
@@ -82,10 +82,19 @@ def parse_frontmatter(block: str) -> dict:
     return keys
 
 
+# The runner is a dispatcher: its permission block allowlists the .NET lens
+# agents it may dispatch. Exempt it from the stack-token guard; the exemption is
+# pinned to exactly this file in the test below.
+RUNNER_ASSET = SKILL_DIR / "assets/agents/pdca-orchestrator.md"
+SCAN_EXEMPT = frozenset((RUNNER_ASSET,))
+
+
 def scan_tree(root: Path, patterns) -> list:
     hits = []
     for path in sorted(root.rglob("*")):
         if not path.is_file() or "__pycache__" in path.parts:
+            continue
+        if path.resolve() in {p.resolve() for p in SCAN_EXEMPT}:
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -102,14 +111,14 @@ class ContractConsistencyTest(unittest.TestCase):
         cls.skill_raw = read(SKILL_PATH)
         cls.skill = norm(cls.skill_raw)
         cls.fm = parse_frontmatter(frontmatter_block(cls.skill_raw))
-        cls.counters = norm(between(cls.skill_raw, "## State machine", "### Phase todo tracker"))
-        cls.todo = norm(between(cls.skill_raw, "### Phase todo tracker", "Transition gates:"))
+        cls.counters = norm(between(cls.skill_raw, "## State machine", "### Phase progress mirror"))
+        cls.mirror = norm(between(cls.skill_raw, "### Phase progress mirror", "Transition gates:"))
         cls.status_file = norm(
             between(cls.skill_raw, "### Cycle status file", "### Message for the next session")
         )
         cls.autonomous = norm(between(cls.skill_raw, "## Autonomous mode", "## Red flags"))
         cls.escalation = norm(
-            between(cls.skill_raw, "### Escalation (`escalate`)",
+            between(cls.skill_raw, "### Escalation (`pdca-escalate`)",
                     "## PLAN selects the toolchain and lenses")
         )
         cls.evidence = norm(
@@ -141,7 +150,7 @@ class ContractConsistencyTest(unittest.TestCase):
     # --- frontmatter ------------------------------------------------------
 
     def test_frontmatter_has_exactly_name_and_description(self):
-        self.assertEqual({"name", "description"}, set(self.fm))
+        self.assertEqual({"name", "description", "metadata", "disable-model-invocation"}, set(self.fm))
         self.assertEqual("pdca-coder", self.fm["name"])
         self.assertNotIn("model", self.fm)
 
@@ -196,14 +205,16 @@ class ContractConsistencyTest(unittest.TestCase):
         self.assertIn("AGENTS.md", self.gate4)
         self.assertIn("status file is finalized", self.gate4)
 
-    # --- mandatory todo tracker rules -------------------------------------
+    # --- the status file is the only progress mirror ----------------------
 
-    def test_todo_tracker_rules(self):
-        self.assertIn("todowrite", self.todo)
-        self.assertIn("exactly one in_progress", self.todo)
-        self.assertIn("single aggregate D:", self.todo)
-        self.assertIn("Status first, todo second", self.todo)
-        self.assertIn("Reconcile each turn", self.todo)
+    def test_progress_mirror_rules(self):
+        self.assertIn("Progress lives only in the cycle status file", self.mirror)
+        self.assertIn("no separate todo or sidebar mirror", self.mirror)
+        self.assertIn("a second mirror only creates divergence", self.mirror)
+        self.assertIn("executor updates the status file in the same turn", self.mirror)
+        self.assertIn("Reconcile each turn", self.mirror)
+        self.assertIn("never from memory", self.mirror)
+        self.assertIn("nothing changed", self.mirror)
 
     # --- autonomous mode: delegation, fallback, Notice --------------------
 
@@ -211,7 +222,7 @@ class ContractConsistencyTest(unittest.TestCase):
         self.assertIn("pdca-orchestrator", self.autonomous)
         self.assertIn("subagent dispatch", self.autonomous)
         self.assertIn("fall back to the flat primary", self.autonomous)
-        self.assertIn("subagent_depth", self.autonomous)
+        self.assertIn("nested delegation", self.autonomous)
         self.assertIn("Notice:", self.autonomous)
 
     # --- escalation: triggers, scoping, no-4th, route-don't-re-decide -----
@@ -225,7 +236,7 @@ class ContractConsistencyTest(unittest.TestCase):
 
     def test_escalation_no_fourth_attempt(self):
         self.assertIn("there is no 4th attempt", self.escalation)
-        self.assertIn("gets no 4th attempt even after escalate", self.escalation)
+        self.assertIn("gets no 4th attempt even after pdca-escalate", self.escalation)
 
     def test_escalation_is_routed_not_re_decided(self):
         self.assertIn("never by re-deciding", self.skill)
@@ -244,7 +255,7 @@ class ContractConsistencyTest(unittest.TestCase):
         self.assertIn("status file is the source of truth", self.recovery)
         self.assertIn("revision r", self.recovery)
         self.assertIn("attempt n/3", self.recovery)
-        self.assertIn("Rebuild the todo", self.recovery)
+        self.assertIn("Reconstruct the state", self.recovery)
         self.assertIn("Recovered after compaction", self.recovery)
 
     def test_instruction_priority_and_injection_defense(self):
@@ -257,7 +268,7 @@ class ContractConsistencyTest(unittest.TestCase):
     # --- status file, parallel DO streams, worktree template --------------
 
     def test_cycle_status_file_schema(self):
-        self.assertIn("docs/specs/status/<task>-<N>.md", self.status_file)
+        self.assertIn(".pdca/status/<task>-<N>.md", self.status_file)
         self.assertIn("Progress log", self.status_file)
         self.assertIn("Current cycle N", self.status_file)
         self.assertIn("Plan revision r", self.status_file)
@@ -282,6 +293,12 @@ class ForbiddenTokenGuardTest(unittest.TestCase):
     def test_no_forbidden_token_in_any_pdca_file(self):
         hits = scan_tree(SKILL_DIR, forbidden_tokens())
         self.assertEqual([], hits, "forbidden tokens found: %r" % hits)
+
+    def test_only_the_runner_is_exempt_from_the_stack_scan(self):
+        self.assertEqual({RUNNER_ASSET}, set(SCAN_EXEMPT))
+        self.assertTrue(RUNNER_ASSET.is_file(), "runner asset missing")
+        hits = [p for p, _ in scan_tree(SKILL_DIR, forbidden_tokens())]
+        self.assertNotIn(str(RUNNER_ASSET), hits)
 
     def test_detector_catches_a_rejected_sample(self):
         patterns = forbidden_tokens()

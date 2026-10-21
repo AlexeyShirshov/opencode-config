@@ -2,7 +2,7 @@
 
 These tests read the *runtime surface* as text and assert the retained,
 domain-neutral PDCA rules are present in the operative sections (state machine,
-counters, phase todo, transition gates, generic phase contracts, normal /
+counters, the phase progress mirror, transition gates, generic phase contracts, normal /
 autonomous modes, durable status, recovery, escalation, evidence-over-assertion,
 generic operating constraints).  They validate the skill *implementation*; they
 are not an instruction that end users must write code or tests.
@@ -53,6 +53,12 @@ HOST_AGENTS = tuple(
     for name in ("planner", "executor", "check", "escalate")
 ) if CONFIG else ()
 
+# The runner is host-facing routing glue: it must name the family's variants
+# (`pdca-coder`/`pdca-dotnet`) and the stack they cover. It is exempt from the
+# domain/stack token scan; the exemption is pinned to exactly this file.
+RUNNER_ASSET = SKILL_DIR / "assets/agents/pdca-orchestrator.md"
+SCAN_EXEMPT = frozenset((RUNNER_ASSET,))
+
 # Word-boundary (where applicable) domain/stack tokens that must never appear
 # in the universal runtime surface.
 FORBIDDEN_WORDS = (
@@ -77,7 +83,7 @@ FORBIDDEN_WORDS = (
     "docfx",
     "pdca-coder",
     "pdca-dotnet",
-    "security-auditor",
+    "pdca-security-auditor",
 )
 # Tokens whose punctuation makes a word boundary awkward; matched literally.
 FORBIDDEN_LITERALS = (".net", "c#")
@@ -118,7 +124,10 @@ def parse_frontmatter(block: str) -> dict:
 def runtime_files() -> list:
     files = [SKILL_PATH]
     if ASSET_AGENTS.is_dir():
-        files += sorted(p for p in ASSET_AGENTS.glob("*.md") if p.is_file())
+        files += sorted(
+            p for p in ASSET_AGENTS.glob("*.md")
+            if p.is_file() and p not in SCAN_EXEMPT
+        )
     if DIAGRAM.is_dir():
         files += sorted(p for p in DIAGRAM.iterdir() if p.is_file())
     files += [p for p in HOST_AGENTS if p.is_file()]
@@ -177,8 +186,8 @@ class ContractConsistencyTest(unittest.TestCase):
         cls.skill_raw = read(SKILL_PATH)
         cls.skill = norm(cls.skill_raw)
         cls.fm = parse_frontmatter(frontmatter_block(cls.skill_raw))
-        cls.counters = norm(between(cls.skill_raw, "## State machine", "### Phase todo tracker"))
-        cls.todo = norm(between(cls.skill_raw, "### Phase todo tracker", "### DO → PLAN candidate"))
+        cls.counters = norm(between(cls.skill_raw, "## State machine", "### Phase progress mirror"))
+        cls.mirror = norm(between(cls.skill_raw, "### Phase progress mirror", "### DO → PLAN candidate"))
         cls.gates = norm(between(cls.skill_raw, "### Transition gates", "## Phase contracts"))
         cls.gate3 = norm(between(cls.skill_raw, "3. **CHECK → ACT**", "4. **ACT → EXIT**"))
         cls.status = norm(
@@ -188,7 +197,7 @@ class ContractConsistencyTest(unittest.TestCase):
     # --- frontmatter ------------------------------------------------------
 
     def test_frontmatter_has_exactly_name_and_description(self):
-        self.assertEqual({"name", "description"}, set(self.fm))
+        self.assertEqual({"name", "description", "metadata", "disable-model-invocation"}, set(self.fm))
 
     def test_name_is_pdca(self):
         self.assertEqual("pdca", self.fm.get("name"))
@@ -209,7 +218,7 @@ class ContractConsistencyTest(unittest.TestCase):
         raw = self.skill_raw
         for anchor in (
             "## State machine",
-            "### Phase todo tracker",
+            "### Phase progress mirror (status file only)",
             "### Transition gates",
             "## Phase contracts",
             "## Normal and autonomous modes",
@@ -261,10 +270,12 @@ class ContractConsistencyTest(unittest.TestCase):
         stop = norm(between(self.skill_raw, "**STOP** is a **separate terminal outcome**", "## Normal and autonomous modes"))
         self.assertIn("not the ACT phase and not a green gate", stop)
 
-    # --- status first, todo second ----------------------------------------
+    # --- the status file is the only progress mirror ----------------------
 
-    def test_status_first_todo_second_and_path(self):
-        self.assertIn("Status first, todo second", self.todo)
+    def test_status_file_is_the_only_progress_mirror(self):
+        self.assertIn("Progress lives only in the cycle status file", self.mirror)
+        self.assertIn("no separate todo or sidebar mirror", self.mirror)
+        self.assertIn("a second mirror only creates divergence", self.mirror)
         self.assertIn(".pdca/status/<task>-<N>.md", self.skill)
         self.assertIn(".pdca/status/<task>-<N>.md", self.status)
 
@@ -282,6 +293,13 @@ class ContractConsistencyTest(unittest.TestCase):
 
 class ForbiddenTokenGuardTest(unittest.TestCase):
     """Zero matches for all domain/stack tokens anywhere on the runtime surface."""
+
+    def test_only_the_runner_is_exempt_from_the_token_scan(self):
+        self.assertEqual({RUNNER_ASSET}, set(SCAN_EXEMPT))
+        self.assertTrue(RUNNER_ASSET.is_file(), "runner asset missing")
+        scanned = set(runtime_files())
+        self.assertNotIn(RUNNER_ASSET, scanned)
+        self.assertEqual(set(ASSET_AGENTS.glob("*.md")) - scanned, {RUNNER_ASSET})
 
     def test_no_forbidden_token_in_runtime_surface(self):
         hits = scan_forbidden()
@@ -316,24 +334,28 @@ class ForbiddenTokenGuardTest(unittest.TestCase):
 
 class RuntimeContractEvidenceTest(unittest.TestCase):
     """K3/K9 evidence: the runtime SKILL.md text literally encodes the
-    phase-todo rule, the normal-mode start signal, and the four generic
-    operating constraints.  Clear, named, file-text assertions only."""
+    phase progress mirror rule, the normal-mode start signal, and the four
+    generic operating constraints.  Clear, named, file-text assertions only."""
 
     @classmethod
     def setUpClass(cls) -> None:
         cls.raw = read(SKILL_PATH)
         cls.skill = norm(cls.raw)
 
-    # --- K3: phase todo tracking -----------------------------------------
+    # --- K3: phase progress mirror is the status file ---------------------
 
-    def test_phase_todo_status_first_todo_second_rule(self):
-        self.assertIn("Status first, todo second", self.skill)
-        self.assertIn("never ahead", self.skill)
+    def test_phase_progress_mirror_is_the_status_file_only(self):
+        self.assertIn("Progress lives only in the cycle status file", self.skill)
+        self.assertIn("no separate todo or sidebar mirror", self.skill)
+        self.assertIn("a second mirror only creates divergence", self.skill)
         self.assertIn("the status file wins", self.skill)
 
-    def test_phase_todo_same_turn_and_reconcile(self):
+    def test_phase_progress_mirror_same_turn_and_reconcile(self):
         self.assertIn("Same turn", self.skill)
+        self.assertIn("the executor updates the status file in the same turn", self.skill)
         self.assertIn("Reconcile each turn", self.skill)
+        self.assertIn("never from memory", self.skill)
+        self.assertIn("nothing changed", self.skill)
 
     # --- K3: normal-mode explicit start signal ---------------------------
 

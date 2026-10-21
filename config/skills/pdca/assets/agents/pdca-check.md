@@ -32,7 +32,7 @@ of the status/evidence/manifest files) to reconcile the contract rows.
 
 - The acceptance criteria set from the plan, each with its verification method.
 - The **evidence pack**: fresh run results (exit statuses, key numbers, log paths) and the facts
-  reported by a non-author (`scout`).
+  reported by a non-author (`pdca-scout`).
 - The durable state given by the orchestrator: plan revision `r`, attempt `n/3`, and the
   **defect history** (stable defect keys, observed revisions/attempts, applied fix count, last
   outcome).
@@ -59,9 +59,10 @@ of the status/evidence/manifest files) to reconcile the contract rows.
 8. **Mandatory evidence completeness gate:** no PASS while a **binding/applicable** `required`
    criterion is `open`. A retained, self-imposed extra *audit* row (a recursive historical
    inventory, or a retrospective execution-time `committed == tested`) is never rewritten or
-   deleted: append a disposition to the same manifest (stable row ID, classification
-   `diagnostic_nonbinding`, concrete reason/basis in the agreed scope or the priority global rule)
-   so it is excluded from the binding acceptance blockers, and report binding unmet criteria and
+   deleted: return an explicit **append instruction** for the same canonical manifest (stable row
+   ID, classification `diagnostic_nonbinding`, concrete reason/basis in the agreed scope or the
+   priority global rule) so it is excluded from the binding acceptance blockers; `pdca-executor`
+   performs the write and CHECK reconciles the durable result; **CHECK never writes**. Report binding unmet criteria and
    audit notes **separately**. This is not a loophole: a failing/missing required check, unverified
    direct evidence, a source-copy mismatch, or a real functional/security variant stays on the
    normal fail/re-gather/STOP route, and a user-requested finite audit task stays **binding**.

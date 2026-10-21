@@ -89,6 +89,7 @@ IN_SCOPE_TEXT_FILES = [
     SKILL_DIR / "assets/diagram/gen_collection.py",
     SKILL_DIR / "tests/test_verification_recovery.py",
     SKILL_DIR / "tests/scenarios.md",
+    SKILL_DIR / "tests/git-model-sim.sh",
     SKILL_DIR / "SKILL.md",
     (CONFIG / "agents/pdca-orchestrator.md") if CONFIG else None,
     SKILL_DIR / "assets/diagram/collection-hand.svg",
@@ -578,10 +579,10 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                 cols = [g for g in _groups(root) if g.get("data-column") == "C"]
                 self.assertEqual(1, len(cols), "expected exactly one data-column=C group")
                 col = cols[0]
-                self.assertEqual("check", col.get("data-role"))
+                self.assertEqual("pdca-check", col.get("data-role"))
                 self.assertEqual("medium", col.get("data-tier"))
                 col_text = group_visible_text(col).lower()
-                self.assertIn("check", col_text)
+                self.assertIn("pdca-check", col_text)
                 self.assertIn("medium", col_text)
                 # the four generic mandatory-check cards survive (task-typed,
                 # not tied to any single technology) ...
@@ -602,11 +603,11 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
                 ]
                 self.assertEqual(1, len(verdict), "no always-run check-verdict group")
                 vg = verdict[0]
-                self.assertEqual("check", vg.get("data-role"))
+                self.assertEqual("pdca-check", vg.get("data-role"))
                 self.assertEqual("medium", vg.get("data-tier"))
                 vtext = group_visible_text(vg).lower()
                 self.assertIn("вердикт", vtext)
-                self.assertIn("check", vtext)
+                self.assertIn("pdca-check", vtext)
                 self.assertIn("pass", vtext)
                 self.assertIn("fail", vtext)
                 self.assertIn("medium", _texts_with_class(vg, "bm"))
@@ -963,10 +964,10 @@ class VerificationRecoveryRenderTest(unittest.TestCase):
 # ---------------------------------------------------------------------------
 # 2026-10-02 merge-retry follow-up (PHASE1 focused contract tests).
 #
-# Post-merge conflict: a *successful* `escalate` merge advice must return to the
-# orchestrator, which re-dispatches the merge to `coder` (or the group tip is
-# skipped as `incomplete`); `escalate`/strong never edits and never spawns
-# `coder`.  The main diagram must show two real incoming MERGE dispatch routes
+# Post-merge conflict: a *successful* `pdca-escalate` merge advice must return to the
+# orchestrator, which re-dispatches the merge to `pdca-executor` (or the group tip is
+# skipped as `incomplete`); `pdca-escalate`/strong never edits and never spawns
+# `pdca-executor`.  The main diagram must show two real incoming MERGE dispatch routes
 # (initial all-lanes-terminal + post-escalate retry/skip) and a labelled
 # `E -> orchestrator` decision result; the lower state graph must expose an
 # explicit MERGE node (10 nodes / 14 edges, including the terminal corrective
@@ -1194,7 +1195,7 @@ class MergeRetryContractTest(unittest.TestCase):
                 self.assertRegex(cond[("MERGE", "C")], _MERGE_C_COND)
                 # MERGE is the coder/cheap integration role, rendered like the column
                 self.assertEqual("cheap", nodes["MERGE"]["tier"])
-                self.assertIn("coder", group_visible_text(nodes["MERGE"]["element"]).lower())
+                self.assertIn("pdca-executor", group_visible_text(nodes["MERGE"]["element"]).lower())
 
     def test_escalate_returns_through_merge_not_bypass(self):
         for theme, stem in THEME_STEMS.items():
@@ -1269,7 +1270,7 @@ class MergeRetryContractTest(unittest.TestCase):
         problems = []
         if not re.search(r"escalat|эскалац", section, re.I):
             problems.append("§D does not name the escalate decision")
-        if not re.search(r"coder", section, re.I):
+        if not re.search(r"pdca-executor", section, re.I):
             problems.append("§D does not name coder as the merge executor")
         if not re.search(r"оркестратор|orchestrator", section, re.I):
             problems.append("§D does not route the retry through the orchestrator")
@@ -1882,7 +1883,7 @@ class DispatchLabelConsistencyTest(unittest.TestCase):
 #     descriptive Russian phrase "Разрешение конфликтов слияния" is rendered on
 #     the body card and the orchestrator band input; the internal `ESCALATE` id
 #     and the `strong` tier are kept; the legend agent id remains lowercase
-#     `escalate` (a different, untouched token);
+#     `pdca-escalate` (a different, untouched token);
 #   * the shared `C -> REPAIR FAIL` display reads the exact phrase
 #     "CHECK FAIL" (main incoming entry + lower caption), while the real
 #     orchestrator dispatch stays proven by `data-dispatched-by=orchestrator`.
@@ -1903,7 +1904,7 @@ REPAIR_COMPLETED_CAPTION = "REPAIR completed"
 # 2026-10-02 user correction: the MAIN C column no longer renders the visible
 # owner label under its header; the lower state-graph `C` node keeps its owner
 # label and its `medium` tier.
-C_OWNER_LABEL = "check · medium"
+C_OWNER_LABEL = "pdca-check · medium"
 
 _TEXT_CW = {"h": 7.0, "t": 7.4, "st": 7.6, "ol": 6.3}
 
@@ -2370,20 +2371,22 @@ class CollectionContractSemanticsTest(unittest.TestCase):
             r"в режиме одной группы ветки/worktree группы и задач не создаются",
         )
 
-    # --- sidebar todo mirrors groups, or tasks when single ----------------
+    # --- the status file is the only progress mirror ----------------------
 
-    def test_sidebar_todo_lists_groups_or_all_tasks_when_single(self):
+    def test_progress_mirror_is_the_status_file_only(self):
         p = self._skill_plain("### P —", "### D —")
-        self.assertRegex(p, re.compile(r"туду|todo", re.I))
-        # multi-group: one sidebar item per group
-        self.assertRegex(p, re.compile(r"по одному пункту на группу", re.I))
-        # single group (could not split): one item per task, no group item
-        self.assertRegex(
-            p, re.compile(r"одн\w+ группа.*по одному пункту на каждую задачу", re.I)
-        )
-        self.assertRegex(p, re.compile(r"пункта-«группы».*нет", re.I))
-        # parallel lanes may hold several in_progress items at once
-        self.assertRegex(p, re.compile(r"параллельные лейны дают.*in_progress", re.I))
+        # no separate sidebar todo: the host may not provide a todo tool
+        self.assertIn("Отдельного туду в сайдбаре нет", p)
+        self.assertIn("хост может не давать todo-инструмента", p)
+        self.assertIn("второе зеркало только порождает расхождение", p)
+        # the collection status file is updated in the same turn and reconciled
+        self.assertIn("в том же такте, что и событие", p)
+        self.assertIn("Перед диспетчеризацией сверяйся с файлом статуса", p)
+        self.assertIn("после компакции состояние восстанавливается из него", p)
+        # groups and tasks live in the status file tables, not a sidebar list
+        status = self._skill_plain("## Статус коллекции", "## Отчёт")
+        self.assertIn("таблицу групп", status)
+        self.assertIn("таблицу задач", status)
 
     # --- merge policy -----------------------------------------------------
 
@@ -2506,6 +2509,65 @@ class CollectionContractSemanticsTest(unittest.TestCase):
         assert scen_enum is not None
         self.assertNotIn("skipped", scen_enum.group(0))
         self.assertNotIn("merge-disposition", scenarios)
+
+    # --- pause of a lane is derived: no new status, no runtime mirror -----
+
+    def test_lane_pause_is_derived_and_adds_no_new_status(self):
+        skill = self._plain(self.skill)
+        # `paused` co-exists with the existing group enum value `in-progress`:
+        # it is derived, not a replacement for the group enum.
+        self.assertIn("in-progress", skill)
+        self.assertIn("paused", skill, "SKILL.md lacks the derived `paused` state")
+        windows = [
+            skill[max(0, m.start() - 300): m.end() + 300]
+            for m in re.finditer("paused", skill)
+        ]
+        self.assertTrue(
+            any("in-progress" in w for w in windows),
+            "`paused` must be stated next to `in-progress` (it is derived, not a "
+            "replacement for the group enum)",
+        )
+        # the pause is derived from the lane, and adds no new statuses
+        self.assertIn("производн", skill,
+                      "SKILL.md must say the pause is derived (stem 'производн')")
+        self.assertIn("новых статусов", skill,
+                      "SKILL.md must say no new statuses are introduced")
+        # negative: `blocked` is never (re)defined as a task/group status; a
+        # negated mention ("статуса `blocked` ... нет") is the required wording,
+        # not a definition.
+        for line in self.skill.splitlines():
+            m = re.search(r"(?i)статус[а-я]*\s+`?`?blocked`?`?", line)
+            if not m:
+                continue
+            tail = line[m.end(): m.end() + 60].lower()
+            with self.subTest(line=line.strip()[:80]):
+                self.assertTrue(
+                    re.search(r"нет|не\s+является|не\s+существует|запрещ|отсутству", tail),
+                    "a status definition of `blocked` appeared for tasks/groups: "
+                    f"{line!r}",
+                )
+
+    def test_failure_recovery_writes_a_checkpoint_and_resumes(self):
+        skill = self._plain(self.skill)
+        for token in ("checkpoint", "resume", "incomplete", "group-stop", "met"):
+            with self.subTest(token=token):
+                self.assertIn(
+                    token, skill,
+                    f"SKILL.md lacks the recovery token {token!r}",
+                )
+
+    def test_final_disposition_is_explicit_and_only_accepted_met_is_done(self):
+        skill = self._plain(self.skill)
+        self.assertIn("checkpoint", skill,
+                      "SKILL.md lacks the recovery checkpoint (paired with the "
+                      "explicit final disposition)")
+        self.assertIn("явн", skill,
+                      "SKILL.md must require an explicit final disposition "
+                      "(stem 'явн')")
+        self.assertIn("только принятый", skill,
+                      "SKILL.md must state that only an accepted `met` closes "
+                      "work ('только принятый')")
+        self.assertIn("met", skill)
 
 
 # ---------------------------------------------------------------------------
