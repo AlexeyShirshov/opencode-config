@@ -187,7 +187,7 @@ function View(props: { context: Plugin.Context; state: () => GitState; sessionID
 }
 
 export default Plugin.define({
-  id: "sandbox.git-status",
+  id: "alexeyshirshov.git-status",
   setup(context) {
     if (context.options.enabled === false) return
 
