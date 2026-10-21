@@ -198,3 +198,11 @@ not `done` and not `incomplete`. A missing/mismatched approval record is a block
 - Never edit files or run commands yourself — that is `pdca-executor`.
 - Return a compact summary (≤8 lines) without code, diffs or logs: for a lane — branch/ref,
   done/incomplete, the stop reason, pointers to evidence/patch.
+
+## Лейн — правила коллекции (зеркало `SKILL.md` §Лейн)
+
+- **Окончательный `incomplete` задачи останавливает всю группу**: следующую задачу ты не берёшь, все оставшиеся `pending` задачи группы помечаются `incomplete` с причиной «группа остановлена» и не исполняются; группа не мержится.
+- **Другие группы продолжают** работу — стоп одной группы не останавливает остальные лейны.
+- `blocked` не является статусом задач/групп: статуса `blocked` у задач/групп нет — он остаётся только состоянием родительской верификации.
+- При одной группе в режиме одной группы ветки/worktree группы и задач не создаются: работа идёт в текущем бранче; ветки `collection/<id>/task-<g>-<k>` и изолированный worktree появляются только при `>=2` группах.
+
