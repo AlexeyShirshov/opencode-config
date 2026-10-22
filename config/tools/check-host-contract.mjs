@@ -75,6 +75,34 @@ function v2Rules(front) {
   return rules
 }
 
+// Shorthand dialect used by the `pdca-*` briefs — `permission:` plus
+// `action: effect` (resource `*`) or `action:` + nested `resource: effect`.
+function shortRules(front) {
+  const rules = []
+  const lines = front.split("\n")
+  const start = lines.findIndex((l) => /^permission:\s*$/.test(l))
+  if (start === -1) return rules
+  let base = null
+  let cur = null
+  for (const line of lines.slice(start + 1)) {
+    if (!line.trim() || /^\s*#/.test(line)) continue
+    if (!/^\s/.test(line)) break // the next top-level key closes the block
+    const indent = line.match(/^\s*/)[0].length
+    const m = line.match(/^\s*("?[^\s:"#]+"?)\s*:\s*(.*?)\s*$/)
+    if (!m) continue
+    if (base === null) base = indent
+    const key = unquote(m[1])
+    const val = unquote(m[2])
+    if (indent <= base) {
+      cur = val ? null : key
+      if (val) rules.push({ action: key, resource: "*", effect: val })
+    } else if (cur) {
+      rules.push({ action: cur, resource: key, effect: val })
+    }
+  }
+  return rules
+}
+
 // Last matching rule wins; `*` on either side matches anything.
 function effective(rules, action, resource) {
   let eff = null
@@ -183,6 +211,50 @@ for (const f of AGENT_FILES) {
     for (const action of ["edit", "subagent"]) {
       if (effective(rules, action, "*") !== "deny") fail(`${where}: ${action} must be denied`)
     }
+  }
+}
+
+// ── pdca-orchestrator: dispatcher-only task allowlist ───────────────────────
+{
+  const where = "agents/pdca-orchestrator.md"
+  const p = join(AGENTS, "pdca-orchestrator.md")
+  const { front } = (exists(p) && splitFront(read(p), where)) || {}
+  if (front) {
+    const rules = shortRules(front)
+    if (effective(rules, "task", "*") !== "deny") fail(`${where}: task must start from *: deny`)
+    const expected = [
+      "pdca-planner",
+      "pdca-executor",
+      "pdca-check",
+      "pdca-escalate",
+      "pdca-scout",
+      "pdca-security-auditor",
+      "docfx-specialist",
+      "dotnet-*",
+    ]
+    const got = allowedResources(rules, "task").sort()
+    if (got.join(",") !== expected.slice().sort().join(","))
+      fail(`${where}: task allowlist drifted, got [${got}]`)
+    // `write` is part of `edit` in V2, so only the real actions are pinned.
+    for (const action of ["edit", "bash"])
+      if (effective(rules, action, "*") !== "deny")
+        fail(`${where}: ${action} must be denied (dispatcher only)`)
+  }
+}
+
+// ── pdca-security-auditor: exactly three read-only skills ───────────────────
+{
+  const where = "agents/pdca-security-auditor.md"
+  const p = join(AGENTS, "pdca-security-auditor.md")
+  const { front } = (exists(p) && splitFront(read(p), where)) || {}
+  if (front) {
+    const rules = shortRules(front)
+    if (effective(rules, "skill", "*") !== "deny") fail(`${where}: skill must start from *: deny`)
+    const expected = ["dotnet-security-owasp", "dotnet-secrets-management", "dotnet-cryptography"]
+    const got = allowedResources(rules, "skill").sort()
+    if (got.join(",") !== expected.slice().sort().join(","))
+      fail(`${where}: skill allowlist must be exactly three skills, got [${got}]`)
+    if (effective(rules, "edit", "*") !== "deny") fail(`${where}: edit must be denied (read-only auditor)`)
   }
 }
 
