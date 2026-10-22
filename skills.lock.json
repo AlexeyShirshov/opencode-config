@@ -1,8 +1,8 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "d242567dc4a83d27c6eb4338b994a91f7aba7ae7",
-  "vendoredAt": "2026-10-22T05:02:29.160Z",
+  "commit": "9a2d991b3f922ebeada9d5ed11352676efc44248",
+  "vendoredAt": "2026-10-22T06:53:39.064Z",
   "items": {
     "skill/pdca": {
       "source": "opencode/pdca",
