@@ -14,6 +14,13 @@
 #
 # One skill name per line. `#` starts a comment; blank lines are ignored.
 #
+# On demand only — лежат в паке `~/.config/opencode/skills-deepseek/`, не
+# регистрируются (описания не стоят контекста), читаются напрямую как
+# `~/.config/opencode/skills-deepseek/<name>/SKILL.md`, когда пользователь
+# просит по имени. Чтобы включить скилл в контекст — добавить имя ниже и
+# `bun tools/curate-skills.mjs --fix`:
+#   humanizer humanizer-ru writing-guru
+#
 # Retired 2026-10-13 — not invoked once in 2026-09-14..10-13 (opencode.db,
 # skill tool calls). Restore by re-adding the name and re-running --fix:
 #   dotnet-agent-gotchas dotnet-architecture-patterns dotnet-csharp-dependency-injection
