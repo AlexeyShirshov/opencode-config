@@ -8,9 +8,9 @@
   },
 
   // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
-  // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `planner` и
-  // Triage CHECK `check` — medium-тир, «руки»/сбор — cheap, `security-auditor` — medium,
-  // `escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
+  // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `pdca-planner` и
+  // Triage CHECK `pdca-check` — medium-тир, «руки»/сбор — cheap, `pdca-security-auditor` — medium,
+  // `pdca-escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
   // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — модель
   // Go-подписки: квота подписки вместо free-потолка zen (окно 200k / ответ 32k), поэтому
   // длинные сессии не упираются в free-лимит. zen-cache-proxy (127.0.0.1:8787) нужен
@@ -37,19 +37,13 @@
   // installed-копии теряется при следующем sync (так уже откатился перевод Sol на OpenAI).
   "agent": {
     "pdca-planner": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    // Зеркало `check` (routing-consistency требует совпадения модели и variant) — Argon,
-    // другое семейство, чем `pdca-planner`: вердикт CHECK независим от того, кто писал план.
+    // CHECK — намеренно на другом семействе (Gemini 4 Argon), чем `pdca-planner` (Sol):
+    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет); замер: thinking ≈ 3× ответа,
+    // 1.1k токенов выхода ≈ 1.7% лимита 65k, обрезки нет.
     "pdca-check": { "model": "opencode/gemini-4-argon", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
     "pdca-executor": { "model": "opencode-go/deepseek-v4.1-flash" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "planner": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    // CHECK — намеренно на другом семействе (Gemini 4 Argon), чем `planner`/`architect` (Sol):
-    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет); замер: thinking ≈ 3× ответа,
-    // 1.1k токенов выхода ≈ 1.7% лимита 65k, обрезки нет.
-    "check": { "model": "opencode/gemini-4-argon", "variant": "high" },
-    "escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "security-auditor": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "coder": { "model": "opencode-go/deepseek-v4.1-flash" },
     "scout": { "model": "opencode-go/deepseek-v4.1-flash" },
     "btw": { "model": "opencode-go/deepseek-v4.1-flash" },
