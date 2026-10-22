@@ -33,8 +33,8 @@ CONFIG_AGENTS = (CONFIG / "agents") if CONFIG else None
 SCRIPT = SKILL_DIR / "scripts/validate_inner_loop.py"
 SKILL = SKILL_DIR / "SKILL.md"
 EN_CODER = SKILL_DIR / "assets/agents/pdca-executor.md"
-# The RU coder brief is a host artifact (config/agents) and needs the host repo.
-RU_CODER = CONFIG_AGENTS / "coder.md" if CONFIG_AGENTS else None
+# The host coder brief (config/agents/coder.md) needs the host repo; it is EN too.
+HOST_CODER = CONFIG_AGENTS / "coder.md" if CONFIG_AGENTS else None
 
 SELECTOR = "FullyQualifiedName~Foo.Tests.BarTests"
 SELECTOR_2 = "FullyQualifiedName~Shared.Tests.ContractTests"
@@ -960,11 +960,11 @@ class _CoderParityMixin:
     Rule-presence only: reads the coder Markdown bodies as text (paths resolved
     relative to this test file / the host repo) and asserts the standalone bullet
     is present, that it sits between the Evidence and Git bullets, and that it
-    encodes the key concepts with wording-robust RU+EN regexes.  It never
-    executes an agent or the cycle.
+    encodes the key concepts (the contract and every brief are EN-only).
+    It never executes an agent or the cycle.
     """
 
-    # Stable bold prefixes introduced by D3 (RU and EN wording).
+    # Stable bold prefixes introduced by D3.
     ANCHORS: dict = {}
     EVIDENCE: dict = {}
 
@@ -974,36 +974,49 @@ class _CoderParityMixin:
             path: path.read_text(encoding="utf-8") for path in cls.ANCHORS
         }
 
+    def _present(self, text, path, table, what):
+        """Return the first accepted wording from ``table[path]`` found in ``text``."""
+        for variant in table[path]:
+            if variant in text:
+                return variant
+        self.fail(
+            "%s missing in %s: none of %r" % (what, path, table[path])
+        )
+
     def _bullet(self, text, path):
         """Return the inner-loop bullet text from its anchor to the next item."""
-        anchor = self.ANCHORS[path]
+        anchor = self._present(text, path, self.ANCHORS, "inner-loop bullet anchor")
         rest = text[text.index(anchor):]
         match = re.search(r"\n(?=- \*\*|#{1,6}\s)", rest)
         return rest[: match.start()] if match else rest
 
     def assert_parity(self, texts):
         """Assert both bodies carry the anchor, concepts and Evidence→Git order."""
-        for path, anchor in self.ANCHORS.items():
-            self.assertIn(anchor, texts[path])
+        for path in self.ANCHORS:
+            self._present(texts[path], path, self.ANCHORS, "inner-loop bullet anchor")
         for path in self.ANCHORS:
             bullet = self._bullet(texts[path], path).lower()
-            # affected subset (RU поднабор/затронут / EN affected/subset)
-            self.assertRegex(bullet, r"affected|затронут|поднабор|subset")
+            # affected subset
+            self.assertRegex(bullet, r"affected|subset")
             # both run kinds are named and distinguished (E10)
             self.assertRegex(bullet, r"unit")
-            self.assertRegex(bullet, r"integration|интеграц")
+            self.assertRegex(bullet, r"integration")
             # the filter is explicitly NOT the classification criterion
-            self.assertRegex(bullet, r"filter|фильтр")
+            self.assertRegex(bullet, r"filter")
             # stream / DO→CHECK boundary for integration
-            self.assertRegex(bullet, r"boundary|границ")
+            self.assertRegex(bullet, r"boundary")
             # prohibition of the whole solution (a whole *unit project* run is legal)
-            self.assertRegex(bullet, r"whole solution|всё решение")
+            self.assertRegex(bullet, r"whole solution")
             # the ledger is projected from the raw journal
-            self.assertRegex(bullet, r"journal|журнал")
+            self.assertRegex(bullet, r"journal")
         for path in self.ANCHORS:
             text = texts[path]
-            evidence = text.index(self.EVIDENCE[path])
-            anchor = text.index(self.ANCHORS[path])
+            evidence = text.index(
+                self._present(text, path, self.EVIDENCE, "evidence bullet")
+            )
+            anchor = text.index(
+                self._present(text, path, self.ANCHORS, "inner-loop bullet anchor")
+            )
             git = text.index("**Git.**")
             self.assertLess(evidence, anchor)
             self.assertLess(anchor, git)
@@ -1030,23 +1043,26 @@ class _CoderParityMixin:
 class CoderParityTests(_CoderParityMixin, unittest.TestCase):
     """D3 guards: the published EN coder asset carries the inner-loop bullet.
 
-    The RU host body (``config/agents/coder.md``) lives in the `opencode-config`
-    repo, so the two-body RU+EN parity guards are host-gated in
+    The host coder body (``config/agents/coder.md``) lives in the `opencode-config`
+    repo, so the two-body parity guards are host-gated in
     ``HostCoderParityTests`` below.
     """
 
-    ANCHORS = {EN_CODER: "**Inner loop"}
-    EVIDENCE = {EN_CODER: "Evidence, not claims"}
+    ANCHORS = {EN_CODER: ("**Inner loop",)}
+    EVIDENCE = {EN_CODER: ("Evidence, not claims",)}
 
 
 @unittest.skipUnless(HOST_AVAILABLE, SKIP_HOST)
 class HostCoderParityTests(_CoderParityMixin, unittest.TestCase):
-    """D3 guards: both coder bodies (EN asset + RU host brief) stay in parity."""
+    """D3 guards: both coder bodies (EN asset + host brief) stay in parity."""
 
-    ANCHORS = {EN_CODER: "**Inner loop", RU_CODER: "**Внутренний цикл"}
+    ANCHORS = {
+        EN_CODER: ("**Inner loop",),
+        HOST_CODER: ("**Inner loop",),
+    }
     EVIDENCE = {
-        EN_CODER: "Evidence, not claims",
-        RU_CODER: "Доказательства, а не заявления",
+        EN_CODER: ("Evidence, not claims",),
+        HOST_CODER: ("Evidence, not claims",),
     }
 
 

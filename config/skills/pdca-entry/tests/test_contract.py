@@ -58,7 +58,7 @@ class FrontmatterTest(unittest.TestCase):
         for name in FAMILY:
             with self.subTest(contract=name):
                 self.assertIn(name, description)
-        for phrase in ("by the cycle", "via PDCA", "по циклу", "через PDCA"):
+        for phrase in ("by the cycle", "via PDCA", "run PDCA"):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, description)
 
@@ -99,8 +99,7 @@ class AutoinvokeTest(unittest.TestCase):
 
     def test_entry_catches_the_former_phrase_triggers(self):
         description = frontmatter(SKILL)["description"]
-        for phrase in ("список задач", "milestone", "инкрементами",
-                       "маленькими шагами", "по циклу"):
+        for phrase in ("task list", "milestone", "increments", "campaign"):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, description)
 
@@ -174,7 +173,7 @@ class CompositionTest(unittest.TestCase):
         self.assertRegex(
             text.lower(),
             r"different fields|not the same field|not interchangeable|"
-            r"different things|разные поля|не одно и то же",
+            r"different things|different fields",
             "the entry must say execution_kind and selected_variant are different fields",
         )
 
@@ -183,7 +182,7 @@ class CompositionTest(unittest.TestCase):
             s for s in sentences(norm(read(SKILL)))
             if re.search(r"\bbatch\b|\bcollections?\b", s, re.I)
             and re.search(r"\bcampaigns?\b", s, re.I)
-            and re.search(r"contain|include|units?\b|содерж|включ", s, re.I)
+            and re.search(r"contain|include|units?\b", s, re.I)
         ]
         self.assertTrue(hits, "the entry must say a collection/batch may contain campaign units")
 
@@ -311,14 +310,14 @@ class ArtifactsTest(unittest.TestCase):
 class CampaignCriteriaTest(unittest.TestCase):
     """The entry delegates campaign criteria instead of restating them.
 
-    The canonical discriminator lives in ``pdca-incremental`` §«Когда выбирать»;
+    The canonical discriminator lives in ``pdca-incremental`` §When to choose;
     the entry only points at it and states who decides a unit's form.
     """
 
     def test_campaign_criteria_are_delegated_to_incremental(self):
         text = norm(read(SKILL))
         self.assertIn(
-            "canonical in `pdca-incremental` §«Когда выбирать»",
+            "canonical in `pdca-incremental` §When to choose",
             text,
             "the entry must point at the canonical campaign criteria instead of "
             "restating them",
