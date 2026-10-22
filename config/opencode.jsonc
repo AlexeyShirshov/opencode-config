@@ -42,11 +42,11 @@
     // Весь глобальный конфиг opencode: `AGENTS.md`, скиллы `skills/pdca-*`,
     // `agents/`, `profiles/`. Субагенты (`scout`/`coder`/`pdca-*`) читают их при
     // сборе фактов — иначе каждый такой `read` уходит в `ask` и подвешивает
-    // автономный PDCA-цикл (наблюдалось в сессии webpdca). Секреты — исключены.
+    // автономный PDCA-цикл (наблюдалось в автономной сессии). Секреты — исключены.
     { "action": "external_directory", "resource": "~/.config/opencode/**", "effect": "allow" },
     // Системные пути и корни соседних репозиториев: агенты читают их при сборе
     // фактов и сборке. Дефолт `ask` вешает автономный цикл на каждом таком чтении
-    // (напр. `cat /etc/timezone` в webpdca), поэтому разрешаем их явно.
+    // (напр. `cat /etc/timezone` при сборе фактов), поэтому разрешаем их явно.
     { "action": "external_directory", "resource": "/etc/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/proc/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/usr/**", "effect": "allow" },
@@ -54,22 +54,22 @@
     { "action": "external_directory", "resource": "/snap/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/sys/**", "effect": "allow" },
     // `/dev/*`: `dotnet run` интеграционных тестов (podman/WSL) дёргает спец-узлы
-    // (`/dev/tty`, `/dev/null`); дефолт `ask` подвесил лейн T227 в nextorm.
+    // (`/dev/tty`, `/dev/null`); дефолт `ask` вешал прогон интеграционных тестов.
     { "action": "external_directory", "resource": "/dev/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/home/alex/sources/**", "effect": "allow" },
     // Coverage/benchmark-отчёты рядом с репо (`dotnet test` кладёт их в
-    // `/home/alex/tests/coverage/report`): subagent `coder` ушёл в ask на этом
-    // пути и подвесил лейн R175. Секретов нет.
+    // `/home/alex/tests/coverage/report`): subagent `coder` уходил в ask на этом
+    // пути и вешал цикл. Секретов нет.
     { "action": "external_directory", "resource": "/home/alex/tests/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/mnt/c/Users/user/**", "effect": "allow" },
     // Собственные логи/tool-output opencode: агенты читают их для провенанса
-    // сессии (напр. scout в nextorm грепал opencode.log). Без allow — `ask` и
+    // сессии (напр. `scout` грепал `opencode.log` для провенанса). Без allow — `ask` и
     // стоп. Только эти подкаталоги: `auth.json`, `*.db`, `snapshot/` — под ask.
     { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/log/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/tool-output/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/zen-cache-proxy.log", "effect": "allow" },
     // State opencode (model.json, plugin-meta.json, prompt-history.jsonl и т.п.):
-    // агенты грепают его для провенанса (scout в nextorm искал pdca-dotnet).
+    // агенты грепают его для провенанса (напр. `scout` искал имена скиллов).
     // Секретов там нет.
     { "action": "external_directory", "resource": "/home/alex/.local/state/opencode/**", "effect": "allow" },
     // Runtime пользователя и VS Code: агенты читают конфиги/расширения при сборе
@@ -78,7 +78,7 @@
     { "action": "external_directory", "resource": "/home/alex/.vscode-server/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/mnt/c/Users/user/AppData/Roaming/Code/User/**", "effect": "allow" },
     // Кэш NuGet: агенты читают `.xml`/метаданные пакетов (напр. Npgsql) при сборе
-    // фактов — дефолт `ask` подвесил subagent `coder` в nextorm. Секретов нет.
+    // фактов — дефолт `ask` вешал subagent `coder`. Секретов нет.
     { "action": "external_directory", "resource": "~/.nuget/packages/**", "effect": "allow" },
     // Секреты и ключи — вне доступа (последнее совпавшее правило выигрывает).
     { "action": "external_directory", "resource": "~/.config/opencode/secrets.env", "effect": "deny" },

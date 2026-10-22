@@ -16,6 +16,14 @@ set -u
 
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 
+# --- 0) host contract (agents/profiles/AGENTS.md/README, no project specifics) --
+if [ -f "$root/config/tools/check-host-contract.mjs" ] && command -v bun >/dev/null 2>&1; then
+  if ! (cd "$root" && bun config/tools/check-host-contract.mjs); then
+    echo "pre-push: BLOCKED — host contract is broken (see above)." >&2
+    exit 1
+  fi
+fi
+
 # --- 1) skills/plugins snapshot must match the source -----------------------
 if [ -f "$root/config/tools/vendor-skills.mjs" ] && [ -d "$root/../skills" ]; then
   if command -v bun >/dev/null 2>&1; then
