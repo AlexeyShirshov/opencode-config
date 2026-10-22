@@ -28,15 +28,6 @@
       "installedAt": "2026-09-16T13:51:03.432Z",
       "updatedAt": "2026-09-16T13:51:03.432Z"
     },
-    "archify": {
-      "source": "tt-a1i/archify",
-      "sourceType": "github",
-      "sourceUrl": "https://github.com/tt-a1i/archify.git",
-      "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "ffb8258f653b66f5afb8340bf8eb61c7309830ff",
-      "installedAt": "2026-09-19T18:56:18.211Z",
-      "updatedAt": "2026-09-19T18:56:54.484Z"
-    },
     "copy-editing": {
       "source": "coreyhaines31/marketingskills",
       "sourceType": "github",
@@ -45,6 +36,15 @@
       "skillFolderHash": "ceed583c7a2aea7b0c517dae816ccf4b560259e9",
       "installedAt": "2026-10-03T13:43:14.321Z",
       "updatedAt": "2026-10-03T13:43:14.321Z"
+    },
+    "slidev": {
+      "source": "slidevjs/slidev",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/slidevjs/slidev.git",
+      "skillPath": "skills/slidev/SKILL.md",
+      "skillFolderHash": "27df218b1e8ce7f639326a2e41048ae8c2c6418a",
+      "installedAt": "2026-10-14T16:57:01.706Z",
+      "updatedAt": "2026-10-14T16:57:01.706Z"
     }
   },
   "dismissed": {
