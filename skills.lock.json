@@ -1,38 +1,38 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "ca4c8f70922c64baf325a39485e9507d1f53cde7",
-  "vendoredAt": "2026-10-22T14:22:24.147Z",
+  "commit": "9e3c35ffeb200bbd239706300a7d360e052fc0c4",
+  "vendoredAt": "2026-10-23T09:14:38.410Z",
   "items": {
     "skill/pdca": {
       "source": "opencode/pdca",
       "target": "config/skills/pdca",
-      "hash": "c4f110c1676cf0b477bead12e425dd568abcbe25ce723ab79b122985ec0b3c85"
+      "hash": "1fa2d16c3e02264a0fccba1b0fb27bfb6a90b9ef40ea816cc4275ef6ad01f121"
     },
     "skill/pdca-entry": {
       "source": "opencode/pdca-entry",
       "target": "config/skills/pdca-entry",
-      "hash": "d9a53dfdc0ba9bb552bceed49e7a0d61ed064c2dd1ff1561374f28d1458252b7"
+      "hash": "1bd9581dcda5d48a0c3db949b84e78e6a61732daf4dba7109626e116c426504e"
     },
     "skill/pdca-coder": {
       "source": "opencode/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "13f236c7db94aaa8d17eef13f75531478e06e63cefc1afed82ec558e30140fb1"
+      "hash": "bfae9e01685a38deaa93c3d8fe5c2da524c7e1525fcb6195e698a43992c620ee"
     },
     "skill/pdca-collection": {
       "source": "opencode/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "aa31604a5e7164a8a5dc1ce5f674347cee3a9cd1d0378b82f1c8b925da509c8a"
+      "hash": "1d712d7fd3e1840301da58f1ddee01dcab8da89ac5002187ee9ef8483475e6c7"
     },
     "skill/pdca-dotnet": {
       "source": "opencode/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "669371f040a6472c84c6f1e7f1de4e9de74eee10dc911b17dcfcab81e9604b04"
+      "hash": "2e91f2a6e02329e88432e3add4f4d4ce20d18caf90c635c6504d2236cedf8b51"
     },
     "skill/pdca-incremental": {
       "source": "opencode/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "44a9b9825b1bc3df525e70735d2f5a3e00a0a569e125ea58ad6e2d5dc1c9e049"
+      "hash": "54aca2b6a81fe84e336b405e39aaddb76a165be53b31cb49600c897b2684147b"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -43,6 +43,11 @@
       "source": "opencode/plugins/zen-failover",
       "target": "config/plugins/zen-failover",
       "hash": "5080c3661ce58527511476bd524472c4071bcd9db654faa3ac21d9327bc5d5a4"
+    },
+    "plugin/clear-session": {
+      "source": "opencode/plugins/clear-session",
+      "target": "config/plugins/clear-session",
+      "hash": "1bd8d82db5fd2ba22e47f80887372e2b9e43b8f8c4e06b46606b5dc862accbc0"
     }
   }
 }

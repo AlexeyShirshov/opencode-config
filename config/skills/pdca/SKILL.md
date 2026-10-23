@@ -1,6 +1,6 @@
 ---
 name: pdca
-description: "Domain-neutral PDCA cycle for decomposing and executing a task with a verifiable result: PLAN → DO → CHECK → ACT with transition gates, evidence-based CHECK, escalation accounting, durable status, and recovery. Invoke only when the user explicitly names the `pdca` skill — not for ordinary tasks."
+description: "Domain-neutral PDCA cycle (PLAN → DO → CHECK → ACT) for a task with a verifiable result: transition gates, evidence-based CHECK, escalation accounting, durable status and recovery. User-invoked — runs only when the user explicitly names `pdca`; ordinary tasks are done directly, and the stack-specific variants live in the family."
 metadata:
   opencode/autoinvoke: false
 disable-model-invocation: true
@@ -74,6 +74,11 @@ field in the role markdown**. Each asset carries only a `# tier:` label
 `pdca-escalate` = strong; `pdca-orchestrator` = cheap). By default a subagent inherits the
 invoking primary's model; bind ids in the profile `agent` block for routing.
 
+**Optional roles belong to the variant.** A variant may declare extra optional roles in its own
+role table; the shared runner asset permits a superset in its dispatch allowlist, and a cycle
+dispatches only the roles its package ships — an absent optional role is unused, not a blocker.
+The base set is the table above.
+
 **Setup (once):** (1) copy `assets/agents/*.md` into the host's agents/subagent directory (the
 `pdca-*` role agents, `pdca-scout` and the runner `pdca-orchestrator`); (2) restart the host (role
 agents load at startup); (3) allow the primary to dispatch `pdca-scout`/`pdca-planner`/`pdca-check`/
@@ -108,7 +113,8 @@ to `pdca-executor` via a subagent. Both the initial PLAN and any replan belong t
   no-4th rule, scope or the authority boundaries (§Escalation).
 - **Do not edit files or run commands** — that is `pdca-executor`'s job, including the cycle
   status file (§Durable status).
-- **Do not read anything yourself** — no artefacts/diffs/logs/status files/outputs. Facts
+- **Do not read anything yourself** (that is **Token Burn**) — no artefacts/diffs/logs/status
+  files/outputs. Facts
   come from `pdca-scout` (pointers), command results from `pdca-executor` (exit status, key numbers,
   log path), judgments from `pdca-check`/`pdca-planner`/`pdca-escalate`. Only their compact
   reports enter your context, to forward.
@@ -134,18 +140,24 @@ Progress is recorded in one place:
 - **Plan revision `r`** — starts at 1 and grows only when `pdca-planner` **actually issued a
   revised plan** (a new `P:` from CHECK → PLAN / DO → PLAN). A rejected candidate or a
   clarification with the plan unchanged is **not** a revision: no bump, no attempt reset. The
-  outgoing failed attempt is recorded before the plan is replaced. No cap on revisions.
+  outgoing failed attempt is recorded before the plan is replaced. No cap on revisions, but
+  gate 1 fixes a **stop-loss budget** (maximum revisions, wall clock, measurement time); its
+  exhaustion routes to `pdca-escalate`/STOP, never to an unplanned extra attempt.
 - **`iteration n/3`** — execution attempts for the current revision `r`: `PLAN(r) → DO`
   starts at 1; `CHECK → DO` increments. After the **third failed CHECK of the same revision**
   → `pdca-escalate` before a fourth (there is no 4th). `DO → PLAN`/`CHECK → PLAN` do **not**
   consume the next revision's attempts; a new revision resets `n` to 1. The same-defect
   history is not erased by a replan (§Escalation). There is no global `n/3` on every
   loop-back.
+- **Contract revision `rv`** — not one of the three: it names the criteria/contract, not an
+  attempt. It starts at 1 and grows only when the criteria or the required rows actually change;
+  an implementation fix or a new attempt under the same criteria keeps it. It appears only in the
+  evidence path (`.pdca/<task>/rv<k>/`, §Phase contracts).
 
 ### Phase progress mirror (status file only)
 
 Progress lives only in the cycle status file (§Durable status). There is no separate todo or
-sidebar mirror: the host may not provide a todo tool (V2 does not), and a second mirror only
+sidebar mirror: the host may not provide a todo tool, and a second mirror only
 creates divergence.
 
 1. **Same turn.** On every event — phase transition, loop-back, closing a `D:`, replan,
@@ -153,7 +165,7 @@ creates divergence.
    subagent dispatch of the next step; never batched.
 2. **Reconcile each turn.** Before dispatching, compare the last status recorded by
    `pdca-executor` (from its report — do not read the file) with your narrative. Divergence →
-   fix it in the same turn; the status file wins.
+   fix it in the same turn; the status file wins. That drift has a name — **State Rot**.
 3. **After compaction/resume** reconstruct the state from the status file (§Recovery after
    compaction), never from memory or the context retelling.
 
@@ -183,8 +195,9 @@ bad plan found by review is a CHECK → PLAN).
    goal/expected result; constraints; assumptions; acceptance criteria **each with a
    verification method**; decomposition into units with dependencies **or** an explicit
    decision not to split a simple task; means and access; risks and stop conditions. Plus:
-   **the plan written to the status file by `pdca-executor`** (last step of PLAN) **and, in
-   normal mode, the user's approval of the plan** — the orchestrator tells the user that the
+   **the plan written to the status file by `pdca-executor`** (last step of PLAN), **every
+   command frozen by the plan validated against the environment** (§Plan command contract),
+   **and, in normal mode, the user's approval of the plan** — the orchestrator tells the user that the
    pdca-planner has produced the plan and written it to the status file, asks them to read it and
    approve it, and starts implementation only after that approval — except in autonomous
    mode, where no approval is required and DO starts right after PLAN. The orchestrator only
@@ -265,7 +278,8 @@ evidence.
 
 **CHECK** is independent of the author of the result; it checks **every** criterion on actual
 evidence and verifies cross-part consistency. Statuses: `met | unmet | unverified`. **The
-absence of a check is NOT a pass.** Report: verdict, a criteria matrix, findings with
+absence of a check is NOT a pass.** A verdict that rests on no numbers is **Verifier Theater**, and
+the verdict is worthless. Report: verdict, a criteria matrix, findings with
 severity, evidence pointers, and correction routing (**implementation defect → DO; wrong plan
 → PLAN**). No numbers/pointers behind a claim → the criterion is `unverified`, not `met`.
 
@@ -351,6 +365,87 @@ fixed (§Skill workspace), the plan chooses `<task>` and `rv` (the status dir is
 §Durable status). The check role's scoped `read` grants `.pdca/**` generically, so the concrete path
 is defined only here.
 
+### Plan command contract (PLAN close)
+
+Every command or invocation the plan freezes is **validated before gate 1** — by
+`pdca-executor`, against the actual environment, with the result recorded in the status file.
+A plan whose decisive command cannot produce a valid result is **not `ready`**:
+
+- **selector resolves** — the identifier names at least one target inside the declared scope; a
+  short or ambiguous identifier is rejected even when the tool accepts it and exits `0`;
+- **argument vector survives the harness** — quoting, separators and redirections are recorded
+  in expanded form, never as a shell alias or an unexpanded placeholder;
+- **phase is legal** — an inner-phase command is not a boundary-only sweep, and a boundary-only
+  command is not planned as inner work;
+- **scope matches the declared budget** — the affected surface rather than the whole workspace
+  when the host cannot carry the whole workspace;
+- **expected outcome is declared** — `green`, `expected-negative`, or `informational`; "green
+  unless it happens to be red" is not a declaration.
+
+A violation is a **PLAN defect**: gate 1 fails and `pdca-planner` revises the plan. It is never
+absorbed as a recorded exception, a substituted command or a `Notice`.
+
+### Vacuous and expected-negative runs
+
+A run that discovers or selects **zero** targets is a **failed** run, whatever its exit status.
+Exit `0` with zero selected targets, zero executed cases or an empty result set is **not**
+evidence of success: the executor records the observed count and the run is re-planned. Every
+decisive run names its minimum selected count.
+
+A decisive negative arm is declared `expected-negative` in the contract together with the exact
+expected failure identity (the status/message and the target it belongs to). Such a run is `met`
+on its observed expected outcome; a "final run must be green" rule cannot override it, a negative
+run is never silently repeated until it turns green, and a negative run without the declared
+identity is a failure.
+
+### Recorded exceptions: catalog and repetition threshold
+
+A verdict may accept a recorded exception only from a fixed catalog, each with a required shape:
+
+- **environment/infrastructure** — the failure and the recovery, both logged, plus the affected
+  command;
+- **tooling incompatibility** — the tool's own error output and the supported substitute that was
+  actually used;
+- **scope/resource policy** — the authority that imposed the limit and the command it affects;
+- **historical provenance** — the artifact identity and why it cannot be re-executed.
+
+Every exception names its class, the affected row, the evidence pointer and the substitute.
+A class that appears in **three or more units of one campaign** is a **systemic defect**: it is
+filed once as its own issue and the mechanism is fixed, instead of a fourth exception being
+recorded. A PASS introduces no new exception class; `pass-with-recorded-exceptions` is a
+diagnostic verdict, never the default.
+
+### Re-anchoring at DO entry
+
+A plan written against an earlier snapshot drifts when sibling work lands. On DO entry, before
+the first edit, `pdca-executor` re-resolves every planned anchor and records the result:
+
+- **cosmetic drift** — line numbers or moved declarations with the same identity → a `Notice`
+  with the old→new pointers; no revision;
+- **semantic drift** — changed footprint, contract, symbol or behavior → DO → PLAN, a genuine
+  revision.
+
+A plan may not execute stale anchors, and cosmetic drift may not manufacture a revision.
+
+### Proportional planning and stop-loss
+
+PLAN depth follows risk, not ceremony: a small, well-understood change gets a compact plan; the
+full contract, the variant matrix and the measurement budget belong to a change whose mechanism
+is unproven or whose blast radius is wide.
+
+For a measurable target whose mechanism is **not yet demonstrated**, PLAN first authorises a
+**bounded probe** — one question, one observable answer, a fixed budget — and writes the
+acceptance contract only afterwards. A campaign whose measured result cannot reach the target
+STOPs with the measured gap; it does not buy another revision hoping for a different number.
+
+### One evidence location binding
+
+The evidence root and every manifest path are resolved **in the same checkout the checks run
+in**. When the work happens in a secondary checkout, that checkout is the binding root: the
+helper's repository argument names it and the evidence appears at the identical
+repository-relative path there. There is no second "main-tree" form: a manifest whose tree cannot
+be recomputed from its own `base_ref` is invalid, not an exception.
+
 ## Normal and autonomous modes
 
 **Normal mode** requires the user's **approval of the plan** after it is on disk
@@ -364,7 +459,9 @@ clarify, or rewrite the plan (via `pdca-planner`, same file by `pdca-executor`).
 
 **Durable approval protocol (caller-driven cycles, normal mode only).** In **normal mode**, when
 the cycle is run by a driver on behalf of a parent/primary, the driver may plan but **never
-obtains or assumes the approval**.
+obtains or assumes the approval**. The dispatched-cycle mechanics are stated once in the runner
+(`pdca-orchestrator` §Normal-mode approval protocol), which every package ships byte-identical; the
+paragraphs below are the base contract that runner implements.
 `pdca-executor` persists a durable **pending approval ref** binding the stable task/`cycle_id`,
 the exact cycle `N`, plan revision `r` and the acceptance-criteria set (`N` is not globally unique
 on its own); a caller-driven PLAN → DO `plan_handoff` **carries it as its pointer** and the driver
@@ -437,15 +534,16 @@ checkout — so it never collides with the project's own `scripts/` or its other
 └─ <task>/rv<k>/       # evidence: frozen manifest, logs, per-row artifacts
 ```
 
-- **Helpers.** The skill package ships its helpers under its own `scripts/` (for example
-  `scripts/pdca_cost.py`, `scripts/validate_inner_loop.py`, `scripts/pdca_evidence.py`); that is the
+- **Helpers.** Each package ships its own helpers under `scripts/`; the base ships
+  `pdca_cost.py`, and a variant may ship more (the plan stages what the selected package
+  actually contains). That directory is the
   **source**. The project keeps its runtime copies in `.pdca/scripts/` (same filenames, stdlib
   only), and every command in this contract is written from the project root:
   `python3 .pdca/scripts/<helper>.py …`. A helper is never run from the installed skill directory,
   and the project's own `scripts/` is never used for bookkeeping. Copies are byte-identical to the
   skill's version; a project fork must be declared (path + reason) in the status file.
 - **Staging is the first mechanical step.** Before the **first** helper command of a cycle —
-  including the PLAN brief validation (`.pdca/scripts/validate_inner_loop.py brief …`) —
+  including the PLAN brief validation when the selected package ships `validate_inner_loop.py` —
   `pdca-executor` stages the helpers the plan actually needs from the `scripts/` of the **selected
   installed package** (the cycle variant named by the dispatch/plan) into `.pdca/scripts/`, as
   byte-identical copies. This staging is an **explicitly allowed brief/PLAN prerequisite**: the

@@ -1,12 +1,10 @@
 ---
 name: pdca-collection
-description: Runs a batch of tasks as a PDCA collection — clusters tasks into parallel groups (worktree per group), executes tasks sequentially inside a group (branch chain + auto-commit); a definitively incomplete task stops its whole group (remaining tasks marked incomplete, never executed) while other groups continue, and only groups that are done are merged with `git merge --no-ff` (never incomplete). Invoke ONLY when the user explicitly names `pdca-collection`.
+description: "PDCA collection: a batch of tasks with independent goals, each planned in full before any DO, then clustered into parallel groups (worktree per group, `git merge --no-ff` of the `done` groups only). User-invoked — runs only when the user explicitly names `pdca-collection`."
 metadata:
   opencode/autoinvoke: false
 disable-model-invocation: true
 ---
-
-# Skill: pdca-collection
 
 # A batch of tasks as PDCA
 
@@ -23,8 +21,8 @@ default), and passes it to the driver as `selected_variant`. This applies to uni
 `execution_kind=cycle`; a campaign unit has no unit-level variant — the variant is chosen by
 `pdca-planner` for a concrete step by the campaign's stack rule and persisted until the step.
 The driver does not classify the task and does not choose the variant itself. The collection's base is the standard CHECK of the code contract
-(`config/skills/pdca-coder/SKILL.md`; for .NET — the identical base
-`config/skills/pdca-dotnet/SKILL.md`).
+(`../pdca-coder/SKILL.md`; for .NET — the identical base
+`../pdca-dotnet/SKILL.md`).
 
 **First we plan the tasks, then we cluster.** A collection starts not from a
 preliminary analysis of the descriptions but from **each** task's **own genuine PLAN**
@@ -152,6 +150,12 @@ replace it.
    criterion unchanged: the previous terminal cause is a mandatory input of the own PLAN,
    and `pdca-planner` either proves that the evidence is now obtainable or redefines
    the oracle; otherwise the task stays a gap (§ALL-barrier, §Stale PLAN).
+
+   **A collection is a batch, not a licence to skip plan hygiene.** The task's own PLAN
+   validates its command contract before `plan_state=ready` (selectors resolve, argv survives
+   the harness, phase/scope legal, expected outcome declared), names a stop-loss budget, and — for
+   an unproven mechanism — plans a bounded probe before the full acceptance contract. A plan whose
+   decisive command cannot run is a gap at the barrier, not a lane surprise.
 3. **ALL-barrier.** The DAG, the groups and the order are **not built** until the requirement of its kind
    is met for **every** unit (§"Barrier by unit kinds"): for `cycle` — this cycle's own genuine
    PLAN with `plan_state=ready`; for `campaign` — an approved preparation document with
@@ -170,12 +174,21 @@ replace it.
    topologically. The result is bound to the **PLAN revision vector** (which plans exactly
    were used) and recorded in the collection status file (§Collection status). Before the persistent
    binding of the schedule there is no lane allocation.
+   **Width is an objective, not a by-product.** Minimise the largest serialized group: a
+   component whose units touch disjoint file families is cut into separate groups even when one
+   lane could carry them in order. A schedule that leaves most units in one chain has degraded to
+   a single lane by construction and must be justified in the status file, not accepted silently.
+   The schedule also declares the **host budget** — available memory, measurement locks, container
+   capacity — and `cap` is derived from it (see §Parameters), never from the number of groups.
+   After the first wave the schedule is **re-examined**: a group that has lost its last writer
+   releases waiting units into a new lane through the persisted revision binding; this is a
+   schedule revision, not an automatic recluster.
    **Parallelism is not an entry condition.** If the barrier leaves one group, the host
    allows only one lane (`cap = 1`), or the tasks share a measurement resource, that is a
    normal degradation to a single lane (§Lane), not a reason to change the contract. Do not create
    fake groups and do not call the run parallel.
 5. **The only progress mirror is the collection status file.** There is no separate sidebar todo:
-   the host may not provide a todo tool (V2 does not), and a second mirror only produces
+   the host may not provide a todo tool, and a second mirror only produces
    divergence. You (the primary) **define the semantics** of the collection status file write (§Collection status)
    in the same tick as the event: a group/task transition, a group stop, a merge,
    a corrective task, an escalation; **the physical write is performed by `pdca-executor`** on an explicit
@@ -304,9 +317,9 @@ ALL-barrier and the persistent binding of the schedule (§P.3–§P.4). Before t
 ### C — verification (the standard CHECK)
 
 The common verification of a collection is the **standard CHECK of the base contract** (two ticks:
-Gather cheap → verdict `pdca-check` medium; the input and the verdict format — `config/agents/pdca-check.md`,
-the structure — `config/skills/pdca-coder/SKILL.md` §CHECK; for .NET — the identical
-`config/skills/pdca-dotnet/SKILL.md` §CHECK), and **not** a separate
+Gather cheap → verdict `pdca-check` medium; the input and the verdict format — `../pdca-coder/assets/agents/pdca-check.md`,
+the structure — `../pdca-coder/SKILL.md` §CHECK; for .NET — the identical
+`../pdca-dotnet/SKILL.md` §CHECK), and **not** a separate
 bespoke stage of the collection. When all lanes are stopped, in the main tree: all
 **`done`** groups are integrated (**became `merged`**, including a repeated merge after a
 conflict, §D.3), **`incomplete` groups are not merged**, and there is **no unfinished
@@ -323,7 +336,7 @@ preserved.
 tree are **separate** fields. Even if there are no selected `done` groups or the current group is
 `incomplete`, the standard `C` is still performed on the integrated tree; the source tasks
 are **not** marked `done` retroactively. Counters/escalation — the base ones
-(`config/skills/pdca-coder/SKILL.md`; .NET — the identical base `pdca-dotnet`), without a collection counter.
+(`../pdca-coder/SKILL.md`; .NET — the identical base `pdca-dotnet`), without a collection counter.
 
 The orchestrator **always** — even when all checks are green — gathers through the existing
 `pdca-executor`/`pdca-scout` the mandatory reports about the raw measurements (tests — universally, plus
@@ -349,7 +362,7 @@ collection worktrees/branch chains; corrective tasks are **separate records/link
 additional lanes**. While `C` is red — **no** success/cleanup, the results are preserved.
 
 The revision/escalation rules inside a corrective task are the **base `r`/`n/3`**
-(`config/skills/pdca-coder/SKILL.md` §State machine, §Escalation; for .NET —
+(`../pdca-coder/SKILL.md` §State machine, §Escalation; for .NET —
 the identical base `pdca-dotnet`): the same defect after
 one fix → `pdca-escalate` **before the second fix** even with a local CHECK=PASS and a new task
 id; a change of the task id/session/status file **does not** reset `r`/`n`/the defect history; an exhausted
@@ -495,27 +508,22 @@ next dependent task of its group; the other groups continue.
 ### Approval protocol (normal mode)
 
 A unit waiting for a user approval is `disposition=paused` with the status `in-progress`, and
-**not** `done`/`incomplete`. The protocol is the same for `cycle` and `campaign`:
+**not** `done`/`incomplete`. The mechanics are stated once in the runner (`pdca-orchestrator`
+§Normal-mode approval protocol): the **durable pending approval ref**, the approval recorded
+against the same ref, the applicability check on resume, the fresh approval after a real revision.
+The collection adds only what the collection owns:
 
-1. The PLAN is ready and persistent; `pdca-executor` writes a **durable pending approval ref**
-   binding the stable `task`/`cycle_id`, the exact `cycle N`, the plan revision `r` and the set of
-   acceptance criteria (`N` by itself is not globally unique). A brief, a summary or a chat message
-   is not an approval.
-2. The driver/lane returns a **checkpoint** to the parent (the collection primary) with this ref —
-   the `plan_handoff` carries it as its approval pointer — and **does not**
-   ask the user itself and **does not** start DO.
-3. The primary asks the user. An explicit approval → `pdca-executor` records an approval record
-   against **the same** ref.
-4. Resume **first checks the applicability** of the saved plan to the actual state through
-   the roles (`pdca-scout` — facts, `pdca-planner` — decision). If the plan is applicable **and**
-   the recorded approval matches the ref (`task`/`cycle_id`, `N`, `r`, criteria set) — the **same**
-   cycle/step continues and DO starts; an unchanged saved plan is no exception. Applicability
-   without a matching record is an **approval-needed checkpoint**, not DO and not a fresh PLAN.
-   If the plan is stale — `pdca-planner` makes a genuine
-   revision by the base rules, and it needs a **fresh** approval; the old approval does not
-   authorize it. Approval-resume does not do an unconditional replan and does not create a new step; the state
-   is durable, so compaction is safe.
-5. Autonomous mode does not invent an approval: an external/user approval remains a blocker or
+1. The driver/lane returns a **checkpoint** to the parent (the collection primary) with the ref —
+   the `plan_handoff` carries it as its approval pointer — and does not ask the user itself and
+   does not start DO. A brief, a summary or a chat message is not an approval.
+2. The primary asks the user; an explicit approval is recorded against **the same** ref. The
+   protocol is the same for `cycle` and `campaign`.
+3. Resume continues **the same** cycle/step, and an unchanged saved plan is no exception;
+   applicability without a matching record is an **approval-needed checkpoint**, not DO and not a
+   fresh PLAN. A stale plan gets a genuine revision from `pdca-planner` and a **fresh** approval, and
+   the old approval does not authorize it: approval-resume does not do an unconditional replan. A
+   paused lane does not advance its group's dependent chain.
+4. Autonomous mode does not invent an approval: an external/user approval remains a blocker or
    a STOP until it is obtained. A mismatching/missing approval record is a blocker, not a pass.
 
 ## Stale PLAN and schedule revision
@@ -544,7 +552,10 @@ applicability check, not a mandatory repeated PLAN and not the driver deciding i
   in normal mode — the user) taking into account the already started lanes and the stop/scope constraints (§C,
   §Surface reservation). The old identities, statuses and evidence are preserved; there is no automatic
   `recluster`. A compatible local change goes through the existing route (PLAN revision +
-  a persisted revision binding); no new topology policy is introduced.
+  a persisted revision binding); no new topology policy is introduced. The addition also consumes
+  capacity explicitly: its queue position is recorded and it may not silently jump ahead of ready
+  units; when the milestone window is fixed, it is scheduled for the next milestone instead of
+  stretching the current one.
 
 ### Surface reservation and its extension
 
@@ -673,7 +684,7 @@ File: `.pdca/status/collection-<slug>.md`. It contains:
 
 ## Report
 
-The format — as in §ACT of the base contract (`config/skills/pdca-coder/SKILL.md`; .NET —
+The format — as in §ACT of the base contract (`../pdca-coder/SKILL.md`; .NET —
 the identical base `pdca-dotnet`): what was done, how it was verified,
 what remains/blocked, the next step. In autonomous mode — without a message
 to the user.
@@ -684,8 +695,8 @@ to the user.
 |---|---|
 | Skill location | by the host's rules (see `docs/install.md`) |
 | Agent location | by the host's rules (see `docs/install.md`) |
-| PLAN parallelism ceiling | `min(#units without a ready plan/frame, plan_cap)`, `plan_cap` = 4 (configured separately from the lane `cap`); an upper bound limited by the host's capabilities; only the write of the common status is serialized |
-| Lane parallelism ceiling | `min(#groups, cap)`, `cap` = 4 (configurable) |
+| PLAN parallelism ceiling | `min(#units without a ready plan/frame, plan_cap)`; `plan_cap` = 4 is a **scheduling choice of this contract**, not a host setting (the host exposes no such key); always bounded by what the host actually runs at once, and only the write of the common status is serialized |
+| Lane parallelism ceiling | `min(#groups, cap)`; `cap` = 4 is a **scheduling choice of this contract**, not a host setting; bounded by the host's observed concurrency **and by the declared host budget** (memory, measurement locks, container capacity) — a declared budget that cannot carry four lanes lowers `cap` and is recorded, not discovered later as timeouts |
 | Worktree directory | `<repo>-worktrees/<collection-id>/<group>` (not created with a single group) |
 | Merge | with `>=2` groups wait for **all** lanes to be terminal, then `git merge --no-ff` of **the `done` groups only** sequentially (not needed with one group); `incomplete` is not merged |
 | One group | work in the current worktree/branch; worktrees, group/task branches and the merge are not created; `incomplete` leaves the commits already made in the current branch |
@@ -716,7 +727,7 @@ The full installation checklist — `docs/install.md` in the skills repository.
 - Recovery after a failure of `C` (the standard CHECK), the corrective task and the state of the
   common verification — §C and §Collection status ("General verification and recovery"); the rules of
   revisions/attempts/escalation — the base of the base contract
-  (`config/skills/pdca-coder/SKILL.md` §State machine, §Escalation; for .NET —
+  (`../pdca-coder/SKILL.md` §State machine, §Escalation; for .NET —
   the identical base `pdca-dotnet`), without an override and without a collection counter.
   The base collection `incomplete` is **not** added to the base.
 
@@ -740,7 +751,7 @@ delegation to the driver, of `pdca-orchestrator` as a subagent and of the `escal
 perform dummy substantive work: no trial edits, trial tasks or fake steps.
 The exact numeric value of a host setting is not invented. There is no key, schema element or constant of a
 parallel cap on the host side in the audited V2 source; this absence does not mean
-unlimited concurrency, so `cap` values are not invented. The installed driver is compared against
+unlimited concurrency — so the 4 above is a stated scheduling choice, never a claim about the host. The installed driver is compared against
 the canonical asset and checked against the applicable permissions: the observed case was an
 installed copy without `pdca-scout` delegation, which silently breaks the `escalate → scout` edge.
 
