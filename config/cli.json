@@ -27,7 +27,8 @@
         "interval": 2500
       }
     },
-    "./plugins/sidebar-plugins"
+    "./plugins/sidebar-plugins",
+    "./plugins/clear-session"
   ],
   "attention": {
     "enabled": true,

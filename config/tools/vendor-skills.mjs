@@ -60,6 +60,7 @@ const ITEMS = [
   { kind: "skill", name: "pdca-incremental", source: "opencode/pdca-incremental", target: "config/skills/pdca-incremental" },
   { kind: "plugin", name: "git-status", source: "opencode/plugins/git-status", target: "config/plugins/git-status" },
   { kind: "plugin", name: "zen-failover", source: "opencode/plugins/zen-failover", target: "config/plugins/zen-failover" },
+  { kind: "plugin", name: "clear-session", source: "opencode/plugins/clear-session", target: "config/plugins/clear-session" },
 ]
 
 // Runtime noise that never belongs to a vendored tree.
