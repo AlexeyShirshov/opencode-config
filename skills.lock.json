@@ -1,38 +1,38 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "a343efccccb7d7e8fad34cf0c1baa626b5f4cce8",
-  "vendoredAt": "2026-10-24T07:10:49.554Z",
+  "commit": "cc27a4c574806176f319025a353cdbb8fd858aa8",
+  "vendoredAt": "2026-10-24T07:22:29.454Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "a5c2c3e45779d320dc0e17558fa89a8c28a9d78d3148fa95cd78d8991228b02b"
+      "hash": "08ccd2648854b0f1d925eae8223c79f86720b18449069945b32acc92888a5a02"
     },
     "skill/pdca-entry": {
       "source": "skills/pdca-entry",
       "target": "config/skills/pdca-entry",
-      "hash": "9e30c2539fd3f6f1ba79939f067d89616f3b127207f0dee27470b7a4dfeabd2c"
+      "hash": "915038ff5f082bd353100794995558a97a8de70e4e22c6ee7d43ddb50246cb49"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "47cae0546a26f5bfac94cf278f7d324b9ebd6ddd3072ee5733ad09abbf3eac77"
+      "hash": "5b2fb60edf6ee38455c3ac2f8c913a4e7724965629cc5236335fa18f5c42bbaa"
     },
     "skill/pdca-collection": {
       "source": "skills/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "ca4b38fb9023c5683f769287a6752e133f7775763e981a3187f4e2d147bcf9b8"
+      "hash": "1daf961ea57035cef75cb924829d0d0ab0db51dbcb36ed1c391debf58ceaea8b"
     },
     "skill/pdca-dotnet": {
       "source": "skills/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "3717d2b604de5df34c415c30746fe08493f957c12a83369a670b43b71ff25f70"
+      "hash": "e502787b811313a5acf5283b5ebedf219a73a80a404706cc04520bc9ce3a9726"
     },
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "9a34d54a78a3018f9c47f69aa28f4c7f4cad8cce0dce156a1fd8f50eeb48328e"
+      "hash": "61b957304e1489358a034543c6f4b77b3e269072fb08bffb5c5fdbadbd451b5d"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
