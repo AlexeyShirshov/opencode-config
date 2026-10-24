@@ -5,7 +5,7 @@ import { dirname, join, basename } from "node:path"
 const HERE = dirname(new URL(import.meta.url).pathname)
 const BASE = dirname(HERE)
 const AGENTS_DIR = join(BASE, "agents")
-const ASSETS_DIR = join(BASE, "skills", "pdca-dotnet", "assets", "agents")
+const ASSETS_DIR = join(BASE, "skills", "pdca-dotnet", "assets", "opencode-agents")
 
 const EXT_COMMENT = [
   "  # external_directory: add paths outside the project worktree if the task needs them, e.g.",
@@ -14,8 +14,8 @@ const EXT_COMMENT = [
 
 const USAGE = `sync-roles — keep the pdca-dotnet role assets in sync with the host agents
 
-  config/agents/*.md                              canonical settings (host)
-  config/skills/pdca-dotnet/assets/agents/*.md    generated settings (portable)
+  config/agents/*.md                                    canonical settings (host)
+  config/skills/pdca-dotnet/assets/opencode-agents/*.md generated settings (portable)
 
 The canonical settings are the frontmatter of config/agents/*.md (name, mode,
 steps, # tier, permission). Assets receive a generated frontmatter with the same
@@ -133,6 +133,16 @@ if (args.includes("--help") || args.includes("-h")) {
   process.exit(0)
 }
 const fix = args.includes("--fix")
+
+// A renamed or missing assets dir would silently turn this gate into a no-op:
+// listRoles() would find nothing to compare and report a clean exit 0.
+for (const dir of [AGENTS_DIR, ASSETS_DIR]) {
+  if (!existsSync(dir)) {
+    console.error(`sync-roles: missing directory ${dir}`)
+    console.error("  (renamed role assets? point ASSETS_DIR at the new name)")
+    process.exit(2)
+  }
+}
 
 const { shared, onlyAssets } = listRoles()
 let drift = 0
