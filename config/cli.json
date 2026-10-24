@@ -1,7 +1,8 @@
 {
   "$schema": "https://opencode.ai/v2/cli.json",
   "theme": {
-    "name": "opencode"
+    "name": "one-dark-pro",
+    "mode": "dark"
   },
   "keybinds": {
     "app.exit": "ctrl+c,ctrl+d,<leader>q,<leader>й",
