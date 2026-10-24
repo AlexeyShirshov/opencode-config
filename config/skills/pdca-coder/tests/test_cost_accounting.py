@@ -7,7 +7,7 @@ role.  They assert the generic classification (unknown stays explicitly
 reconcile with the overall totals.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

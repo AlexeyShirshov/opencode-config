@@ -11,7 +11,7 @@ section-scoped assertions (locate a section, then assert within it), never globa
 keyword counts.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-incremental/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-incremental/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

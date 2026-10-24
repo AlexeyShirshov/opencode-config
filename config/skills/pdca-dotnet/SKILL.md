@@ -21,7 +21,7 @@ state machine, gates, counters, approval protocol and evidence rules. The .NET-o
 `### Test run safety`, `### Versioned evidence contract`, `### Reviewer evidence pack`,
 `### CHECK completeness gate` and `### ACT cleanup receipt`. Both are published **complete** because
 each is installed and invoked standalone, so a shared rule is necessarily written twice: a change to
-one is made in **both** files, and `opencode/pdca/tests/test_variant_parity.py` fails when an
+one is made in **both** files, and `skills/pdca/tests/test_variant_parity.py` fails when an
 anchored rule or shared section drifts.
 
 **Models and providers live outside this skill.** The skill names only **roles**; the

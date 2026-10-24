@@ -27,7 +27,7 @@ It is *not* a card below `C`, and `C` never launches it directly; the
 `C→orchestrator→REPAIR` mediation stays visible.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

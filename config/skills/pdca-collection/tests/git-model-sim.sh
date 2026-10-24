@@ -11,7 +11,7 @@
 # Branch naming (must be siblings — git forbids a ref that is a prefix of
 # another ref):  group `collection/<id>/group-<g>`, task `collection/<id>/task-<g>-<k>`.
 #
-# Run:  bash opencode/pdca-collection/tests/git-model-sim.sh
+# Run:  bash skills/pdca-collection/tests/git-model-sim.sh
 set -euo pipefail
 
 SKILL_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)

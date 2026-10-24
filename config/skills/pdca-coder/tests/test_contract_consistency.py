@@ -1,17 +1,17 @@
 """Static regression guards for the pdca-coder contract.
 
-These tests read the skill directory (`opencode/pdca-coder/`) as *text* and assert the
+These tests read the skill directory (`skills/pdca-coder/`) as *text* and assert the
 retained PDCA rules are present in the operative sections (state machine, counters, gates,
 the status file as the only progress mirror, autonomous mode, escalation, evidence/recovery/injection, status
 file, parallel DO streams, worktree template).  They are rule-presence guards,
 not behavioral proof.
 
 The last class is a **forbidden-token** guard: it scans every file under
-`opencode/pdca-coder/` for the nine stack tokens (built from concatenated
+`skills/pdca-coder/` for the nine stack tokens (built from concatenated
 fragments so this file itself stays clean) and asserts each has zero matches.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import unittest
 from pathlib import Path
 
 # This repo IS the published-skills repo: the skill lives at
-# `opencode/pdca-coder/`, i.e. one level above this `tests/` directory.
+# `skills/pdca-coder/`, i.e. one level above this `tests/` directory.
 SKILL_DIR = Path(__file__).resolve().parents[1]
 SKILL_PATH = SKILL_DIR / "SKILL.md"
 

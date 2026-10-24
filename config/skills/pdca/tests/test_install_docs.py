@@ -14,7 +14,7 @@ looking for a skill name anywhere in the text, and they match per sentence — n
 phrase snapshots, so the docs stay editable.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -28,7 +28,7 @@ REPO = Path(__file__).resolve().parents[3]
 
 # Every skill the repository ships (a directory with a SKILL.md entry point).
 SHIPPED = sorted(
-    path.parent.name for path in REPO.glob("opencode/pdca*/SKILL.md")
+    path.parent.name for path in REPO.glob("skills/pdca*/SKILL.md")
 )
 
 CHECKOUT_DOCS = ("README.md", "docs/install.md", "docs/ru/install.md")
@@ -132,7 +132,7 @@ def copy_commands(text: str) -> list[tuple[list[str], str]]:
 
 
 def expand_sources(sources: list[str]) -> set[str]:
-    """Resolve explicit paths and `opencode/pdca*` globs to shipped skill ids."""
+    """Resolve explicit paths and `skills/pdca*` globs to shipped skill ids."""
     covered: set[str] = set()
     for source in sources:
         if any(char in source for char in "*?["):

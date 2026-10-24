@@ -5,9 +5,9 @@ evidence** of behaviour: the matrix was compiled before the behavioural runs, th
 cycle was **not** executed, and no production state machine was created. (Historical stage: the phrase
 "no agent/model … was launched" refers to the time the matrix was compiled,
 `2026-10-02T04:28Z`; the behavioural samples appeared later and are recorded below.) The render-output
-tests of Task 2 — `opencode/pdca-collection/tests/test_verification_recovery.py` —
+tests of Task 2 — `skills/pdca-collection/tests/test_verification_recovery.py` —
 were **created**; at the **historical** stage of Task 2 their run
-`python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v`
+`python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py' -v`
 gave `Ran 11 tests` / `OK` (11 passed / 0 failed / 0 skipped), exit 0 — that is
 the **historical count of Task 2** (`2026-10-02T05:02Z`), not the current active number. The current
 result after revision v2 is recorded in `…/check-owner-v2/report-v2.md`
@@ -19,7 +19,7 @@ read-only samples `baseline-*`/`after-*` by the rubric (see below); they too are
 
 The git mechanics (`SKILL.md` §Git model) are checked by a deterministic bash script —
 no network, on temporary repositories:
-`bash opencode/pdca-collection/tests/git-model-sim.sh` (it is also launched from `unittest discover`
+`bash skills/pdca-collection/tests/git-model-sim.sh` (it is also launched from `unittest discover`
 through `tests/test_git_model.py`; cases: ref naming (siblings,
 not nesting), the task branch chain + the group ff + `merge --no-ff`, a merge conflict → detected,
 single-group — commits into the current branch without branches and merge, an `incomplete` group — not
@@ -68,11 +68,11 @@ matrix they are neither invented nor substituted.
 Source of the rules: `docs/superpowers/specs/2026-10-01-pdca-collection-verification-recovery-design.md`
 and the plan `docs/superpowers/plans/2026-10-01-pdca-collection-verification-recovery-plan.md`.
 The collection skill **does not override** the state machine/gates/revision rules of the base code
-PDCA contract (`opencode/pdca-coder/SKILL.md`; for .NET — the identical `pdca-dotnet`).
+PDCA contract (`skills/pdca-coder/SKILL.md`; for .NET — the identical `pdca-dotnet`).
 
 The common operating base (applies to all cases unless stated otherwise below):
-`opencode/pdca-collection/SKILL.md` — §C (verification), §Failure, §Collection status, §D
-(infrastructure/merge); the base of the code contract (`opencode/pdca-coder/SKILL.md`; for .NET —
+`skills/pdca-collection/SKILL.md` — §C (verification), §Failure, §Collection status, §D
+(infrastructure/merge); the base of the code contract (`skills/pdca-coder/SKILL.md`; for .NET —
 the identical `pdca-dotnet`) — §State machine (counters
 `r`/`n`/3), §Escalation (`pdca-escalate`), §Cycle status file. The roles are not invented:
 `pdca-executor`/`pdca-scout` — cheap, `pdca-planner`/`pdca-check`/security — medium, `pdca-escalate` — strong; `pdca-orchestrator` —
@@ -88,14 +88,14 @@ it does not extend the enumeration. The words `blocked`, `re-gather`,
 ## Behavioural sampling protocol
 
 - **Frozen baseline contract:** `.superpowers/sdd/2026-10-01-pdca-collection-verification-recovery-plan/baseline-SKILL.md` —
-  a verbatim copy of the pre-change `opencode/pdca-collection/SKILL.md`
+  a verbatim copy of the pre-change `skills/pdca-collection/SKILL.md`
   (sha256 `f9e5e789dbd87bcde80bf6a6e2296e3e7ca6dbb660d1973614a4ad351f792de4`).
 - **Identical prompts:** `.superpowers/sdd/2026-10-01-pdca-collection-verification-recovery-plan/scenario-a-prompt.md`
   … `scenario-d-prompt.md`. Each refers **only** to the `{{SkillPath}}` placeholder for
-  the contract under test and to the base `opencode/pdca-dotnet/SKILL.md` by its original
+  the contract under test and to the base `skills/pdca-dotnet/SKILL.md` by its original
   full path (if the reader needs the base). The baseline and after prompts are **byte-identical**.
 - **Substitution:** baseline run → `{{SkillPath}}` = the frozen `baseline-SKILL.md`;
-  GREEN run → `{{SkillPath}}` = the updated `opencode/pdca-collection/SKILL.md`.
+  GREEN run → `{{SkillPath}}` = the updated `skills/pdca-collection/SKILL.md`.
   Nothing else in the prompts changes.
 - **Read-only:** one fresh context per case; it reads only the contract under test (and, if it
   wishes, the base); it does **not** read the plan/spec/this matrix/the rubric; it does not execute code, does not change
@@ -210,7 +210,7 @@ success/cleanup, the parent collection stays `unverified`, the source tasks of t
 keep their previous statuses; the local PASS of the corrective task **does not** mean the success of the
 collection.
 **Operating sources:** spec §Escalation, revisions and STOP, §Step 5; SKILL §Failure; the base
-`opencode/pdca-dotnet/SKILL.md` §State machine / §Escalation (the same-defect rule).
+`skills/pdca-dotnet/SKILL.md` §State machine / §Escalation (the same-defect rule).
 
 ---
 
@@ -278,7 +278,7 @@ the collection and tidy up the worktrees/branches".
   `incomplete` and is never `merged`.
 
 **Operating sources:** SKILL §C, §A, §Collection status, §Failure, §P/§Lane; the base of the code
-contract `opencode/pdca-coder/SKILL.md` (for .NET — the identical `pdca-dotnet`; the counters/escalation do not change).
+contract `skills/pdca-coder/SKILL.md` (for .NET — the identical `pdca-dotnet`; the counters/escalation do not change).
 
 ---
 
@@ -423,7 +423,7 @@ after samples collected later and their verdicts are in §GREEN below.)
 ## GREEN (after) results — observed
 
 Collected by the controller `2026-10-02T04:32Z` with the same identical prompts with `{{SkillPath}}` =
-`opencode/pdca-collection/SKILL.md`. The verbatim samples:
+`skills/pdca-collection/SKILL.md`. The verbatim samples:
 `.superpowers/sdd/2026-10-01-pdca-collection-verification-recovery-plan/samples/after-<a|b|c|d>.md`.
 Independent review **`ses_f051a9991ffeJGhWTAOT2ZkJPI`**: the overall result is **Spec PASS,
 Quality CHANGES_REQUIRED** (documentation edits), while for each of the four
@@ -465,7 +465,7 @@ bytes only; historical byte equivalence between rounds is not proven).
   behaviour (consistent with the disclaimer above).
 - The combined case "`incomplete` of a task inside a lane ↔ the corrective STOP" was **not**
   re-enacted directly — that is a coverage limitation. The contract contains the separation
-  (`opencode/pdca-collection/SKILL.md`: "This is **not** mixed with the mechanism of a task's `incomplete`
+  (`skills/pdca-collection/SKILL.md`: "This is **not** mixed with the mechanism of a task's `incomplete`
   inside a lane"), but it is **not** checked by a sample/test and is not claimed as verified.
 - The v3 semantics "a definitive `incomplete` of a task stops the whole group (the remainder →
   `incomplete` "the group is stopped"); an `incomplete` group is never merged and its results
@@ -497,7 +497,7 @@ the final approval of Task 1 was **not** issued — a fresh scoped check is requ
 > continues the saved PLAN from DO. Source — the spec
 > `docs/superpowers/specs/2026-10-06-pdca-collection-plan-barrier-design.md` and the plan
 > `docs/superpowers/plans/2026-10-06-pdca-collection-plan-barrier-plan.md`. Contract
-> regressions: `opencode/pdca-collection/tests/test_plan_barrier.py` (text/status/agent)
+> regressions: `skills/pdca-collection/tests/test_plan_barrier.py` (text/status/agent)
 > and `CollectionPlanBarrierDiagramTest` in `test_verification_recovery.py` (render).
 > The earlier sections a–e and their samples remain verbatim history and are not rewritten.
 

@@ -22,7 +22,7 @@ state machine, gates, counters, approval protocol and evidence rules, with .NET 
 evidence and review sections in place of the generic ones. Both are published **complete** because
 each is installed and invoked standalone, so a shared rule is necessarily written twice. This file
 owns the stack-agnostic rules; the twin owns the .NET sections. A change to a shared rule is made in
-**both** files, and `opencode/pdca/tests/test_variant_parity.py` fails when one of the anchored
+**both** files, and `skills/pdca/tests/test_variant_parity.py` fails when one of the anchored
 rules or shared sections drifts.
 
 **Models and providers live outside this skill.** The skill names only **roles**; the

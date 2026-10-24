@@ -1,13 +1,13 @@
 """Artifact and reproducibility guards for the pdca-incremental hand diagram.
 
-Reads the generated files under ``opencode/pdca-incremental/assets/diagram/`` and
+Reads the generated files under ``skills/pdca-incremental/assets/diagram/`` and
 asserts the family invariants: light/dark titles, required labels, XML well-formedness,
 one byte-equal inline SVG per HTML and no domain tokens.  Reproducibility is proven
 empirically: only the generator is copied into a temporary directory, executed twice
 with the current Python and compared byte-for-byte with the committed artifacts.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-incremental/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-incremental/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

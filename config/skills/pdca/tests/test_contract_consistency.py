@@ -9,9 +9,9 @@ are not an instruction that end users must write code or tests.
 
 The runtime surface is exactly:
 
-* ``opencode/pdca/SKILL.md``
-* ``opencode/pdca/assets/agents/*.md``
-* ``opencode/pdca/assets/diagram/*``
+* ``skills/pdca/SKILL.md``
+* ``skills/pdca/assets/agents/*.md``
+* ``skills/pdca/assets/diagram/*``
 * optionally the four host agents ``<host>/config/agents/pdca-{planner,executor,check,escalate}.md``
   (the RUNNER is the shared host agent ``<host>/config/agents/pdca-orchestrator.md``, not scanned
   here); these live in the separate ``opencode-config`` repo and are hidden behind
@@ -24,7 +24,7 @@ domain/stack tokens and asserts zero occurrences, and that no runtime file
 carries a ``model:`` field.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -7,9 +7,9 @@ production state machine was created. Rule presence is checked by
 The behavioral review is performed by an independent `pdca-escalate` against the full corresponding
 contracts.
 
-Source of the rules (the operative norm): `opencode/pdca-dotnet/SKILL.md` (§State machine,
+Source of the rules (the operative norm): `skills/pdca-dotnet/SKILL.md` (§State machine,
 §Transition gates, §Orchestrator role, §Host requirements), the EN role briefs
-`opencode/pdca-dotnet/assets/agents/*.md`, and the diagram sources `opencode/pdca-dotnet/assets/diagram/gen_pdca.py`. The historical design
+`skills/pdca-dotnet/assets/agents/*.md`, and the diagram sources `skills/pdca-dotnet/assets/diagram/gen_pdca.py`. The historical design
 `docs/superpowers/specs/2026-10-01-pdca-consistency-design.md` is context only, not the norm (it
 allows any primary; the operative rule is cheap-only). Counters: cycle `<N>`
 (grows only in ACT), plan revision `r`, attempt `n/3` within a
@@ -32,12 +32,12 @@ revision; a rejected candidate **without a plan change** is not a new revision a
 | L | Fallback: `pdca-orchestrator` unavailable | The flat primary drives the cycle itself, the fallback is recorded (`Notice:`); gates/no-4th/scope/security are not waived |
 
 Common operative base (applies to every case unless stated below):
-`opencode/pdca-dotnet/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
+`skills/pdca-dotnet/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
 §Phase progress mirror, §Escalation (`pdca-escalate`) (triggers, incl. 5), §Autonomous mode,
 §Cycle status file, §Parallel CHECK streams, §Host requirements (roles → agents),
-§Orchestrator role; `opencode/pdca-dotnet/assets/agents/*.md` (`pdca-planner`, `pdca-executor`,
+§Orchestrator role; `skills/pdca-dotnet/assets/agents/*.md` (`pdca-planner`, `pdca-executor`,
 `pdca-check`, `pdca-escalate`, `pdca-scout`, `pdca-security-auditor`, `pdca-orchestrator`); the diagram
-labels `opencode/pdca-dotnet/assets/diagram/gen_pdca.py`.
+labels `skills/pdca-dotnet/assets/diagram/gen_pdca.py`.
 
 ---
 

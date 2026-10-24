@@ -5,7 +5,7 @@ family contracts, state the precedence, and hand off without duplicating a
 contract.  The runner it ships must be the same file as everywhere else.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-entry/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-entry/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

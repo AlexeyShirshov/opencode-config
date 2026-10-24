@@ -1,12 +1,12 @@
 """Docs "claim → source" maps: section anchors must resolve, line numbers only in the preamble.
 
-The articles cite skill files as `opencode/<skill>/SKILL.md §Heading` (or
+The articles cite skill files as `skills/<skill>/SKILL.md §Heading` (or
 `§A · §B`) instead of line ranges, so edits to a skill do not silently rot the
 maps.  A numeric reference is allowed only for the short file preamble (before
 the first `##` heading), where there is no section to name.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ DOCS = [
     if "pdca-slides" not in p.parts and "dist" not in p.parts
 ]
 
-CITATION = re.compile(r"`(opencode/[a-z-]+/SKILL\.md)([^`]*)`")
+CITATION = re.compile(r"`(skills/[a-z-]+/SKILL\.md)([^`]*)`")
 NUMBERS = re.compile(r"^\d+(?:-\d+)?(?:,\d+(?:-\d+)?)*$")
 
 # A bare `> 2` / `>= 2` / `≥ 2` depth value is not proof that the host supports the
@@ -201,17 +201,17 @@ class CompositionDocsTest(unittest.TestCase):
 # of the same level); the pre-existing variant-routing rows that name concrete stacks as
 # contract inputs (e.g. `.NET/C#` → `pdca-dotnet`) are outside these slices by design.
 COMPOSITION_SECTIONS = {
-    "opencode/pdca-collection/SKILL.md": (
+    "skills/pdca-collection/SKILL.md": (
         ("###", "Collection units and the execution form"),
         ("###", "P — per-task PLANs, the barrier, clustering"),
         ("###", "Surface reservation and its extension"),
     ),
-    "opencode/pdca-incremental/SKILL.md": (
+    "skills/pdca-incremental/SKILL.md": (
         ("##", "Campaign invariants"),
         ("##", "Campaign status file"),
         ("###", "0. Bootstrap"),
     ),
-    "opencode/pdca/assets/agents/pdca-orchestrator.md": (
+    "skills/pdca/assets/agents/pdca-orchestrator.md": (
         ("##", "Contract"),
         ("##", "Input 1"),
         ("##", "Input 2"),

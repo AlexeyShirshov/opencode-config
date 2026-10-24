@@ -8,7 +8,7 @@ clustering objective, and the lane ceiling derives from a declared host budget.
 Presence-only, like the other contract guards in this package.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

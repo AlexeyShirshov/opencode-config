@@ -7,7 +7,7 @@ of mutations that a contract violation would produce, and proves the checks
 catch the violation.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py'
+    python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py'
 """
 
 from __future__ import annotations

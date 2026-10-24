@@ -26,7 +26,7 @@ skills repo (~/sources/skills, локально ../skills)  →  opencode-config
 (локальный клон: **`/home/alex/sources/skills`**, от этого репозитория — `../skills`):
 
 ```
-opencode/<skill>/           →  config/skills/<skill>/
+skills/<skill>/             →  config/skills/<skill>/
 opencode/plugins/<plugin>/  →  config/plugins/<plugin>/
 ```
 
@@ -36,7 +36,7 @@ opencode/plugins/<plugin>/  →  config/plugins/<plugin>/
 2. тестируем там же:
    ```bash
    OPENCODE_CONFIG_REPO=/home/alex/sources/opencode-config \
-     python3 -m unittest discover -s opencode/<skill>/tests -p 'test_*.py'
+     python3 -m unittest discover -s skills/<skill>/tests -p 'test_*.py'
    ```
 3. коммитим и пушим в skills repo (пуш — человеком или по явной просьбе);
 4. только после этого — вендоринг в снимок:

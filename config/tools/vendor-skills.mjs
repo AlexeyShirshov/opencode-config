@@ -18,7 +18,7 @@ import { dirname, join, relative, resolve } from "node:path"
 //
 // Source of truth:
 //   skills repo  (AlexeyShirshov/skills, default ../../skills)
-//     opencode/<skill>/            ->  config/skills/<skill>/
+//     skills/<skill>/              ->  config/skills/<skill>/
 //     opencode/plugins/<plugin>/   ->  config/plugins/<plugin>/
 //   this repo (config/)            ->  ~/.config/opencode/  (deploy only, explicit)
 //
@@ -52,19 +52,31 @@ const HOST_DIR = resolve(
 // What this snapshot vendors from the skills repo. A new skill/plugin is added
 // here only after it exists (committed + pushed) upstream.
 const ITEMS = [
-  { kind: "skill", name: "pdca", source: "opencode/pdca", target: "config/skills/pdca" },
-  { kind: "skill", name: "pdca-entry", source: "opencode/pdca-entry", target: "config/skills/pdca-entry" },
-  { kind: "skill", name: "pdca-coder", source: "opencode/pdca-coder", target: "config/skills/pdca-coder" },
-  { kind: "skill", name: "pdca-collection", source: "opencode/pdca-collection", target: "config/skills/pdca-collection" },
-  { kind: "skill", name: "pdca-dotnet", source: "opencode/pdca-dotnet", target: "config/skills/pdca-dotnet" },
-  { kind: "skill", name: "pdca-incremental", source: "opencode/pdca-incremental", target: "config/skills/pdca-incremental" },
+  { kind: "skill", name: "pdca", source: "skills/pdca", target: "config/skills/pdca" },
+  { kind: "skill", name: "pdca-entry", source: "skills/pdca-entry", target: "config/skills/pdca-entry" },
+  { kind: "skill", name: "pdca-coder", source: "skills/pdca-coder", target: "config/skills/pdca-coder" },
+  { kind: "skill", name: "pdca-collection", source: "skills/pdca-collection", target: "config/skills/pdca-collection" },
+  { kind: "skill", name: "pdca-dotnet", source: "skills/pdca-dotnet", target: "config/skills/pdca-dotnet" },
+  { kind: "skill", name: "pdca-incremental", source: "skills/pdca-incremental", target: "config/skills/pdca-incremental" },
   { kind: "plugin", name: "git-status", source: "opencode/plugins/git-status", target: "config/plugins/git-status" },
   { kind: "plugin", name: "zen-failover", source: "opencode/plugins/zen-failover", target: "config/plugins/zen-failover" },
   { kind: "plugin", name: "clear-session", source: "opencode/plugins/clear-session", target: "config/plugins/clear-session" },
 ]
 
-// Runtime noise that never belongs to a vendored tree.
-const IGNORED = new Set(["__pycache__", "node_modules", ".git", ".pdca", ".DS_Store"])
+// Runtime noise that never belongs to a vendored tree. `bin`/`obj`/`TestResults`
+// are MSBuild output: the pdca-dotnet plan-lint fixture ships a Proj.csproj, and an
+// open editor's C# language server design-time-builds it right inside the snapshot —
+// otherwise every `--check` after a `--fix` reports that generated tree as drift.
+const IGNORED = new Set([
+  "__pycache__",
+  "node_modules",
+  ".git",
+  ".pdca",
+  ".DS_Store",
+  "bin",
+  "obj",
+  "TestResults",
+])
 const IGNORED_SUFFIX = [".pyc", ".pyo", ".swp", ".log"]
 
 const args = process.argv.slice(2)

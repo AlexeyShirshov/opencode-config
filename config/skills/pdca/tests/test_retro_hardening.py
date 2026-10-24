@@ -13,7 +13,7 @@ the runtime text, like `test_contract_consistency.py`; it does not execute a
 cycle.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ import re
 import unittest
 from pathlib import Path
 
-FAMILY = Path(__file__).resolve().parents[2]  # the `opencode/` directory
+FAMILY = Path(__file__).resolve().parents[2]  # the `skills/` directory
 
 BASE = FAMILY / "pdca/SKILL.md"
 CODER = FAMILY / "pdca-coder/SKILL.md"

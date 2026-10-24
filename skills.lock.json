@@ -1,38 +1,38 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "9e3c35ffeb200bbd239706300a7d360e052fc0c4",
-  "vendoredAt": "2026-10-23T09:14:38.410Z",
+  "commit": "a343efccccb7d7e8fad34cf0c1baa626b5f4cce8",
+  "vendoredAt": "2026-10-24T07:10:49.554Z",
   "items": {
     "skill/pdca": {
-      "source": "opencode/pdca",
+      "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "1fa2d16c3e02264a0fccba1b0fb27bfb6a90b9ef40ea816cc4275ef6ad01f121"
+      "hash": "a5c2c3e45779d320dc0e17558fa89a8c28a9d78d3148fa95cd78d8991228b02b"
     },
     "skill/pdca-entry": {
-      "source": "opencode/pdca-entry",
+      "source": "skills/pdca-entry",
       "target": "config/skills/pdca-entry",
-      "hash": "1bd9581dcda5d48a0c3db949b84e78e6a61732daf4dba7109626e116c426504e"
+      "hash": "9e30c2539fd3f6f1ba79939f067d89616f3b127207f0dee27470b7a4dfeabd2c"
     },
     "skill/pdca-coder": {
-      "source": "opencode/pdca-coder",
+      "source": "skills/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "bfae9e01685a38deaa93c3d8fe5c2da524c7e1525fcb6195e698a43992c620ee"
+      "hash": "47cae0546a26f5bfac94cf278f7d324b9ebd6ddd3072ee5733ad09abbf3eac77"
     },
     "skill/pdca-collection": {
-      "source": "opencode/pdca-collection",
+      "source": "skills/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "1d712d7fd3e1840301da58f1ddee01dcab8da89ac5002187ee9ef8483475e6c7"
+      "hash": "ca4b38fb9023c5683f769287a6752e133f7775763e981a3187f4e2d147bcf9b8"
     },
     "skill/pdca-dotnet": {
-      "source": "opencode/pdca-dotnet",
+      "source": "skills/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "2e91f2a6e02329e88432e3add4f4d4ce20d18caf90c635c6504d2236cedf8b51"
+      "hash": "3717d2b604de5df34c415c30746fe08493f957c12a83369a670b43b71ff25f70"
     },
     "skill/pdca-incremental": {
-      "source": "opencode/pdca-incremental",
+      "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "54aca2b6a81fe84e336b405e39aaddb76a165be53b31cb49600c897b2684147b"
+      "hash": "9a34d54a78a3018f9c47f69aa28f4c7f4cad8cce0dce156a1fd8f50eeb48328e"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -42,12 +42,12 @@
     "plugin/zen-failover": {
       "source": "opencode/plugins/zen-failover",
       "target": "config/plugins/zen-failover",
-      "hash": "5080c3661ce58527511476bd524472c4071bcd9db654faa3ac21d9327bc5d5a4"
+      "hash": "7faf0804ee29bfce3215988b8449a504f7a605bac6680a31ee30a91378323d07"
     },
     "plugin/clear-session": {
       "source": "opencode/plugins/clear-session",
       "target": "config/plugins/clear-session",
-      "hash": "1bd8d82db5fd2ba22e47f80887372e2b9e43b8f8c4e06b46606b5dc862accbc0"
+      "hash": "cb3fb38f12a9416bb7083728a602e05e77f6a57cf4a8f076c8452bfeca7b958a"
     }
   }
 }

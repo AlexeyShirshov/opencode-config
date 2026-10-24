@@ -6,10 +6,10 @@ production-автомат не создавался. Присутствие пр
 `test_contract_consistency.py`, и она тоже лишь фиксирует наличие правил, а не поведение.
 Поведенческий разбор проходит независимый `pdca-escalate` по полным соответствующим контрактам.
 
-Источник правил (действующая норма): `opencode/pdca-coder/SKILL.md` (§State machine,
+Источник правил (действующая норма): `skills/pdca-coder/SKILL.md` (§State machine,
 §Transition gates, §Orchestrator role, §Host requirements, §PLAN selects the toolchain and lenses),
-EN-роли `opencode/pdca-coder/assets/agents/*.md` и источник
-диаграммы `opencode/pdca-coder/assets/diagram/gen_pdca.py`. Счётчики: цикл `<N>` (растёт
+EN-роли `skills/pdca-coder/assets/agents/*.md` и источник
+диаграммы `skills/pdca-coder/assets/diagram/gen_pdca.py`. Счётчики: цикл `<N>` (растёт
 только в ACT), ревизия плана `r`, попытка `n/3` в пределах
 ревизии; отвергнутый кандидат **без смены плана** не новая ревизия и не сбрасывает ретраи.
 
@@ -34,12 +34,12 @@ EN-роли `opencode/pdca-coder/assets/agents/*.md` и источник
 | L | Fallback: `pdca-orchestrator` недоступен | Flat primary ведёт цикл сам, fallback зафиксирован (`Notice:`); гейты/no-4th/scope/security не отменяются |
 
 Общая оперативная база (применяется ко всем кейсам, если ниже не уточнено):
-`opencode/pdca-coder/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
+`skills/pdca-coder/SKILL.md` — §State machine (Three counters), §Transition gates 1–4,
 §Phase progress mirror, §Escalation (`pdca-escalate`) (триггеры, в т.ч. 5), §Autonomous mode,
 §Cycle status file, §Parallel CHECK streams, §Host requirements (roles → agents),
-§Orchestrator role, §PLAN selects the toolchain and lenses; `opencode/pdca-coder/assets/agents/*.md`
+§Orchestrator role, §PLAN selects the toolchain and lenses; `skills/pdca-coder/assets/agents/*.md`
 (`pdca-planner`, `pdca-executor`, `pdca-check`, `pdca-escalate`, `pdca-scout`, `pdca-security-auditor`,
-`pdca-orchestrator`); метки диаграммы `opencode/pdca-coder/assets/diagram/pdca-coder-hand.svg`.
+`pdca-orchestrator`); метки диаграммы `skills/pdca-coder/assets/diagram/pdca-coder-hand.svg`.
 
 ---
 

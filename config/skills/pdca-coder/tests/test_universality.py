@@ -5,7 +5,7 @@ model or a real cycle.  The skill targets software-engineering tasks and must
 not advertise non-code deliverables (presentations, research reports, ...).
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -5,7 +5,7 @@ role carries a `# tier:` label (no `model:`).  They never execute a model or the
 live PDCA cycle, so they prove structure, not behavior.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

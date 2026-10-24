@@ -18,7 +18,7 @@ Two kinds of guard:
   .NET-only sections must not leak into the stack-agnostic variant.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import re
 import unittest
 from pathlib import Path
 
-FAMILY = Path(__file__).resolve().parents[2]  # the `opencode/` directory
+FAMILY = Path(__file__).resolve().parents[2]  # the `skills/` directory
 CODER = FAMILY / "pdca-coder/SKILL.md"
 DOTNET = FAMILY / "pdca-dotnet/SKILL.md"
 

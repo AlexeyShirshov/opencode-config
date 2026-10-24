@@ -12,7 +12,7 @@ family and the host keys that still exist — to a model; the shared RUNNER
 `pdca-orchestrator` is asserted separately; the integration is additive.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -31,7 +31,7 @@ ASSET_AGENTS = SKILL_DIR / "assets/agents"
 # The host `pdca-*` agents are the .NET-flavoured briefs, and the universal
 # skill's own assets are domain-neutral, so host body/permission parity is
 # asserted against `pdca-dotnet`'s assets (the mirror of the host briefs).
-HOST_ASSETS = REPO_ROOT / "opencode/pdca-dotnet/assets/agents"
+HOST_ASSETS = REPO_ROOT / "skills/pdca-dotnet/assets/agents"
 
 # Host config (agents/profiles/AGENTS.md/skills-keep) lives in the `opencode-config` repo,
 # not in this one. Point at it with OPENCODE_CONFIG_REPO to enable host-parity checks;
@@ -362,7 +362,7 @@ class SkillFrontmatterTest(unittest.TestCase):
 
 RUNNER_ASSET = ASSET_AGENTS / "pdca-orchestrator.md"
 FAMILY_SKILLS = ("pdca-entry", "pdca", "pdca-coder", "pdca-dotnet", "pdca-collection", "pdca-incremental")
-# Repo root: <repo>/opencode/pdca/tests/<this file>.
+# Repo root: <repo>/skills/pdca/tests/<this file>.
 REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -430,7 +430,7 @@ class RunnerAssetTest(unittest.TestCase):
         )
 
     def test_runner_asset_is_identical_in_every_skill(self):
-        copies = {s: (REPO_ROOT / "opencode" / s / "assets/agents/pdca-orchestrator.md")
+        copies = {s: (REPO_ROOT / "skills" / s / "assets/agents/pdca-orchestrator.md")
                   for s in FAMILY_SKILLS}
         expected = copies["pdca"].read_bytes()
         for skill, path in copies.items():

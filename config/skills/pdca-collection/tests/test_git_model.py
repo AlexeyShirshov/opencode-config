@@ -11,7 +11,7 @@ Requires ``bash`` and ``git >= 2.28`` (``git init -b``); the test skips when
 either is unavailable.  No network, no third-party dependencies.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

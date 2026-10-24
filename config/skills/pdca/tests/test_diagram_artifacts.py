@@ -1,7 +1,7 @@
 """Artifact + reproducibility guards for the universal `pdca` hand diagram.
 
 These tests read the generated diagram files under
-``opencode/pdca/assets/diagram/``, assert the exact light/dark titles and
+``skills/pdca/assets/diagram/``, assert the exact light/dark titles and
 labels, XML well-formedness, a single byte-equal inline SVG per HTML, and zero
 domain/security tokens.  Reproducibility is proven empirically: only the
 generator is copied into a temporary directory, executed with the current Python
@@ -9,7 +9,7 @@ and compared byte-for-byte with the committed artifacts (twice, to prove
 determinism).  The external `archify` skill is never invoked.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -8,7 +8,7 @@ per-group totals reconcile with the overall totals, and that the session-tree
 walk resolves a root plus its descendants.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

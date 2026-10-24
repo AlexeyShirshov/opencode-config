@@ -7,7 +7,7 @@ execute a model and do not prove that an agent follows the contract.  Behavioral
 scenario review is a separate step.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-dotnet/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-dotnet/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

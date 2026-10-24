@@ -1,11 +1,11 @@
 """Artifact guards for the pdca-coder hand diagram.
 
 These tests read the generated diagram files under
-``opencode/pdca-coder/assets/diagram/`` only; they never re-run the generator.
+``skills/pdca-coder/assets/diagram/`` only; they never re-run the generator.
 Reproducibility is proven by command evidence in the cycle status file.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

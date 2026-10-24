@@ -16,7 +16,7 @@ The tests pin that split so the routing rule cannot creep back into the agent:
 * the autonomous handoff of every cycle contract names its own `selected_variant`.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -27,10 +27,10 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
-# Canonical repo: <root>/config/skills; published pack: <root>/opencode.
-SKILLS = REPO / "opencode"
+# This repo: <root>/skills; an opencode-config checkout: <root>/config/skills.
+SKILLS = REPO / "skills"
 if not SKILLS.is_dir():
-    SKILLS = REPO / "skills"
+    SKILLS = REPO / "config" / "skills"
 
 HOST_REPO = Path(os.environ["OPENCODE_CONFIG_REPO"]) if os.environ.get("OPENCODE_CONFIG_REPO") else None
 CONFIG = (HOST_REPO / "config") if HOST_REPO else None

@@ -10,7 +10,7 @@ rejects any write on the connection; a malformed profile is handled without an
 unhandled exception.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

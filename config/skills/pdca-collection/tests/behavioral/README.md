@@ -33,11 +33,11 @@ mutations that a contract violation would produce.
 ## Usage
 
 ```bash
-python3 opencode/pdca-collection/tests/behavioral/probe.py install
-python3 opencode/pdca-collection/tests/behavioral/probe.py gap
-python3 opencode/pdca-collection/tests/behavioral/probe.py campaign
-python3 opencode/pdca-collection/tests/behavioral/probe.py lane
-python3 opencode/pdca-collection/tests/behavioral/probe.py check ~/pdca-behavioral/gap-<stamp>
+python3 skills/pdca-collection/tests/behavioral/probe.py install
+python3 skills/pdca-collection/tests/behavioral/probe.py gap
+python3 skills/pdca-collection/tests/behavioral/probe.py campaign
+python3 skills/pdca-collection/tests/behavioral/probe.py lane
+python3 skills/pdca-collection/tests/behavioral/probe.py check ~/pdca-behavioral/gap-<stamp>
 ```
 
 Each run prints `PASS`/`FAIL` with the concrete failures, and leaves the evidence in the

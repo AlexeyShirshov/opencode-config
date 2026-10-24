@@ -12,7 +12,7 @@ The runtime surface is the SKILL plus the role assets/host agents; the
 ``tests/`` directory itself is not scanned.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

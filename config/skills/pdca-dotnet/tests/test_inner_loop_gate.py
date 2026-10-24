@@ -7,7 +7,7 @@ documented CLI contract (argv, exit codes, `FAIL:`/`ERROR:` output) and that no
 supplied command is ever executed.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-dotnet/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-dotnet/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -8,7 +8,7 @@ writing the manifest, the `>=2 disjoint footprints` entry rule, patch-only
 git fallback) so a future edit cannot silently restore them.
 
 Run from the repository root:
-    python3 -m unittest discover -s opencode/pdca-entry/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-entry/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[3]
-SKILLS = REPO / "opencode"
+SKILLS = REPO / "skills"
 ENTRY = SKILLS / "pdca-entry/SKILL.md"
 INCREMENTAL = SKILLS / "pdca-incremental/SKILL.md"
 COLLECTION = SKILLS / "pdca-collection/SKILL.md"

@@ -7,7 +7,7 @@ immutable, so it never creates `-wal`/`-shm` sidecars and rejects any write on
 the connection; malformed profile JSON is handled in a controlled way.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-coder/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-coder/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -17,7 +17,7 @@ At P1 these tests are intentionally RED: the new contract markers do not exist
 yet.  They must fail on the missing NEW contract text, not on syntax/typos.
 
 Run:
-    python3 -m unittest discover -s opencode/pdca-collection/tests -p 'test_*.py' -v
+    python3 -m unittest discover -s skills/pdca-collection/tests -p 'test_*.py' -v
 """
 
 from __future__ import annotations

@@ -108,11 +108,11 @@ def install() -> None:
         target = SANDBOX_CONFIG / "skills" / name
         if target.exists():
             shutil.rmtree(target)
-        shutil.copytree(REPO_ROOT / "opencode" / name, target, ignore=ignore)
+        shutil.copytree(REPO_ROOT / "skills" / name, target, ignore=ignore)
         print(f"skill  {name} -> {target}")
     (SANDBOX_CONFIG / "agents").mkdir(parents=True, exist_ok=True)
     for name in AGENTS:
-        source = REPO_ROOT / "opencode" / AGENT_SET / "assets" / "agents" / f"{name}.md"
+        source = REPO_ROOT / "skills" / AGENT_SET / "assets" / "agents" / f"{name}.md"
         shutil.copy2(source, SANDBOX_CONFIG / "agents" / f"{name}.md")
         print(f"agent  {name} -> {SANDBOX_CONFIG / 'agents' / (name + '.md')}")
 
