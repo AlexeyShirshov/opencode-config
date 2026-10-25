@@ -68,7 +68,7 @@ opencode/plugins/<plugin>/  →  config/plugins/<plugin>/
 
 ```bash
 bun config/tools/vendor-skills.mjs --check    # скиллы/плагины: снимок == skills repo
-bun config/tools/sync-roles.mjs --check       # config/agents → role-assets pdca-dotnet
+bun config/tools/sync-roles.mjs --check       # config/agents: зеркало role-assets (канон — в skills repo)
 bun config/tools/sync-profiles.mjs --check    # config/profiles → installed профили
 ```
 
