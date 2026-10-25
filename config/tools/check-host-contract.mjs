@@ -340,6 +340,8 @@ for (const f of readdirSync(PROFILES).filter((f) => f.endsWith(".jsonc"))) {
     if (text.includes("~1460") || /контракт\s+~?\d+\s+строк/.test(text))
       fail("README.md: brittle line-count claim is back")
     if (text.includes("пустым `model:`")) fail("README.md: stale empty-model claim is back")
+    for (const stale of ["`pdca-entry`", "assets/agents/", "выбирает вариант", "только по скиллу `pdca-dotnet`"])
+      if (text.includes(stale)) fail(`README.md: stale PDCA claim "${stale}"`)
   }
 }
 
