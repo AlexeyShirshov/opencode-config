@@ -53,7 +53,6 @@ const HOST_DIR = resolve(
 // here only after it exists (committed + pushed) upstream.
 const ITEMS = [
   { kind: "skill", name: "pdca", source: "skills/pdca", target: "config/skills/pdca" },
-  { kind: "skill", name: "pdca-entry", source: "skills/pdca-entry", target: "config/skills/pdca-entry" },
   { kind: "skill", name: "pdca-coder", source: "skills/pdca-coder", target: "config/skills/pdca-coder" },
   { kind: "skill", name: "pdca-collection", source: "skills/pdca-collection", target: "config/skills/pdca-collection" },
   { kind: "skill", name: "pdca-dotnet", source: "skills/pdca-dotnet", target: "config/skills/pdca-dotnet" },

@@ -279,10 +279,15 @@ if (exists(join(AGENTS, "lane.md"))) fail("agents/lane.md: legacy orchestrator n
       "does not dispatch the cycle",
       "rights of expensive roles are never widened",
       "skill pdca",
-      "pdca-entry",
+      "single entry",
     ])
       if (!text.includes(token)) fail(`${where}: missing routing clause "${token}"`)
-    for (const stale of ["picks the cycle variant", "Trigger phrases «по циклу»"])
+    for (const stale of [
+      "picks the cycle variant",
+      "Trigger phrases «по циклу»",
+      "pdca-entry",
+      "selected_variant",
+    ])
       if (text.includes(stale)) fail(`${where}: stale wording "${stale}"`)
   }
 }
