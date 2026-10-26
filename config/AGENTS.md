@@ -21,6 +21,12 @@
 - Batch several `tools.roslyn(...)` calls in ONE `execute` (`Promise.all([...])`): one round-trip instead of many, the daemon keeps the solution loaded.
 - Pass `solution: "/abs/path/to/X.slnx"` when the session directory has no `.sln`/`.slnx` (e.g. you are in a docs/config repo and the solution lives elsewhere).
 
+## A denied tool call rejects the call, not the tool
+
+- `Permission denied: shell` names neither the offending segment nor the rule: the harness splits a command at `;`, `&&` and `|` and checks every segment on its own, so one unlisted verb (`echo`, `cd`) kills the whole call. Retry the single allowed verb; never infer "this tool is absent", and do not hunt the MCP catalog for a replacement.
+- Put the directory in the shell tool's `workdir` instead of `cd … &&`: a read-only allowlist has no `cd`, so the chain dies with it.
+- The same reading holds for `edit`/`write`/`read` denials: the denial covers one path or one call. A denied operation proves only that operation was rejected; a role whose known permissions cover the work is the way to get the evidence, not a widened allowlist.
+
 ## Issues: search for duplicates before filing
 
 - Before creating **any** issue (`gh issue create` on any repo, and the built-in `report` skill), first search for existing tickets — that search is step 0 of the workflow and the `report` skill does **not** contain it, so add it yourself.
