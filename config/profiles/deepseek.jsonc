@@ -28,7 +28,8 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, квота Go не тратится);
+  // Тиры: cheap — DeepSeek из подписки Go (`opencode-go/deepseek-v4.1-flash`, тот же id, что и
+  // дефолт сессии; квота Go тратится);
   // medium SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high); CHECK — Argon (Console,
   // другое семейство для независимого вердикта); strong — Sonnet (Console). Дефолтная модель
   // сессии остаётся на Go-подписке. Конкретные id — только здесь и в `model`/`small_model`;
@@ -43,12 +44,12 @@
     // 1.1k токенов выхода ≈ 1.7% лимита 65k, обрезки нет.
     "pdca-check": { "model": "opencode/gemini-4-argon", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "deepseek/deepseek-flash" },
+    "pdca-executor": { "model": "opencode-go/deepseek-v4.1-flash" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "deepseek/deepseek-flash" },
-    "scout": { "model": "deepseek/deepseek-flash" },
+    "coder": { "model": "opencode-go/deepseek-v4.1-flash" },
+    "scout": { "model": "opencode-go/deepseek-v4.1-flash" },
     "btw": { "model": "opencode-go/deepseek-v4.1-flash" },
-    "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
+    "pdca-orchestrator": { "model": "opencode-go/deepseek-v4.1-flash" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
