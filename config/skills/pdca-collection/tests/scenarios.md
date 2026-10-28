@@ -25,7 +25,7 @@ not nesting), the task branch chain + the group ff + `merge --no-ff`, a merge co
 single-group — commits into the current branch without branches and merge, an `incomplete` group — not
 integrated into `main`, its branch/tip and commits preserved as evidence; exit 0 = all cases green).
 
-The host artifacts (`config/agents/pdca-orchestrator.md` — the prompt of the common RUNNER,
+The host artifacts (`config/agents/pdca-orchestrator.md` — the prompt of the common DRIVER,
 `config/profiles/*.jsonc`, `config/AGENTS.md`) live in the `opencode-config` repository; the tests
 touch them only with `OPENCODE_CONFIG_REPO=<path to opencode-config>`, otherwise those checks
 are skipped.
@@ -67,7 +67,7 @@ matrix they are neither invented nor substituted.
 
 Source of the rules: `docs/superpowers/specs/2026-10-01-pdca-collection-verification-recovery-design.md`
 and the plan `docs/superpowers/plans/2026-10-01-pdca-collection-verification-recovery-plan.md`.
-The collection skill **does not override** the state machine/gates/revision rules of the base code
+The collection skill **does not override** the state machine, phase exits or revision rules of the base common contract
 PDCA contract (`skills/pdca-coder/SKILL.md`; for .NET — the identical `pdca-dotnet`).
 
 The common operating base (applies to all cases unless stated otherwise below):
@@ -142,7 +142,7 @@ branches on the way so we can deliver. No need to re-check anything in full" [pr
 **Required outcome:** a failure → raw evidence (`pdca-executor`) → triage by `pdca-check` (medium);
 a confirmed real defect → a standard corrective `pdca-dotnet` task on the
 integrated current tree/branch with its own linked status file; after its ACT —
-a repeat of **all** common gates of the parent C; no cleanup/success while C is red; no
+a repeat of **all** common phase exits and checks of the parent integration CHECK; no cleanup/success while C is red; no
 automatic rerun/remerge/recluster/reset/revert.
 **Operating sources:** spec §Step 1–5, §Control flow, §Common verification and
 recovery; SKILL §C; lane.md §Failure (the row "A regression of the mandatory checks/artifacts of an item"), status.md §General
@@ -497,14 +497,14 @@ the final approval of Task 1 was **not** issued — a fresh scoped check is requ
 > continues the saved PLAN from DO. Source — the spec
 > `docs/superpowers/specs/2026-10-06-pdca-collection-plan-barrier-design.md` and the plan
 > `docs/superpowers/plans/2026-10-06-pdca-collection-plan-barrier-plan.md`. Contract
-> regressions: `skills/pdca-collection/tests/test_plan_barrier.py` (text/status/agent)
+> regressions: agent/status level only; the former text contract tests were removed
 > and `CollectionPlanBarrierDiagramTest` in `test_verification_recovery.py` (render).
 > The earlier sections a–e and their samples remain verbatim history and are not rewritten.
 
 ## Planning scenarios (v5, CURRENT static)
 
 Status: a **static (non-executable) checklist**, and **not** a live multi-agent run.
-The corresponding checks are the contract tests of `test_plan_barrier.py` + the render tests; the live
+The corresponding checks are the render tests; the live
 behaviour of the collection was not enacted here and is not claimed as verified.
 
 | # | Brief | Required outcome |

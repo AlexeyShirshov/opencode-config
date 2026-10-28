@@ -1,33 +1,33 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "4fde74f9acd7184897d54396e45e2d20cf1fbe18",
-  "vendoredAt": "2026-10-26T16:27:00.739Z",
+  "commit": "46e844ef09a0f8e2118467334cc5bf053654feef",
+  "vendoredAt": "2026-10-28T05:22:56.319Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "2907776885656f4244b91cf7f7abe4f70487bd0857bd3990c20430fa87351aae"
+      "hash": "44598a90b0183d6ab53ed78ea040a77eb564d65a11deb740f00014ff79059cca"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "b6fc21ec06a6bd12023f0211eae771d537adb6406700d34b0df25e3187613d3e"
+      "hash": "dbded3c3ea596ba889062da221934dcee93a21495468eca940210829f0ec8e11"
     },
     "skill/pdca-collection": {
       "source": "skills/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "6130abd02cb7f9dc15a01c64f7e2ed48c06d50f9339019dd07c7829a3e1eb2f9"
+      "hash": "02f8d14c110e9bedc71ae1fc4e23598b8b410c713198fdaa5e75203a94a841d6"
     },
     "skill/pdca-dotnet": {
       "source": "skills/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "2c54b6ebf71161c841547d608d097c53afdf41accff0ab91db1e9848be2f43ad"
+      "hash": "83f64a67d754b03514c67e814b73061e2624bfc4669f40051337c303f1e852bf"
     },
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "2698c68836dbed824bd54984c4a39311f8df9a6e38249f3cc9ef14836493f33c"
+      "hash": "66c6979f463415bdfacf3b011c5922a9b865d1f64c8e4dd46915d45bf2836b21"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -37,7 +37,7 @@
     "plugin/zen-failover": {
       "source": "opencode/plugins/zen-failover",
       "target": "config/plugins/zen-failover",
-      "hash": "7faf0804ee29bfce3215988b8449a504f7a605bac6680a31ee30a91378323d07"
+      "hash": "fda5fea95def208e7d56be2389d9fc247dba2299739379a44f655615af5b5a38"
     },
     "plugin/clear-session": {
       "source": "opencode/plugins/clear-session",

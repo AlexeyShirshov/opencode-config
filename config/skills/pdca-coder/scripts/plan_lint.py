@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-"""Static contract lint for a PDCA plan's frozen commands.
+"""Static contract lint for a PDCA plan's frozen verification commands.
 
-Reads the machine projection of a plan's command block (``commands.json``),
-never the Markdown status file, and answers one question: *can this plan's
-decisive commands produce a valid result in this environment?*  It does not
-run the planned work and it does not judge whether the rows prove the goal.
+Reads the machine projection of a plan's **verification** command block
+(``commands.json``), never the Markdown status file, and answers one question:
+*can this plan's decisive evidence-producing commands produce a valid result in
+this environment?*  The projection covers only the commands that return
+acceptance evidence for the plan's criteria — tests, builds, measurements,
+mutation runs.  It never prescribes, freezes or forbids the implementation
+actions and commands DO chooses inside the contract; those are not linted here.
+The lint does not run the planned work and it does not judge whether the rows
+prove the goal.
 
 Two subcommands:
 
-``check``  static only (the gate-1 form): schema, argv shape, phase/scope
+``check``  static only (the plan-close form): schema, argv shape, phase/scope
            legality, build scope against the declared host budget, selector
            resolution against the project sources, expected outcome, evidence
            binding, unit coverage.  Seconds, no containers, no network.
@@ -632,7 +637,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     for name, help_text in (
-        ("check", "static validation (gate 1)"),
+        ("check", "static validation (plan close)"),
         ("probe", "static validation plus each harness probe"),
     ):
         proto = sub.add_parser(name, help=help_text)

@@ -32,6 +32,66 @@ permission:
   question: allow
   todowrite: allow
   doom_loop: ask
+permissions:
+  # V2 form of the same policy as the `permission:` map above. Both blocks are
+  # kept equivalent; last match wins, so the deny-broad rules come first.
+  - action: *
+    resource: "*"
+    effect: deny
+  - action: read
+    resource: "*"
+    effect: allow
+  - action: read
+    resource: "*.env"
+    effect: deny
+  - action: read
+    resource: "*.env.*"
+    effect: deny
+  - action: read
+    resource: "*.env.example"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: subagent
+    resource: "pdca-scout"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cd *"
+    effect: allow
+  - action: shell
+    resource: "ls*"
+    effect: allow
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "stat *"
+    effect: allow
+  - action: skill
+    resource: "*"
+    effect: deny
+  - action: question
+    resource: "*"
+    effect: allow
+  - action: todowrite
+    resource: "*"
+    effect: allow
+  - action: doom_loop
+    resource: "*"
+    effect: ask
 ---
 
 # pdca-escalate (strong tier) — hard-decision second tier
@@ -40,8 +100,8 @@ You are the second tier of the domain-neutral `pdca` cycle, called by the cheap 
 when the routine subagents are not enough or a second opinion is required. You are **not an
 executor**: you edit nothing and run nothing that changes state — you return a **decision**
 (not a menu of options and not an implementation). The orchestrator executes it **only by
-routing**: a genuinely revised plan → `pdca-planner` (`r+1`), implementation under the current
-plan or a status STOP → `pdca-executor`. The decision **does not waive** the gates, the no-4th
+routing**: a genuinely revised plan → `pdca-planner` (`r+1`), implementation under the current plan →
+`pdca-executor`, and an incomplete/STOP finalization → ACT, recorded by `pdca-executor`. The decision **does not waive** the gates, the no-4th
 rule, scope or the authority boundaries; the orchestrator does not re-select it and does not
 rewrite the plan itself.
 
@@ -79,6 +139,8 @@ before the second fix.
 
 ## Boundaries
 
+- STOP is an ACT outcome, not a separate terminal path: when no actionable revised plan exists, the
+  driver routes the finalization to ACT, and `pdca-executor` records it there.
 - No file edits, no state-changing commands. Read-only inspection only; the permitted `bash`
   commands are inspection-only.
 - **No task cutoff.** Your decision never creates a wall-clock, token or total-revision limit; the

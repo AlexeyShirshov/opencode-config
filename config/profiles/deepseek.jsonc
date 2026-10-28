@@ -11,14 +11,14 @@
   // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `pdca-planner` и
   // Triage CHECK `pdca-check` — medium-тир, «руки»/сбор — cheap, `pdca-security-auditor` — medium,
   // `pdca-escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
-  // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — модель
-  // Go-подписки: квота подписки вместо free-потолка zen (окно 200k / ответ 32k), поэтому
-  // длинные сессии не упираются в free-лимит. zen-cache-proxy (127.0.0.1:8787) нужен
-  // только ролям на провайдере `opencode` (CHECK/strong); Sol идёт через `openai` напрямую.
-  "model": "opencode-go/deepseek-v4.1-flash",
+  // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — прямой DeepSeek
+  // (`deepseek/deepseek-flash`: окно 1M / ответ ~393k), без подписки Go и без free-потолка zen
+  // (окно 200k / ответ 32k). zen-cache-proxy (127.0.0.1:8787) нужен только ролям на провайдере
+  // `opencode` (strong — Sonnet); Sol идёт через `openai` напрямую.
+  "model": "deepseek/deepseek-flash",
 
-  // Служебные задачи (заголовки/резюме) — прямой DeepSeek: вызовы неинтерактивные,
-  // падение человек не увидит; квоту Go-подписки на них не тратим.
+  // Служебные задачи (заголовки/резюме) — тот же прямой DeepSeek: вызовы неинтерактивные,
+  // падение человек не увидит.
   "small_model": "deepseek/deepseek-flash",
 
   // Обычный режим: стартуем в `build` (полные инструменты) — просто выполняем задачу.
@@ -28,11 +28,11 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: cheap — DeepSeek из подписки Go (`opencode-go/deepseek-v4.1-flash`, тот же id, что и
-  // дефолт сессии; квота Go тратится);
-  // medium SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high); CHECK — Argon (Console,
-  // другое семейство для независимого вердикта); strong — Sonnet (Console). Дефолтная модель
-  // сессии остаётся на Go-подписке. Конкретные id — только здесь и в `model`/`small_model`;
+  // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии);
+  // medium SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high); CHECK — Argon из
+  // подписки Go (`opencode-go/gemini-4-argon`, другое семейство для независимого вердикта);
+  // strong — Sonnet (Console). Дефолтная модель сессии — прямой DeepSeek.
+  // Конкретные id — только здесь и в `model`/`small_model`;
   // в доках/ролях/скиллах — только тиры.
   // ВАЖНО: `~/.config/opencode/profiles/` — копия этого файла. Правь здесь и синхронизируй
   // (`cp config/profiles/deepseek.jsonc ~/.config/opencode/profiles/`): правка только в
@@ -40,16 +40,16 @@
   "agent": {
     "pdca-planner": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     // CHECK — намеренно на другом семействе (Gemini 4 Argon), чем `pdca-planner` (Sol):
-    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет); замер: thinking ≈ 3× ответа,
-    // 1.1k токенов выхода ≈ 1.7% лимита 65k, обрезки нет.
-    "pdca-check": { "model": "opencode/gemini-4-argon", "variant": "high" },
+    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет), ответ 65k. Идёт из подписки
+    // Go: месячная квота на модель — $30 (≈2 120 запросов), 5-часовое окно — 20% от месячной.
+    "pdca-check": { "model": "opencode-go/gemini-4-argon", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "opencode-go/deepseek-v4.1-flash" },
+    "pdca-executor": { "model": "deepseek/deepseek-flash" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "opencode-go/deepseek-v4.1-flash" },
-    "scout": { "model": "opencode-go/deepseek-v4.1-flash" },
-    "btw": { "model": "opencode-go/deepseek-v4.1-flash" },
-    "pdca-orchestrator": { "model": "opencode-go/deepseek-v4.1-flash" }
+    "coder": { "model": "deepseek/deepseek-flash" },
+    "scout": { "model": "deepseek/deepseek-flash" },
+    "btw": { "model": "deepseek/deepseek-flash" },
+    "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден

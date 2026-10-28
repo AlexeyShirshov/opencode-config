@@ -36,19 +36,6 @@ TIERS = {
     "pdca-orchestrator": "cheap",
 }
 SEC_SKILLS = {"dotnet-security-owasp", "dotnet-secrets-management", "dotnet-cryptography"}
-CRITICAL_TOKENS = [
-    "The decision routes; the driver does not re-decide",
-    "cannot waive the gates, the no-4th rule",
-    "there is no 4th",
-    "Orchestration is cheap-only",
-    "effective host-profile tier is cheap",
-    "medium/strong primary does not drive the cycle",
-    "returns into the aggregated report",
-    "ordinary security finding is an ordinary failed stream",
-    "hard security trade-off",
-]
-
-
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
@@ -150,14 +137,14 @@ class RolePermissionTest(unittest.TestCase):
         self.assertEqual(legacy_effective(perm, "skill", "*"), "deny")
         self.assertEqual(legacy_allowed(perm, "skill"), SEC_SKILLS)
 
-    def test_asset_agents_keep_v1_permission_map_for_compat(self):
-        # V1 only understands `permission:`; V2 translates it automatically.
-        # A V2-only `permissions:` list would silently drop every restriction in V1.
+    def test_asset_agents_carry_both_permission_forms(self):
+        # V1 reads `permission:`, V2 reads `permissions:`. Ship both and keep them
+        # semantically equivalent; a V2-only list drops every restriction in V1.
         for path in sorted(ASSET_AGENTS.glob("*.md")):
             data = frontmatter(path)
             with self.subTest(path=path.name):
                 self.assertIn("permission", data)
-                self.assertNotIn("permissions", data)
+                self.assertIn("permissions", data)
                 self.assertTrue(legacy_permission(path))
 
     def _assert_role_tiers_are_tier_comments(self, base: Path) -> None:
@@ -228,7 +215,8 @@ class GeneratedDiagramTest(unittest.TestCase):
     def test_named_edges_and_nodes_present_in_both_themes(self):
         expected_edges = {
             "check_security", "security_check_report", "security_escalate_tradeoff",
-            "escalate_do_nonexhausted", "escalate_plan_exhausted", "escalate_stop", "check_act",
+            "escalate_do_nonexhausted", "escalate_plan_exhausted", "escalate_act",
+            "act_stop", "do_act_incomplete", "check_act",
         }
         expected_nodes = {"PLAN", "DO", "CHECK", "ACT", "START", "EXIT",
                           "sec_check", "escalate", "stop"}
@@ -248,7 +236,9 @@ class GeneratedDiagramTest(unittest.TestCase):
             "security_escalate_tradeoff": ("sec_check", "escalate"),
             "escalate_do_nonexhausted": ("escalate", "DO"),
             "escalate_plan_exhausted": ("escalate", "PLAN"),
-            "escalate_stop": ("escalate", "stop"),
+            "escalate_act": ("escalate", "ACT"),
+            "act_stop": ("ACT", "stop"),
+            "do_act_incomplete": ("DO", "ACT"),
             "check_act": ("CHECK", "ACT"),
         }
         for edge_id, pair in expected.items():
@@ -274,28 +264,6 @@ class GeneratedDiagramTest(unittest.TestCase):
                     self.fail("inline SVG not found")
                 self.assertEqual(match.group(0).strip(),
                                  (DIAGRAM / svg_name).read_text(encoding="utf-8").strip())
-
-
-class ContractTextTest(unittest.TestCase):
-    """The operative contract of this overlay is its inheritance chain.
-
-    A .NET overlay inherits the base cycle and the coder overlay, so the retained
-    routing/safety rules are asserted over the whole chain (base → coder → .NET),
-    not over the shortened overlay file alone.
-    """
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.base = SKILL_DIR.parent / "pdca/SKILL.md"
-        cls.coder = SKILL_DIR.parent / "pdca-coder/SKILL.md"
-        cls.references = sorted((SKILL_DIR / "references").glob("*.md"))
-        cls.corpus = norm(" ".join(
-            read(path) for path in [cls.base, cls.coder, SKILL] + cls.references
-        ))
-
-    def test_skill_critical_routing_tokens(self):
-        missing = [token for token in CRITICAL_TOKENS if token not in self.corpus]
-        self.assertEqual(missing, [])
 
 
 if __name__ == "__main__":
