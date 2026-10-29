@@ -29,20 +29,26 @@
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
   // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии);
-  // medium SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high); CHECK — Argon из
-  // подписки Go (`opencode-go/gemini-4-argon`, другое семейство для независимого вердикта);
-  // strong — Sonnet (Console). Дефолтная модель сессии — прямой DeepSeek.
+  // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); medium CHECK
+  // и SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high, другое семейство для
+  // независимого вердикта); strong — Sonnet (Console). Дефолт сессии — прямой DeepSeek.
   // Конкретные id — только здесь и в `model`/`small_model`;
   // в доках/ролях/скиллах — только тиры.
   // ВАЖНО: `~/.config/opencode/profiles/` — копия этого файла. Правь здесь и синхронизируй
   // (`cp config/profiles/deepseek.jsonc ~/.config/opencode/profiles/`): правка только в
   // installed-копии теряется при следующем sync (так уже откатился перевод Sol на OpenAI).
   "agent": {
-    "pdca-planner": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    // CHECK — намеренно на другом семействе (Gemini 4 Argon), чем `pdca-planner` (Sol):
-    // независимый вердикт. `high` — потолок у Argon (xhigh/max нет), ответ 65k. Идёт из подписки
-    // Go: месячная квота на модель — $30 (≈2 120 запросов), 5-часовое окно — 20% от месячной.
-    "pdca-check": { "model": "opencode-go/gemini-4-argon", "variant": "high" },
+    // PLAN — Argon из подписки Go: окно 1M, ответ 65k, `high` — потолок (xhigh/max нет).
+    // Квота Go на модель — $30 (≈2 120 запросов), 5-часовое окно — 20 % от месячной; план жрёт
+    // её в основном выходом (длинный текст плана), при исчерпании zen-failover уводит на
+    // `opencode/gemini-4-argon` (платный zen).
+    "pdca-planner": { "model": "opencode-go/gemini-4-argon", "variant": "high" },
+    // CHECK — намеренно на другом семействе (Sol), чем `pdca-planner` (Gemini): независимый
+    // вердикт. Идёт из ChatGPT Plus (`openai/…` — $0 маргинально); окно 1,05M покрывает реальные
+    // проверки (пик по базе — 800k контекста). На платном zen тот же Sol дороже Argon'а, причём
+    // с 272k контекста — по повышенному тарифу ($4/$15/$0,2 за 1M вместо $2/$10/$0,1), поэтому
+    // падение подписки (zen-failover: `openai` → `opencode/gpt-6.1-sol`) дороже, но не смертельно.
+    "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
     "pdca-executor": { "model": "deepseek/deepseek-flash" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
