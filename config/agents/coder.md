@@ -75,9 +75,6 @@ permissions:
     resource: "/home/alex/.local/share/opencode/tool-output/**"
     effect: allow
   - action: external_directory
-    resource: "/home/alex/.local/share/opencode/zen-cache-proxy.log"
-    effect: allow
-  - action: external_directory
     resource: "/home/alex/.local/state/opencode/**"
     effect: allow
   - action: external_directory

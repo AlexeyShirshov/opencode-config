@@ -67,7 +67,6 @@
     // стоп. Только эти подкаталоги: `auth.json`, `*.db`, `snapshot/` — под ask.
     { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/log/**", "effect": "allow" },
     { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/tool-output/**", "effect": "allow" },
-    { "action": "external_directory", "resource": "/home/alex/.local/share/opencode/zen-cache-proxy.log", "effect": "allow" },
     // State opencode (model.json, plugin-meta.json, prompt-history.jsonl и т.п.):
     // агенты грепают его для провенанса (напр. `scout` искал имена скиллов).
     // Секретов там нет.

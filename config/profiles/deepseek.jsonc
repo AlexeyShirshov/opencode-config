@@ -80,7 +80,7 @@
         // 401 `Missing API key` — молча падал strong-тир (`pdca-escalate` на Sonnet).
         // Теперь провайдер идёт напрямую в Zen, OAuth прикладывается сам; цена — prompt-cache
         // Anthropic живёт 5 мин вместо часа, поэтому длинные паузы оркестратора дороже.
-        // tools/zen-cache-proxy.mjs остаётся в репо, но профилем больше не используется.
+        // tools/zen-cache-proxy.mjs удалён из репо (вместе с запуском из алиаса oc-ds).
       }
     },
     "deepseek": {

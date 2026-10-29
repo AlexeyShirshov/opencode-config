@@ -128,40 +128,17 @@ filter-package() {
     dotnet package search "$query" --take 20
 }
 
-# opencode profiles (oc-ds определяется ниже как функция — поднимает zen-cache-proxy)
+# opencode profiles (oc-ds определяется ниже как функция)
 alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode'
 
-# zen-cache-proxy: добавляет cache_control ttl="1h" к Anthropic-запросам (escalate,
-# security-auditor) к OpenCode Zen. Иначе prompt-cache живёт 5 мин и перезаписывается
-# ($5/M у Opus). GPT-6 Sol идёт через /v1/responses с нативным кэшем 24h — прокси к
-# нему неприменим. Порт должен совпадать с provider.opencode.options.baseURL в
-# profiles/deepseek.jsonc (oc-ds).
-OC_ZEN_PROXY_PORT="${OC_ZEN_PROXY_PORT:-8787}"
-# NB: не используем /dev/tcp — в этой WSL он виснет на connect.
-_oc_zen_proxy_up() { curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:$OC_ZEN_PROXY_PORT/__health"; }
-_oc_zen_proxy_ensure() {
-  _oc_zen_proxy_up && return 0
-  local bun; bun="$(command -v bun || echo "$HOME/.bun/bin/bun")"
-  PORT="$OC_ZEN_PROXY_PORT" REWRITE=ttl nohup "$bun" "$HOME/.config/opencode/tools/zen-cache-proxy.mjs" \
-    >>"$HOME/.local/share/opencode/zen-cache-proxy.log" 2>&1 &
-  disown 2>/dev/null || true
-  local i
-  for i in 1 2 3 4 5 6 7 8 9 10; do
-    _oc_zen_proxy_up && return 0
-    sleep 0.1
-  done
-  echo "zen-cache-proxy не поднялся на :$OC_ZEN_PROXY_PORT (лог: ~/.local/share/opencode/zen-cache-proxy.log)" >&2
-}
-
-# oc-ds — основной профиль (обычная работа + PDCA-скилл); поднимает zen-cache-proxy
-# (нужен для Opus/Sol). Всегда новый сеанс: `-c` (продолжить последнюю) не используем —
+# oc-ds — основной профиль (обычная работа + PDCA-скилл). Всегда новый сеанс:
+# `-c` (продолжить последнюю) не используем —
 # на пустом проекте он даёт "Unexpected server error" из placeholder sessionID "dummy".
 # Снимаем устаревшие алиасы, если остались в открытом шелле: иначе
 # при следующем source интерактивный bash разворачивает алиас в строке `oc-ds() {`
 # и падает с "syntax error near unexpected token `('".
 unalias oc-ds 2>/dev/null || true
 oc-ds() {
-  _oc_zen_proxy_ensure
   OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" opencode "$@"
 }
 # isolated sandbox for experiments (own config + sessions DB)

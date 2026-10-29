@@ -51,7 +51,6 @@ start:
   -m, --model <p/m>      модель (provider/model) [профиль]
       --config <file>    OPENCODE_CONFIG (напр. profiles/deepseek.jsonc)
       --profile <name>   = --config ~/.config/opencode/profiles/<name>.jsonc
-      --proxy            поднять zen-cache-proxy перед запуском
       --prelude <cmd>    выполнить команду один раз перед запуском (eval)
       --verify-cmd <cmd> после merge выполнить в <repo> (валидация слияния)
       --no-auto          не передавать --auto в opencode (будут вопросы)
@@ -83,7 +82,6 @@ PROFILE=
 AUTO=1
 DRY=0
 YES=0
-PROXY=0
 PRELUDE=
 VERIFY_CMD=
 ALLOW_DIRTY=0
@@ -141,7 +139,6 @@ while (($#)); do
     --profile)        PROFILE=$2; shift 2 ;;
     --verify-cmd)     VERIFY_CMD=$2; shift 2 ;;
     --prelude)        PRELUDE=$2; shift 2 ;;
-    --proxy)          PROXY=1; shift ;;
     --no-auto)        AUTO=0; shift ;;
     --allow-dirty)    ALLOW_DIRTY=1; shift ;;
     --reuse)          REUSE=1; shift ;;
@@ -219,25 +216,6 @@ ensure_clean_repo() {
   fi
 }
 
-start_proxy() {
-  local port=${OC_ZEN_PROXY_PORT:-8787} script="$HOME/.config/opencode/tools/zen-cache-proxy.mjs"
-  [[ -f $script ]] || { note "прокси не найден: $script — пропускаю"; return 0; }
-  if curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:$port/__health"; then
-    note "прокси уже поднят на :$port"; return 0
-  fi
-  local bun; bun=$(command -v bun || echo "$HOME/.bun/bin/bun")
-  [[ -x $bun ]] || die "bun не найден (нужен для zen-cache-proxy)"
-  PORT=$port REWRITE=ttl nohup "$bun" "$script" \
-    >>"$HOME/.local/share/opencode/zen-cache-proxy.log" 2>&1 &
-  disown 2>/dev/null || true
-  local i
-  for i in $(seq 1 30); do
-    curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:$port/__health" && { note "прокси поднят :$port"; return 0; }
-    sleep 0.1
-  done
-  die "прокси не поднялся на :$port (лог: ~/.local/share/opencode/zen-cache-proxy.log)"
-}
-
 build_prompt() { # name wt branch task
   cat <<EOF
 Проведи следующую задачу по циклу PDCA. Сначала загрузи скилл \`pdca-dotnet\` (инструмент skill, name: pdca-dotnet)
@@ -286,7 +264,6 @@ cmd_start() {
 
   if ((DRY)); then note "dry-run: ничего не создаю"; return 0; fi
   ensure_clean_repo
-  ((PROXY)) && start_proxy
   [[ -n $PRELUDE ]] && { note "prelude: $PRELUDE"; eval "$PRELUDE"; }
 
   mkdir -p "$RUN_DIR/capture"
