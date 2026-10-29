@@ -13,8 +13,8 @@
   // `pdca-escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
   // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — прямой DeepSeek
   // (`deepseek/deepseek-flash`: окно 1M / ответ ~393k), без подписки Go и без free-потолка zen
-  // (окно 200k / ответ 32k). zen-cache-proxy (127.0.0.1:8787) нужен только ролям на провайдере
-  // `opencode` (strong — Sonnet); Sol идёт через `openai` напрямую.
+  // (окно 200k / ответ 32k). Роли на провайдере `opencode` (strong — Sonnet, Opus) идут
+  // напрямую в Zen без локального прокси; Sol — через `openai` напрямую.
   "model": "deepseek/deepseek-flash",
 
   // Служебные задачи (заголовки/резюме) — тот же прямой DeepSeek: вызовы неинтерактивные,
@@ -74,12 +74,13 @@
       "options": {
         // Рассуждающие (medium/strong-тир) модели долго «молчат» — запас больше.
         "headerTimeout": 60000,
-        "chunkTimeout": 300000,
-        // Локальный zen-cache-proxy добавляет cache_control.ttl="1h" (иначе 5 мин):
-        // оркестратор не теряет prompt-cache, пока ждёт субагентов → нет дорогих
-        // перезаписей контекста. Поднимается из алиаса oc-ds;
-        // см. tools/zen-cache-proxy.mjs.
-        "baseURL": "http://127.0.0.1:8787/v1"
+        "chunkTimeout": 300000
+        // baseURL на локальный zen-cache-proxy (127.0.0.1:8787) убран: после OAuth-логина
+        // Console (27.10) запросы через прокси уходили без авторизации и upstream отвечал
+        // 401 `Missing API key` — молча падал strong-тир (`pdca-escalate` на Sonnet).
+        // Теперь провайдер идёт напрямую в Zen, OAuth прикладывается сам; цена — prompt-cache
+        // Anthropic живёт 5 мин вместо часа, поэтому длинные паузы оркестратора дороже.
+        // tools/zen-cache-proxy.mjs остаётся в репо, но профилем больше не используется.
       }
     },
     "deepseek": {
