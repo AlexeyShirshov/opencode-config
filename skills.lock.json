@@ -1,8 +1,8 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "b13b0c2e879a405b9693f66e8e3e0077ef8372fd",
-  "vendoredAt": "2026-10-30T10:12:56.785Z",
+  "commit": "6d646dcbc58c110784131c8168b2acec80cdf133",
+  "vendoredAt": "2026-10-30T10:34:46.670Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
@@ -37,7 +37,7 @@
     "plugin/zen-failover": {
       "source": "opencode/plugins/zen-failover",
       "target": "config/plugins/zen-failover",
-      "hash": "4144dd58e78f32f6297bc9f6e61c6bdc463015e4a7e0689182bcbf077bc12364"
+      "hash": "b8e4475b6cdb86af531cb1106d721d266d46e12ad98e21b903aaea41936df2e7"
     },
     "plugin/clear-session": {
       "source": "opencode/plugins/clear-session",
