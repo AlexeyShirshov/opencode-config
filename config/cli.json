@@ -29,7 +29,14 @@
       }
     },
     "./plugins/sidebar-plugins",
-    "./plugins/clear-session"
+    "./plugins/clear-session",
+    // herdr integration (opencode-tui-v2): pane-local статус idle/working/blocked
+    // и следование за выбранной сессией. Ставится `herdr integration install opencode`,
+    // но регистрацию в cli.json установщик откладывает, пока OpenCode не смигрирует
+    // V1-настройки (tui.json/kv.json), поэтому держим её в снимке явно.
+    // Без неё `herdr integration status` показывает `needs repair`, а herdr
+    // угадывает статус по экрану вместо отчётов плагина.
+    "./herdr-opencode"
   ],
   "attention": {
     "enabled": true,
