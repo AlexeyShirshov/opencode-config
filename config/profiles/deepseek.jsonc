@@ -29,6 +29,12 @@
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
   // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии);
+  // исключение — `coder` на Luna из ChatGPT Plus (`openai/gpt-6-luna`): пилот на малой доле
+  // объёма cheap-тира, остальные cheap-роли остаются на DeepSeek. У Luna на подписке окно 272k
+  // (не 1,05M из models.dev) и выход 128k; при исчерпании квоты `openai` zen-failover уводит её
+  // на `opencode/gpt-6-luna`.
+  // `pdca-executor` — бесплатная модель под Go (`opencode-go/beam-free`, окно 1,05M, выход 131k):
+  // free-модели не расходуют платную квоту Go и с 0.2.2 не деградируются zen-failover.
   // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); medium CHECK
   // и SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high, другое семейство для
   // независимого вердикта); strong — Sonnet (Console). Дефолт сессии — прямой DeepSeek.
@@ -50,9 +56,9 @@
     // падение подписки (zen-failover: `openai` → `opencode/gpt-6.1-sol`) дороже, но не смертельно.
     "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "deepseek/deepseek-flash" },
+    "pdca-executor": { "model": "opencode-go/beam-free" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "deepseek/deepseek-flash" },
+    "coder": { "model": "openai/gpt-6-luna" },
     "scout": { "model": "deepseek/deepseek-flash" },
     "btw": { "model": "deepseek/deepseek-flash" },
     "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
