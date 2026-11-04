@@ -28,13 +28,16 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии);
-  // исключение — `coder` на Luna из ChatGPT Plus (`openai/gpt-6-luna`): пилот на малой доле
-  // объёма cheap-тира, остальные cheap-роли остаются на DeepSeek. У Luna на подписке окно 272k
-  // (не 1,05M из models.dev) и выход 128k; при исчерпании квоты `openai` zen-failover уводит её
-  // на `opencode/gpt-6-luna`.
-  // `pdca-executor` — бесплатная модель под Go (`opencode-go/beam-free`, окно 1,05M, выход 131k):
-  // free-модели не расходуют платную квоту Go и с 0.2.2 не деградируются zen-failover.
+  // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии).
+  // Исключение — кодовые роли `pdca-executor` и `coder` на бесплатной модели под Go
+  // (`opencode-go/beam-free`, окно 1,05M, выход 131k): $0 и не расходуют платную квоту Go.
+  // У free-пула общий дневной потолок (~2 000 запросов на обе роли, сброс в 00:00 UTC); когда
+  // он выбран, zen-failover 0.3.0 сам записывает cap, переводит сессию и привязку на
+  // `openai/gpt-6-luna` и по истечении срока возвращает Beam. Цель этого фолбэка задаёт
+  // `ZEN_FAILOVER_RULES` в `oc-ds`/`pdca-fleet` (дефолт плагина — платный DeepSeek). У Luna
+  // на подписке окно 272k и выход 128k (пик контекста executor'а: медиана 68–92k, p90
+  // ~110–186k); если исчерпана и она, `openai` деградируется и сессия уходит на
+  // `opencode/gpt-6-luna` (Console).
   // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); medium CHECK
   // и SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high, другое семейство для
   // независимого вердикта); strong — Sonnet (Console). Дефолт сессии — прямой DeepSeek.
@@ -58,7 +61,7 @@
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
     "pdca-executor": { "model": "opencode-go/beam-free" },
     "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "openai/gpt-6-luna" },
+    "coder": { "model": "opencode-go/beam-free" },
     "scout": { "model": "deepseek/deepseek-flash" },
     "btw": { "model": "deepseek/deepseek-flash" },
     "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
