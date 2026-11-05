@@ -128,8 +128,16 @@ filter-package() {
     dotnet package search "$query" --take 20
 }
 
-# opencode profiles (oc-ds определяется ниже как функция)
-alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode'
+# opencode profiles (oc-ds определяется ниже как функция).
+# oc-gp — на собственном сервере: фоновый сервер opencode один на пользователя и
+# фиксирует конфиг из окружения ПЕРВОГО клиента. Без `--standalone` gp при живом
+# ds-сервере получал ds-конфиг (dotnet-скиллы и pdca, без skills-gp), поэтому
+# приватный сервер здесь обязателен. `--standalone` сохраняет общую БД сессий.
+unalias oc-gp 2>/dev/null || true
+oc-gp() {
+  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/gp.jsonc" \
+    opencode --standalone "$@"
+}
 
 # oc-ds — основной профиль (обычная работа + PDCA-скилл). Всегда новый сеанс:
 # `-c` (продолжить последнюю) не используем —
