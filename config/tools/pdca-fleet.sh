@@ -315,6 +315,13 @@ launch_one() {
   (
     set +e
     [[ -n $CONFIG_RESOLVED ]] && export OPENCODE_CONFIG="$CONFIG_RESOLVED"
+    # deepseek: capped free model (beam-free) уезжает на Luna; у gp свой набор моделей.
+    # Месячная квота Go восстанавливается 17.11 (Console), а не через дефолтные 7 дней:
+    # 14d — запас вперёд, точный возврат даёт проба плагина (раз в 5 минут).
+    if [[ "$CONFIG_RESOLVED" == *deepseek.jsonc ]]; then
+      export ZEN_FAILOVER_RULES="opencode-go=openai/gpt-6-luna;openai=opencode/<id>"
+      export ZEN_FAILOVER_RESET_OPENCODE_GO=14d
+    fi
     export PDCA_FLEET_RUN="$RUN_ID" PDCA_FLEET_NAME="$name"
     export CAPTURE_DIR="$RUN_DIR/capture/$name"
     local -a a=(run --dir "$wt" --title "pdca-fleet/$RUN_ID/$name")

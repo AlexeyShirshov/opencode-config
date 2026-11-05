@@ -134,12 +134,24 @@ alias oc-gp='OPENCODE_CONFIG=$HOME/.config/opencode/profiles/gp.jsonc opencode'
 # oc-ds — основной профиль (обычная работа + PDCA-скилл). Всегда новый сеанс:
 # `-c` (продолжить последнюю) не используем —
 # на пустом проекте он даёт "Unexpected server error" из placeholder sessionID "dummy".
+# ZEN_FAILOVER_RULES: у free-модели (beam-free) свой дневной потолок; когда он выбран,
+# сессия и привязка уезжают на `openai/gpt-6-luna`, а не на платный DeepSeek. Платные
+# модели Go не затронуты: их цели задаёт ZEN_FAILOVER_MAP (argon/kimi → свои двойники).
+# ZEN_FAILOVER_RESET_OPENCODE_GO: месячная квота Go выбирается целиком и восстанавливается
+# не через неделю, а в дату продления подписки (Console: 17 ноября 18:24Z). Плагин знает
+# только относительный срок, поэтому ставим 14d — с запасом вперёд: недобор хуже перебора,
+# потому что по истечении срока привязка восстанавливается вслепую и сразу получает 429.
+# Точный возврат даёт проба (раз в 5 минут): как только Go отвечает, она снимает деградацию
+# сама, так что перебор в 14d ни на что не влияет.
 # Снимаем устаревшие алиасы, если остались в открытом шелле: иначе
 # при следующем source интерактивный bash разворачивает алиас в строке `oc-ds() {`
 # и падает с "syntax error near unexpected token `('".
 unalias oc-ds 2>/dev/null || true
 oc-ds() {
-  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" opencode "$@"
+  OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" \
+    ZEN_FAILOVER_RULES='opencode-go=openai/gpt-6-luna;openai=opencode/<id>' \
+    ZEN_FAILOVER_RESET_OPENCODE_GO=14d \
+    opencode "$@"
 }
 # isolated sandbox for experiments (own config + sessions DB)
 alias oc-sandbox='$HOME/sources/opencode-config-sandbox/bin/oc-sandbox'

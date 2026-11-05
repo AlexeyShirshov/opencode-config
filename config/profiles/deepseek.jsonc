@@ -38,7 +38,12 @@
   // на подписке окно 272k и выход 128k (пик контекста executor'а: медиана 68–92k, p90
   // ~110–186k); если исчерпана и она, `openai` деградируется и сессия уходит на
   // `opencode/gpt-6-luna` (Console).
-  // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); medium CHECK
+  // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); месячная
+  // квота Go выбрана 04.11 (Console: renews 17.11, 18:24Z). Пока она не вернулась, первый же
+  // 429 деградирует источник и planner идёт на `opencode/gemini-4-argon` (Console, платно,
+  // ~$0.09 за прогон плана); срок деградации задаёт `ZEN_FAILOVER_RESET_OPENCODE_GO=14d` в
+  // `oc-ds`/`pdca-fleet` (дефолт плагина — 7d, для месячного лимита это слишком рано), а точный
+  // возврат — проба раз в 5 минут. medium CHECK
   // и SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high, другое семейство для
   // независимого вердикта); strong — Sonnet (Console). Дефолт сессии — прямой DeepSeek.
   // Конкретные id — только здесь и в `model`/`small_model`;
