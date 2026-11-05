@@ -19,8 +19,9 @@
 # `~/.config/opencode/skills-deepseek/<name>/SKILL.md`, когда пользователь
 # просит по имени. Чтобы включить скилл в контекст — добавить имя ниже и
 # `bun tools/curate-skills.mjs --fix`.
-# Writing/editing-скиллы (humanizer, humanizer-ru, writing-guru,
-# writing-for-agents) в паке больше не лежат — они в `skills-gp/` (oc-gp).
+# Writing/editing-скиллы (humanizer, humanizer-ru, writing-guru) в паке больше
+# не лежат — они в `skills-gp/` (oc-gp); `writing-for-agents`, `skill-creator` и
+# `bro` — в глобальном `dot-agents/skills/` (виден обоим профилям, в паке не нужны).
 #
 # Retired 2026-10-13 — not invoked once in 2026-09-14..10-13 (opencode.db,
 # skill tool calls). Restore by re-adding the name and re-running --fix:
@@ -33,7 +34,6 @@
 # routing / meta
 dotnet-advisor
 find-skills
-skill-creator
 
 # C# language core
 dotnet-csharp-async-patterns
