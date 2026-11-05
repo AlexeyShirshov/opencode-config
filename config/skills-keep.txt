@@ -18,8 +18,9 @@
 # регистрируются (описания не стоят контекста), читаются напрямую как
 # `~/.config/opencode/skills-deepseek/<name>/SKILL.md`, когда пользователь
 # просит по имени. Чтобы включить скилл в контекст — добавить имя ниже и
-# `bun tools/curate-skills.mjs --fix`:
-#   humanizer humanizer-ru writing-guru
+# `bun tools/curate-skills.mjs --fix`.
+# Writing/editing-скиллы (humanizer, humanizer-ru, writing-guru,
+# writing-for-agents) в паке больше не лежат — они в `skills-gp/` (oc-gp).
 #
 # Retired 2026-10-13 — not invoked once in 2026-09-14..10-13 (opencode.db,
 # skill tool calls). Restore by re-adding the name and re-running --fix:

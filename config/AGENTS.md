@@ -50,7 +50,7 @@
 
 - A new skill — especially a third-party one from skills.sh — goes into the **full pack** `~/.config/opencode/skills-deepseek/<name>/` (snapshot: `config/skills-deepseek/<name>/`) and stays **unregistered**. The pack is not scanned, so its description costs no context; the skill is read on demand as `~/.config/opencode/skills-deepseek/<name>/SKILL.md` when the user names it.
 - `~/.config/opencode/skills/` (snapshot `config/skills/`) is scanned **always**, for every profile and every subagent, so each description there is permanent context for all of them. Only the `pdca*` family lives there today; `oc-gp` denies it via profile permissions, so it is effectively ds-only. Profile-only skills go to `config/skills-gp/` (gp) or the `skills-deepseek` pack via `skills-keep.txt` (ds), not here — unless the skill must be picked automatically without being named in every profile.
-- To advertise a pack skill in context, add its name to `skills-keep.txt` and run `bun tools/curate-skills.mjs --fix`; to retire it — drop the name and re-run. Writing skills live in the pack on demand: `humanizer`, `humanizer-ru`, `writing-guru`.
+- To advertise a pack skill in context, add its name to `skills-keep.txt` and run `bun tools/curate-skills.mjs --fix`; to retire it — drop the name and re-run. Writing/editing skills are gp-only: `config/skills-gp/` (`habr-article`, `copy-editing`, `humanizer`, `humanizer-ru`, `writing-guru`, `writing-for-agents`).
 
 ### Tier routing: decisions on medium, facts on cheap
 
