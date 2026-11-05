@@ -1,27 +1,32 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  // Вложенные субагенты (primary → pdca-orchestrator → роли). Дефолт 1 блокирует `pdca-orchestrator`. Нужен перезапуск.
-  // V2: глубина живёт в `experimental.subagent_depth` — top-level `subagent_depth` V2 отбрасывает
-  // с WARN (`omitted unsupported legacy setting`), и субагент теряет право делегировать (глубина = 1).
+  // Вложенные субагенты. Дефолт 1 не даёт субагенту делегировать; в oc-ds это
+  // блокирует `pdca-orchestrator`, поэтому глубина 3 (V2 читает её только из
+  // `experimental`; top-level `subagent_depth` отбрасывается с WARN). В oc-gp
+  // PDCA нет, но глубина оставлена, чтобы не ломать вложенные не-PDCA сценарии.
   "experimental": {
     "subagent_depth": 3
   },
   "model": "opencode-go/deepseek-v4.1-flash",
+  // PDCA — только в oc-ds. Скиллы семейства лежат в общем `skills/`, поэтому здесь
+  // они закрыты правами (`deny` скрывает их из списка модели и запрещает загрузку),
+  // а запуск PDCA-ролей дополнительно запрещён: у `pdca-orchestrator` собственный
+  // `skill: "*": allow` идёт позже правил профиля.
+  "permissions": [
+    { "action": "skill", "resource": "pdca", "effect": "deny" },
+    { "action": "skill", "resource": "pdca-*", "effect": "deny" },
+    { "action": "subagent", "resource": "pdca-*", "effect": "deny" }
+  ],
   // ── Привязка ролей: модель профиля (`model`) действует на дефолтного агента (`build`,
   // `plan` и всё, что не имеет явной привязки); роли ниже привязаны отдельно и её не
-  // наследуют. У oc-gp нет отдельного провайдера medium/strong-тира, поэтому роли делят
-  // одну модель. Проект может переопределить роль своим `.opencode/opencode.jsonc`
+  // наследуют. PDCA-ролей в oc-gp нет; остальные привязки совпадают с oc-ds.
+  // Проект может переопределить роль своим `.opencode/opencode.jsonc`
   // (проектный конфиг мержится после профиля).
   "agent": {
-    "pdca-planner": { "model": "opencode-go/kimi-k3" },
-    "pdca-check": { "model": "opencode-go/kimi-k3" },
-    "pdca-escalate": { "model": "opencode-go/kimi-k3" },
-    "pdca-executor": { "model": "opencode-go/kimi-k3" },
-    "architect": { "model": "opencode-go/kimi-k3" },
-    "coder": { "model": "opencode-go/kimi-k3" },
-    "scout": { "model": "opencode-go/kimi-k3" },
-    "btw": { "model": "opencode-go/kimi-k3" },
-    "pdca-orchestrator": { "model": "opencode-go/kimi-k3" }
+    "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
+    "coder": { "model": "opencode-go/beam-free" },
+    "scout": { "model": "deepseek/deepseek-flash" },
+    "btw": { "model": "deepseek/deepseek-flash" }
   },
   "skills": {
     "paths": [
@@ -33,20 +38,6 @@
       "options": {
         "headerTimeout": 60000,
         "chunkTimeout": 180000
-      }
-    },
-    "openrouter": {
-      "options": {
-        "headerTimeout": 60000,
-        "chunkTimeout": 180000
-      },
-      "models": {
-        "moonshotai/kimi-k2.6": {
-          "limit": { "context": 262144, "output": 8192 }
-        },
-        "google/gemini-3.8-flash": {
-          "limit": { "context": 1048576, "output": 8192 }
-        }
       }
     }
   }

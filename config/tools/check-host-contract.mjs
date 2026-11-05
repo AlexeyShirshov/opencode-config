@@ -307,8 +307,12 @@ for (const f of readdirSync(PROFILES).filter((f) => f.endsWith(".jsonc"))) {
     if (DEAD_ROLES.includes(role)) fail(`${where}: binds retired role "${role}"`)
     else if (!agentIds.has(role)) fail(`${where}: binds unknown agent "${role}"`)
   }
-  for (const role of ["pdca-planner", "pdca-check", "pdca-escalate", "pdca-executor", "pdca-orchestrator"]) {
-    if (!bound.includes(role)) fail(`${where}: no model binding for ${role}`)
+  const PDCA_ROLES = ["pdca-planner", "pdca-check", "pdca-escalate", "pdca-executor", "pdca-orchestrator"]
+  if (f === "deepseek.jsonc") {
+    for (const role of PDCA_ROLES) if (!bound.includes(role)) fail(`${where}: no model binding for ${role}`)
+  } else {
+    // PDCA живёт только в oc-ds: остальные профили не должны привязывать его роли.
+    for (const role of PDCA_ROLES) if (bound.includes(role)) fail(`${where}: PDCA is ds-only — drop the ${role} binding`)
   }
   for (const [role, spec] of Object.entries(cfg.agent ?? {})) {
     const model = spec?.model
@@ -346,7 +350,7 @@ for (const f of readdirSync(PROFILES).filter((f) => f.endsWith(".jsonc"))) {
 }
 
 // ── no project specifics above the config layer ─────────────────────────────
-const SKIP_DIRS = new Set(["node_modules", ".git", "v1", "skills", "skills-deepseek", "tools"])
+const SKIP_DIRS = new Set(["node_modules", ".git", "v1", "skills", "skills-gp", "skills-deepseek", "tools"])
 const PROJECT_RE = /\b(nextorm|webpdca)\b|лейн\s+T\d+|lane\s+T\d+/i
 const TEXT_EXT = /\.(md|jsonc?|txt|mjs|js|ts|sh|py|ya?ml)$/
 function scan(dir) {
