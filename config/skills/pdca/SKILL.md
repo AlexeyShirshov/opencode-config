@@ -47,42 +47,39 @@ which the planner reads; this table neither classifies nor restates them.
 | **Incremental Execution** | `incremental` | `pdca-incremental`, the campaign layer on §Common cycle contract |
 | **Collection** | `collection` | `pdca-collection`, the batch layer on §Common cycle contract |
 
-The planner defines criteria, never an implementation plan or implementation steps: the executor
-determines those during DO. Feasibility need not be proven during PLAN; when critical facts are
-missing, a **bounded probe** may clarify feasibility, form or criteria, and its results may refine
-those decisions. A probe is not a separate PDCA cycle, and one run before DO to answer that question
-is not implementation of a changed task.
+The planner defines criteria, never an implementation plan or steps: the executor determines those
+during DO. Feasibility need not be proven during PLAN; a **bounded probe** may clarify missing
+critical facts, feasibility, form or criteria, and refine those decisions. A probe is not a separate
+PDCA cycle, and one pre-DO run answering that question is not implementation of a changed task.
 
 **Auxiliary code does not change the nature of the goal.** A prototype, checker, script or utility
-used to investigate feasibility or verify a non-coding goal does not turn the goal into a coding
-task; findings may still affect execution decisions.
+used to investigate or verify a non-coding goal does not make it a coding task; findings may still
+affect execution decisions.
 
 **The requested result is the object the user's words ask for** — a value, a file, a behaviour or an
-answer — and PLAN names it before any criterion is written; the plan delivers that same object.
-Feasibility is judged on that object, never on a rephrasing of it: asking a question does not turn a
-request for a value into a request for an explanation. If sufficient evidence proves that the
-requested result cannot be produced under the stated constraints — not merely that one candidate
-failed — execution stops: PLAN returns `original task is infeasible under the stated constraints` with
-cause and evidence, and ACT finalizes an honest `blocked`/`STOP` carrying that answer. If the task
-requires a value no available method can compute, execution stops the same way: PLAN returns
-`goal cannot be measured under the available means` with the missing metric, instrument or comparable
-basis, and ACT finalizes the rejection without a DO. If the supplied facts already establish the
-requested result and nothing is left to produce, execution also stops before DO: PLAN returns
-`requested result already established`, and ACT records the result with its derivation, the evidence
-pointers and the fact that no independent CHECK ran.
+answer — and PLAN names it before writing any criterion; the plan delivers that same object, and
+feasibility is judged on it, never on a rephrasing (a question does not turn a value request into an
+explanation request). If sufficient evidence proves the requested result cannot be produced under
+the stated constraints — not merely that one candidate failed — execution stops: PLAN returns
+`original task is infeasible under the stated constraints` with cause and evidence, and ACT finalizes
+an honest `blocked`/`STOP`. If a required value is computable by no available method, execution stops
+the same way: PLAN returns `goal cannot be measured under the available means` with the missing
+metric, instrument or comparable basis, and ACT finalizes the rejection without DO. If supplied facts
+already establish the requested result, execution stops before DO too: PLAN returns `requested result
+already established`, and ACT records the result with its derivation, evidence pointers and that no
+independent CHECK ran.
 
 ### Where each form continues
 
 Bounded Execution continues in §Bounded Execution. Incremental Execution continues in
 `pdca-incremental`, which **inherits §Common cycle contract** and adds only the campaign layer.
-Collection continues in `pdca-collection`, which **inherits the same common rules** for the
-individual item cycles, its final integration CHECK, corrective cycles and shared role/safety
-requirements, and adds only collection coordination (preparation barrier, dependencies, groups,
-lanes, integration and batch status). The collection's batch status and integration gate do not
-create another cycle, cycle attempt counter or substitute for an item's whole-goal CHECK.
-A direct load of either form skill loads the base common rules with it and skips the entry
-classification when the user named that form explicitly. **Routing ends here**: no later
-section re-classifies the task or selects another form.
+Collection continues in `pdca-collection`, which **inherits the same common rules** for item cycles,
+its final integration CHECK, corrective cycles and shared role/safety requirements, and adds only
+collection coordination (preparation barrier, dependencies, groups, lanes, integration, batch
+status). Its batch status and integration gate create no other cycle or attempt counter and never
+substitute for an item's whole-goal CHECK. A direct load of either form skill loads the base common
+rules and skips entry classification when the user named that form explicitly. **Routing ends here**:
+no later section re-classifies the task or selects another form.
 
 ## Common cycle contract
 
@@ -352,9 +349,10 @@ against, not another set.
 
 **The CHECK contract travels inline.** `references/check.md` is the single source of the procedure:
 the driver reads it in full and passes its **complete contents inline** in **every** `pdca-check`
-dispatch — first CHECK, recheck, campaign step or collection item alike; CHECK cannot read the
-installed reference. A driver that cannot load it whole raises an explicit blocker before dispatch:
-no reduced contract, no verdict from the agent prompt alone.
+dispatch (first CHECK, recheck, campaign step, collection item, ACT retrospective); CHECK cannot
+read installed reference. A driver that cannot load it whole raises an explicit blocker before
+dispatch: no reduced contract, no verdict from the agent prompt alone. An ACT retrospective dispatch
+also inlines the retrospective contract from `references/act.md`.
 
 **CHECK has three independent exits:**
 
@@ -382,10 +380,10 @@ covers the same candidate and verifies every global requirement.
 
 #### ACT
 
-ACT closes the cycle; the driver and `pdca-executor` carry it out — no separate subagent role — and it
-records the outcome the originating phase determined, never its own verdict or approval. It changes
-no product, test or checked artifact. `pdca-executor` reads `references/act.md` on status-file
-creation and on **every** status write: the payloads, the closing order and the skeleton live there.
+ACT closes the cycle; the driver and `pdca-executor` carry it out — no separate subagent role
+(analysis reuses `pdca-check` in `retrospective` mode). It records the originating phase's outcome,
+never its own verdict or approval; changes no product, test or checked artifact. `pdca-executor` reads
+`references/act.md` on status-file creation and every status write.
 
 - **ACT → EXIT** — after an accepted CHECK, on the untouched accepted snapshot: closes the cycle's
   scope, or the whole task in Bounded Execution.
@@ -398,7 +396,8 @@ detour: the originating outcome is recorded per `references/act.md`, including t
 independent CHECK for an established result.
 
 Product work found during closure is not ACT's: it goes back to DO and a final CHECK. Every closure
-runs through ACT, never beside it.
+runs through ACT, never beside it; each runs a retrospective via `pdca-check` (`retrospective` mode),
+recorded in `## Lessons learned`.
 
 ### Evidence over assertion
 
@@ -461,9 +460,9 @@ and temporary scratch are not PDCA state and follow their own rules (§Evidence 
   accumulate; accepted conclusions may be superseded with a reason, but facts are not backfilled.
   There is no separate todo or sidebar mirror.
 - **Fixed headings:** `## Current state`, `## Original task`, `## PLAN record`, `## Approval record`,
-  `## DO result`, `## CHECK record`, `## ACT record`, `## Revision history`, `## Defect history`,
-  `## Changed files`, `## Git state`, `## Progress log` (last). The skeleton, field rules and closing
-  order are in `references/act.md`. The skeleton is the shape of a cycle record: a form-owned campaign
+  `## DO result`, `## CHECK record`, `## ACT record`, `## Lessons learned`, `## Revision history`,
+  `## Defect history`, `## Changed files`, `## Git state`, `## Progress log` (last). The skeleton,
+  field rules and closing order are in `references/act.md`. The skeleton is the shape of a cycle record: a form-owned campaign
   container may define its own outer sections, with the cycle record nested and demoted inside them,
   and those outer sections neither replace nor reorder the inner fixed headings. The body is written
   in the language of the user's dialogue; heading labels stay stable.
@@ -629,34 +628,26 @@ approval. Autonomous mode has no approval slots/gate except environment/user-req
 
 ### References
 
-Phase detail is disclosed per role; a supporting file is never auto-loaded by being mentioned, and the
-routing below keeps the scopes apart.
+A supporting file is never auto-loaded by being mentioned; the routing below keeps the scopes apart.
 
-- `references/plan.md` — **`pdca-planner` only**: entry classification and the **sole** form/overlay
-  discriminators, plan fields, criteria, terminal outcomes, gap closure, numeric thresholds, plan
-  hygiene, the step boundary, the output contract, the evidence boundary and revision accounting. The
-  driver supplies its **exact absolute path** (from this base contract's directory) in the PLAN or
-  criteria-revision dispatch; the planner reads it itself and the driver never reads, inlines or
-  forwards the plan reference.
-- `references/check.md` — the CHECK contract, delivered **inline by the driver as the complete
-  contents** in every `pdca-check` dispatch (first CHECK, recheck, campaign step, collection item);
-  CHECK cannot read the installed file, and a driver that cannot load it in full raises an explicit
-  blocker before dispatch. It holds the method CHECK chooses, the evidence chain, criteria matrix,
-  mandatory-requirement veto, combined final check, verdict and routing.
-- `references/act.md` — read by `pdca-executor` on status-file **creation and every status write**,
-  not only at ACT: the canonical skeleton, fixed headings, field rules and closing order, so the
-  skeleton exists before the first ready plan record.
+- `references/plan.md` — **`pdca-planner` only**: the planner reads it at its exact absolute path,
+  supplied by the driver; the driver never reads, inlines or forwards it.
+- `references/check.md` — CHECK contract, delivered **inline** as the **complete contents** by the
+  driver in every `pdca-check` dispatch (first CHECK, recheck, campaign step, collection item, ACT
+  retrospective); CHECK cannot read the installed file, and a driver that cannot load it whole raises
+  an explicit blocker.
+- `references/act.md` — read by `pdca-executor` on status-file creation and every status write:
+  skeleton, headings, field rules, closing order. Driver reads only its retrospective section for
+  inline ACT retrospective delivery.
 - `references/escalate.md` — driver: read before expert dispatch (inside its §Read scope); pass its
   complete protocol with the input built from the inputs it requires.
-- `references/driver.md` — **driver**: the dispatcher mechanics that no phase or form contract owns —
-  entry adoption, dispatch transport, the scoped read, routed-versus-taken decisions. A delegated
-  driver (`pdca-orchestrator`) reads it in full right after the contracts are loaded, resolved against
-  the **base directory returned by the load of this `pdca` entry contract** (loaded first, by exact
-  ID, even when a form contract is already named), and applies it as written, returning an explicit
-  blocker if it cannot; the normal-mode primary may use it the same way. Its §Read scope is the single
-  owner of the driver's own reads, `check.md` (inline delivery) and `escalate.md` (before expert
-  dispatch) included. It points at the section that owns each policy rule instead of restating it,
-  and never narrows a role's permissions.
+- `references/driver.md` — **driver**: read in full by a delegated driver (`pdca-orchestrator`) right
+  after the contracts load, resolved against the **base directory returned by the load of this `pdca`
+  entry contract** (loaded first, by exact ID, even when a form contract is already named), and
+  applied as written, with an explicit blocker if it cannot; the normal-mode primary may use it the
+  same way. Its §Read scope is the single owner of the driver's own reads, `check.md` (inline
+  delivery) and `escalate.md` (before expert dispatch) included. It never narrows a role's
+  permissions.
 
 ## Bounded Execution
 
