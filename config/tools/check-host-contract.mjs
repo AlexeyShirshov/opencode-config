@@ -308,11 +308,26 @@ for (const f of readdirSync(PROFILES).filter((f) => f.endsWith(".jsonc"))) {
     else if (!agentIds.has(role)) fail(`${where}: binds unknown agent "${role}"`)
   }
   const PDCA_ROLES = ["pdca-planner", "pdca-check", "pdca-escalate", "pdca-executor", "pdca-orchestrator"]
-  if (f === "deepseek.jsonc") {
-    for (const role of PDCA_ROLES) if (!bound.includes(role)) fail(`${where}: no model binding for ${role}`)
+  // Каждый профиль выбирает одну из двух форм (тот же контракт, что в
+  // skills/pdca/tests/test_routing_consistency.py): либо привязаны все PDCA-роли,
+  // либо весь PDCA-цикл выключен — skill pdca* → deny И subagent pdca* → deny,
+  // и тогда ни одна роль не привязана. Полумера — ошибка.
+  const rules = Array.isArray(cfg.permissions) ? cfg.permissions : []
+  const denies = (action) =>
+    rules.some(
+      (r) =>
+        r?.action === action &&
+        r?.effect === "deny" &&
+        String(r?.resource ?? "").startsWith("pdca"),
+    )
+  const pdcaOff = denies("skill") && denies("subagent")
+  const pdcaBound = PDCA_ROLES.filter((role) => bound.includes(role))
+  if (pdcaOff) {
+    for (const role of pdcaBound) fail(`${where}: PDCA is disabled here — drop the ${role} binding`)
   } else {
-    // PDCA живёт только в oc-ds: остальные профили не должны привязывать его роли.
-    for (const role of PDCA_ROLES) if (bound.includes(role)) fail(`${where}: PDCA is ds-only — drop the ${role} binding`)
+    for (const role of PDCA_ROLES)
+      if (!pdcaBound.includes(role))
+        fail(`${where}: no model binding for ${role} (bind every PDCA role or disable pdca* skills+subagents)`)
   }
   for (const [role, spec] of Object.entries(cfg.agent ?? {})) {
     const model = spec?.model
