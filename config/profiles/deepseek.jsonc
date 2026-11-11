@@ -8,18 +8,16 @@
   },
 
   // ── Профиль oc-ds: обычная работа — дефолт-агент `build` (полные инструменты) ──
-  // на cheap-тире; PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet` (решения PLAN `pdca-planner` и
-  // Triage CHECK `pdca-check` — medium-тир, «руки»/сбор — cheap, `pdca-security-auditor` — medium,
-  // `pdca-escalate` — strong). Субагенты целиком живут в общих `agents/*.md`.
-  // Дефолт интерактивных сессий (`build`, `plan`, любые без явной привязки) — прямой DeepSeek
-  // (`deepseek/deepseek-flash`: окно 1M / ответ ~393k), без подписки Go и без free-потолка zen
-  // (окно 200k / ответ 32k). Роли на провайдере `opencode` (strong — Sonnet, Opus) идут
-  // напрямую в Zen без локального прокси; Sol — через `openai` напрямую.
-  "model": "deepseek/deepseek-flash",
+  // PDCA-цикл (.NET/C#) — общий скилл `pdca-dotnet`
+  // (решения PLAN `pdca-planner` и Triage CHECK `pdca-check` — medium-тир, «руки»/сбор — cheap,
+  // `pdca-security-auditor` — medium, `pdca-escalate` — strong). Субагенты целиком живут
+  // в общих `agents/*.md`.
+  // Дефолт интерактивных сессий и агентов без привязки — бесплатный Beam.
+  "model": "opencode-go/beam-free",
 
-  // Служебные задачи (заголовки/резюме) — тот же прямой DeepSeek: вызовы неинтерактивные,
-  // падение человек не увидит.
-  "small_model": "deepseek/deepseek-flash",
+  // Служебные задачи (заголовки/резюме) — Luna: вызовы неинтерактивные, поэтому самая
+  // дешёвая по квоте модель подписки.
+  "small_model": "openai/gpt-6-luna",
 
   // Обычный режим: стартуем в `build` (полные инструменты) — просто выполняем задачу.
   // Цикл PDCA не навязан: opencode сам показывает агенту список скиллов (name+description)
@@ -28,48 +26,26 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // Тиры: cheap — прямой DeepSeek (`deepseek/deepseek-flash`, тот же id, что и дефолт сессии).
-  // Исключение — кодовые роли `pdca-executor` и `coder` на бесплатной модели под Go
-  // (`opencode-go/beam-free`, окно 1,05M, выход 131k): $0 и не расходуют платную квоту Go.
-  // У free-пула общий дневной потолок (~2 000 запросов на обе роли, сброс в 00:00 UTC); когда
-  // он выбран, zen-failover 0.3.0 сам записывает cap, переводит сессию и привязку на
-  // `openai/gpt-6-luna` и по истечении срока возвращает Beam. Цель этого фолбэка задаёт
-  // `ZEN_FAILOVER_RULES` в `oc-ds`/`pdca-fleet` (дефолт плагина — платный DeepSeek). У Luna
-  // на подписке окно 272k и выход 128k (пик контекста executor'а: медиана 68–92k, p90
-  // ~110–186k); если исчерпана и она, `openai` деградируется и сессия уходит на
-  // `opencode/gpt-6-luna` (Console).
-  // medium PLAN — Argon из подписки Go (`opencode-go/gemini-4-argon`, variant high); месячная
-  // квота Go выбрана 04.11 (Console: renews 17.11, 18:24Z). Пока она не вернулась, первый же
-  // 429 деградирует источник и planner идёт на `opencode/gemini-4-argon` (Console, платно,
-  // ~$0.09 за прогон плана); срок деградации задаёт `ZEN_FAILOVER_RESET_OPENCODE_GO=14d` в
-  // `oc-ds`/`pdca-fleet` (дефолт плагина — 7d, для месячного лимита это слишком рано), а точный
-  // возврат — проба раз в 5 минут. medium CHECK
-  // и SOL-роли — ChatGPT Plus (`openai/gpt-6.1-sol`, variant high, другое семейство для
-  // независимого вердикта); strong — Sonnet (Console). Дефолт сессии — прямой DeepSeek.
+  // PLAN и escalation идут через Console, CHECK и cheap-роли — через ChatGPT.
+  // Beam ограничен дневной квотой; цель fallback зависит от правил zen-failover.
+  // При квотной ошибке openai zen-failover может переключить на платный Console;
+  // истечение токена (401) само по себе такого переключения не гарантирует.
   // Конкретные id — только здесь и в `model`/`small_model`;
   // в доках/ролях/скиллах — только тиры.
   // ВАЖНО: `~/.config/opencode/profiles/` — копия этого файла. Правь здесь и синхронизируй
-  // (`cp config/profiles/deepseek.jsonc ~/.config/opencode/profiles/`): правка только в
-  // installed-копии теряется при следующем sync (так уже откатился перевод Sol на OpenAI).
+  // (`bun config/tools/sync-profiles.mjs --fix`): правка только в installed-копии
+  // теряется при следующем sync.
   "agent": {
-    // PLAN — Argon из подписки Go: окно 1M, ответ 65k, `high` — потолок (xhigh/max нет).
-    // Квота Go на модель — $30 (≈2 120 запросов), 5-часовое окно — 20 % от месячной; план жрёт
-    // её в основном выходом (длинный текст плана), при исчерпании zen-failover уводит на
-    // `opencode/gemini-4-argon` (платный zen).
-    "pdca-planner": { "model": "opencode-go/gemini-4-argon", "variant": "high" },
-    // CHECK — намеренно на другом семействе (Sol), чем `pdca-planner` (Gemini): независимый
-    // вердикт. Идёт из ChatGPT Plus (`openai/…` — $0 маргинально); окно 1,05M покрывает реальные
-    // проверки (пик по базе — 800k контекста). На платном zen тот же Sol дороже Argon'а, причём
-    // с 272k контекста — по повышенному тарифу ($4/$15/$0,2 за 1M вместо $2/$10/$0,1), поэтому
-    // падение подписки (zen-failover: `openai` → `opencode/gpt-6.1-sol`) дороже, но не смертельно.
+    "pdca-planner": { "model": "opencode/gemini-4-carbon" },
+    // CHECK — Sol high: окно 1,05M покрывает реальные проверки (пик по базе — 800k контекста).
     "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "opencode-go/beam-free" },
-    "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "opencode-go/beam-free" },
-    "scout": { "model": "deepseek/deepseek-flash" },
-    "btw": { "model": "deepseek/deepseek-flash" },
-    "pdca-orchestrator": { "model": "deepseek/deepseek-flash" }
+    "pdca-executor": { "model": "openai/gpt-6-luna" },
+    "architect": { "model": "openai/gpt-6-astra" },
+    "coder": { "model": "openai/gpt-6-luna" },
+    "scout": { "model": "openai/gpt-6-luna" },
+    "btw": { "model": "openai/gpt-6-luna" },
+    "pdca-orchestrator": { "model": "openai/gpt-6-luna" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
@@ -102,6 +78,14 @@
         "apiKey": "{env:DEEPSEEK_API_KEY}",
         "headerTimeout": 60000,
         "chunkTimeout": 180000
+      }
+    },
+    // ChatGPT-подписка используется для части ролей. Sol на проверках
+    // молчит долго, Luna — на больших диффах; запас по таймаутам как у прежних источников.
+    "openai": {
+      "options": {
+        "headerTimeout": 60000,
+        "chunkTimeout": 300000
       }
     }
   },

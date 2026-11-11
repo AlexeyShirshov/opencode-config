@@ -7,7 +7,8 @@
   "experimental": {
     "subagent_depth": 3
   },
-  "model": "opencode-go/deepseek-v4.1-flash",
+  "model": "opencode-go/beam-free",
+  "small_model": "openai/gpt-6-luna",
   // PDCA — только в oc-ds. Скиллы семейства лежат в общем `skills/`, поэтому здесь
   // они закрыты правами (`deny` скрывает их из списка модели и запрещает загрузку),
   // а запуск PDCA-ролей дополнительно запрещён: у `pdca-orchestrator` собственный
@@ -23,10 +24,10 @@
   // Проект может переопределить роль своим `.opencode/opencode.jsonc`
   // (проектный конфиг мержится после профиля).
   "agent": {
-    "architect": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "coder": { "model": "opencode-go/beam-free" },
-    "scout": { "model": "deepseek/deepseek-flash" },
-    "btw": { "model": "deepseek/deepseek-flash" }
+    "architect": { "model": "openai/gpt-6-astra" },
+    "coder": { "model": "openai/gpt-6-luna" },
+    "scout": { "model": "openai/gpt-6-luna" },
+    "btw": { "model": "openai/gpt-6-luna" }
   },
   "skills": {
     "paths": [
@@ -38,6 +39,12 @@
       "options": {
         "headerTimeout": 60000,
         "chunkTimeout": 180000
+      }
+    },
+    "openai": {
+      "options": {
+        "headerTimeout": 60000,
+        "chunkTimeout": 300000
       }
     }
   }
