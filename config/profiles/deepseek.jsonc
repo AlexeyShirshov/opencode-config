@@ -36,7 +36,7 @@
   // (`bun config/tools/sync-profiles.mjs --fix`): правка только в installed-копии
   // теряется при следующем sync.
   "agent": {
-    "pdca-planner": { "model": "opencode/gemini-4-carbon" },
+    "pdca-planner": { "model": "opencode/gemini-4-argon" },
     // CHECK — Sol high: окно 1,05M покрывает реальные проверки (пик по базе — 800k контекста).
     "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
