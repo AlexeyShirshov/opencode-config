@@ -40,7 +40,7 @@
     // CHECK — Sol high: окно 1,05M покрывает реальные проверки (пик по базе — 800k контекста).
     "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
     "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "openai/gpt-6-luna" },
+    "pdca-executor": { "model": "openai/gpt-6-luna", "variant": "xhigh" },
     "architect": { "model": "openai/gpt-6-astra" },
     "coder": { "model": "openai/gpt-6-luna" },
     "scout": { "model": "openai/gpt-6-luna" },
