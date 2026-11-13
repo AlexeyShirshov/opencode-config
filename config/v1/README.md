@@ -9,7 +9,7 @@
 
 | Файл | Что это в V1 | Статус в V2 |
 | --- | --- | --- |
-| `plugins/btw-context.js` | на `tool.execute.before` ловил тул `task` (`args.command === "btw"`) | портирован: `plugins/btw-context.js` (хук `prompt`, триггер — agent `btw`) |
+| `plugins/btw-context.js` | на `tool.execute.before` ловил тул `task` (`args.command === "btw"`) | собственная V2-реализация удалена; в TUI есть встроенный `/btw` |
 | `plugins/wsl-notify.js` | событие `question.asked`, Bun `$` | портирован: `plugins/wsl-notify.js` (`form.created`, `node:child_process`) |
 | `plugins/git-status.tsx` | TUI-плагин `{ id, tui }` | портирован: `plugins/git-status/` (пакет-каталог, `replace: "sidebar.footer"`) |
 | `plugins/sidebar-todo.tsx` | TUI-плагин, список todo сессии (`client.session.todo`) | **не портируем**: в V2 подсистемы todo нет (тул `todowrite` удалён, API/событий нет) |
@@ -17,7 +17,7 @@
 | `plugins/response-timestamp.js` | метки времени ответов, хук `experimental.text.complete` | **удалено**: в V2 нет аналога; у `Tool.Result` нет поля `title` |
 | `plugins/terminal-title.js` | заголовок вкладки терминала (OSC 2 в `/dev/tty`) | **удалено**: плагины V2 живут в фоновом сервисе, а не в процессе TUI, поэтому `/dev/tty` недоступен |
 | `tools/roslyn.ts` | custom tool `roslyn` через V1-хелпер `tool()` из `@opencode-ai/plugin` | портирован: `plugins/roslyn.js` (`ctx.tool.transform`, тот же один тул `roslyn`; бинарь `roslyn-cli/` остался в `tools/`) |
-| `commands/btw.md` | фронтматтер `agent: general`, `subtask: true` | актуальная версия — `commands/btw.md` (`agent: btw`, `subagent: true`) |
+| `commands/btw.md` | фронтматтер `agent: general`, `subtask: true` | встроенный `/btw` в V2 TUI |
 | `agents/*.md` | 13 файловых ролей с V1-frontmatter (`permission:`-map, `task`/`bash`/`write`/`list`/`todowrite`/`doom_loop`/`lsp`, `tools`) | портированы на V2 (`permissions`-массив, `subagent`/`shell`/`edit`); `list`/`todowrite`/`doom_loop`/`lsp` убраны как отсутствующие в V2; `name:` снят — см. §Ловушка ниже |
 | `opencode.jsonc` | V1-блоки: `plugin`, `lsp` (roslyn-language-server), `agent.plan.permission`, top-level `permission` | портированы: `plugins`, `agents.plan.permissions`, top-level `permissions`; блок `lsp` **удалён** (V2 не запускает язык-серверы — семантика C# идёт через тул `roslyn`) |
 
