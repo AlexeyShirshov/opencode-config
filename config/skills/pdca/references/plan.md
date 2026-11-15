@@ -29,6 +29,9 @@ here; the driver routes them and `pdca-executor` records them.
   task makes them relevant. If the user supplied criteria, reproduce them **verbatim** as the
   acceptance set and add none; only when the user supplied none do you define them from the
   unchanged task;
+- **Criterion IDs are immutable for a revision.** PLAN assigns them once; DO and CHECK refer to
+  them by ID and never restate, renumber, rename or replace them. A change in criterion identity,
+  coverage or wording is a contract revision (`r`), not an implementation detail.
 - risks and stop conditions;
 - **known resource and access constraints affecting whether the requested result is achievable** —
   what the available means and access actually allow, not a choice of tools, implementation or
@@ -70,6 +73,16 @@ conditions under which they apply.
   outcome (§Terminal PLAN outcomes), never a `ready` placeholder.
 - A measurable goal whose value no available method computes is its own rejection — `goal cannot be
   measured under the available means` — never a campaign that measures by improvisation.
+
+### Key assumptions and early probes
+
+- Verify read-only the existence and shape of the contracts, data flow and measurement basis the
+  plan depends on before returning it; a plan resting on an unchecked assumption is not ready.
+- A risky semantic assumption is not left as an assumption: convert it into a bounded early probe
+  authorized through the driver, or into an explicit stop condition.
+- Criteria are the single source of truth: DO and CHECK refer to them by stable ID and never
+  restate, rename, renumber or widen them; any change is a contract revision, not an
+  implementation detail.
 
 ## Terminal PLAN outcomes
 

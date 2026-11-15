@@ -28,6 +28,25 @@ stays inside the permissions it already has, on the task inputs and the cycle's 
 An observation or run its chosen method needs is requested through the driver, which has
 `pdca-executor` produce it or `pdca-scout` observe it.
 
+## Evidence packaging
+
+Before choosing verification methods, CHECK verifies that the candidate identity, the claimed
+criterion IDs, run identities and all referenced artifacts are present and internally consistent.
+Missing or inconsistent packaging is not an implementation defect and not a counted attempt: CHECK
+returns the exact missing items and requests assembly only; DO assembles them for the same
+candidate without rerunning unrelated product checks. One such round per revision; if packaging is
+still incomplete after it, mark the affected criteria `unverified` and return a verdict on the
+artifacts that exist.
+
+## Candidate identity
+
+DO's candidate carries one stable identity derived from the changed state (commit, patch or content
+digest), not chosen by the author, plus an evidence pack bound to it: the claimed criterion IDs and
+durable pointers to every run, log and artifact. The identity must survive CHECK dispatch; use
+durable copies where a transient pointer cannot. Changing the candidate state invalidates the
+identity and needs a new CHECK. Correcting only evidence or packaging keeps the identity and does
+not consume an attempt.
+
 ## Assess the criteria
 
 Before judging the result, assess the criteria against the original task: do they cover its
@@ -37,6 +56,10 @@ them verbatim and do not accept the result against a different, weaker or enlarg
 coverage, contradiction or an unjudgeable criterion is a criteria defect for PLAN, not a reason to
 judge the result against a weaker reading. One failed candidate is not proof that a criterion is
 unachievable.
+
+Criteria are the single source of truth: refer to them by their stable IDs and never restate,
+rename, renumber or widen them. A changed criterion identity or coverage is a contract defect for
+PLAN, not a wording correction at CHECK.
 
 A campaign step's numeric criterion **restates the recipe's floor**: a criterion that reads a forecast
 of achievable volume, a quota of work or a share of the campaign target is a criteria defect for
