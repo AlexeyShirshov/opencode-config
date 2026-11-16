@@ -36,7 +36,8 @@
     // V1-настройки (tui.json/kv.json), поэтому держим её в снимке явно.
     // Без неё `herdr integration status` показывает `needs repair`, а herdr
     // угадывает статус по экрану вместо отчётов плагина.
-    "./herdr-opencode"
+    "./herdr-opencode",
+    "./herdr"
   ],
   "attention": {
     "enabled": true,

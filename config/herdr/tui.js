@@ -1,4 +1,4 @@
-// Интеграция с Herdr для OpenCode V1: launcher сохраняется вместе с ID сессии.
+// Pane-local profile-aware session recovery for OpenCode V2 and Herdr.
 import net from "node:net";
 import { appendFileSync, mkdirSync } from "node:fs";
 import os from "node:os";
@@ -7,7 +7,7 @@ import path from "node:path";
 // TUI errors otherwise disappear into the terminal's hidden console.
 const log = (event, details = {}) => {
   try {
-    const dir = path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local/state"), "o3-herdr");
+    const dir = path.join(process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local/state"), "opencode-herdr");
     mkdirSync(dir, { recursive: true });
     appendFileSync(path.join(dir, "session.jsonl"), JSON.stringify({
       time: new Date().toISOString(), pid: process.pid,
@@ -17,13 +17,14 @@ const log = (event, details = {}) => {
 };
 
 const parseResumeCommand = () => {
-  const raw = process.env.O3_HERDR_RESUME_ARGV;
-  if (raw === undefined) return ["o3", "agent", "opencode"];
+  const raw = process.env.OPENCODE_HERDR_RESUME_ARGV;
+  if (raw === undefined) return ["opencode"];
   try {
     const command = JSON.parse(raw);
     if (!Array.isArray(command) || command.length === 0 ||
         command.length > 62 || command.some((arg) => typeof arg !== "string" || /['\x00-\x1f\x7f]/.test(arg)) ||
-        !/^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/.test(command[0])) return undefined;
+        !/^[a-zA-Z0-9][a-zA-Z0-9._+-]*$/.test(command[0]) ||
+        Buffer.byteLength(JSON.stringify([...command, "--session", "s".repeat(128)])) > 8192) return undefined;
     return command;
   } catch {
     return undefined;
@@ -31,25 +32,7 @@ const parseResumeCommand = () => {
 };
 
 const plugin = {
-  id: "o3.herdr.session",
-  tui(api) {
-    if (process.env.HERDR_ENV !== "1" || !process.env.HERDR_PANE_ID ||
-        !process.env.HERDR_SOCKET_PATH || !parseResumeCommand()) return;
-    // OpenCode 1.18.35 uses the tui lifecycle and state/route API, despite
-    // its 1.x version. setup/data/ui.router belongs to the other TUI API.
-    const cleanup = plugin.setup({
-      ui: { router: { current() {
-        const route = api.route.current;
-        return { type: route?.name, sessionID: route?.params?.sessionID };
-      } } },
-      data: { session: {
-        get: (id) => api.state.session.get(id),
-      } },
-    });
-    api.lifecycle.onDispose(() => {
-      cleanup?.();
-    });
-  },
+  id: "opencode.herdr.session",
   setup(api) {
     const command = parseResumeCommand();
     const pane = process.env.HERDR_PANE_ID;
@@ -95,7 +78,7 @@ const plugin = {
       pending = true;
       sequence = Math.max(sequence + 1, Date.now() * 1000);
       const request = {
-        id: `o3-resume:${sequence}`,
+        id: `opencode-resume:${sequence}`,
         method: "pane.report_agent_session",
         params: {
           pane_id: pane,
@@ -104,7 +87,6 @@ const plugin = {
           source: "herdr:opencode",
           agent: "opencode",
           session_start_source: "select",
-          seq: sequence,
           agent_session_id: sessionID,
           resume_argv: [...command, "--session", sessionID],
         },

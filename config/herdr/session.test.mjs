@@ -1,15 +1,16 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, readFile } from "node:fs/promises";
+import { mkdtemp, rm, readFile, writeFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { describe, test } from "node:test";
 import { setTimeout as delay } from "node:timers/promises";
-import plugin from "./o3-session.js";
+import plugin from "./tui.js";
 
-describe("Восстановление профиля O3 в Herdr", () => {
+describe("Восстановление профиля OpenCode в Herdr", () => {
   for (const { label, resumeEnv, command } of [
-    { label: "прямой O3", resumeEnv: undefined, command: ["o3", "agent", "opencode"] },
+    { label: "прямой OpenCode", resumeEnv: undefined, command: ["opencode"] },
     { label: "oc-gp", resumeEnv: '["oc-gp"]', command: ["oc-gp"] },
     { label: "oc-dev", resumeEnv: '["oc-dev"]', command: ["oc-dev"] },
     { label: "произвольный профиль", resumeEnv: '["oc","customer-profile"]', command: ["oc", "customer-profile"] },
@@ -41,8 +42,9 @@ describe("Восстановление профиля O3 в Herdr", () => {
           HERDR_ENV: "1", HERDR_PANE_ID: "w1:p1",
           HERDR_SOCKET_PATH: socketPath,
         });
-        delete process.env.O3_HERDR_RESUME_ARGV;
-        if (resumeEnv !== undefined) process.env.O3_HERDR_RESUME_ARGV = resumeEnv;
+        process.env.XDG_STATE_HOME = dir;
+        delete process.env.OPENCODE_HERDR_RESUME_ARGV;
+        if (resumeEnv !== undefined) process.env.OPENCODE_HERDR_RESUME_ARGV = resumeEnv;
         const api = {
           ui: { router: { current: () => ({ type: "session", sessionID: selected }) } },
           data: { session: {
@@ -62,7 +64,7 @@ describe("Восстановление профиля O3 в Herdr", () => {
         await delay(500);
         assert.deepEqual(reports.at(-1).params.resume_argv, [...command, "--session", "ses_second"]);
         assert.equal(reports.at(-1).params.state, undefined);
-        assert.ok(reports.at(-1).params.seq > reports[1].params.seq);
+        assert.equal(reports.at(-1).params.seq, undefined);
       } finally {
         cleanup?.();
         process.env = previousEnv;
@@ -83,23 +85,40 @@ describe("Восстановление профиля O3 в Herdr", () => {
   });
 
   test("игнорирует небезопасную команду восстановления", () => {
-    const previous = process.env.O3_HERDR_RESUME_ARGV;
+    const previous = { ...process.env };
     process.env.HERDR_ENV = "1";
     process.env.HERDR_PANE_ID = "w1:p1";
     process.env.HERDR_SOCKET_PATH = "/tmp/herdr.sock";
-    process.env.O3_HERDR_RESUME_ARGV = '["oc-gp", "bad\\narg"]';
+    process.env.OPENCODE_HERDR_RESUME_ARGV = '["oc-gp", "bad\\narg"]';
     try {
       assert.equal(plugin.setup({}), undefined);
     } finally {
-      if (previous === undefined) delete process.env.O3_HERDR_RESUME_ARGV;
-      else process.env.O3_HERDR_RESUME_ARGV = previous;
+      process.env = previous;
     }
   });
 
   test("подключён в TUI и получает профиль из launcher", async () => {
-    const config = JSON.parse(await readFile(new URL("../tui.json", import.meta.url), "utf8"));
-    assert.ok(config.plugin.includes(new URL("./o3-session.js", import.meta.url).href));
-    const script = await readFile(new URL("../bin/oc", import.meta.url), "utf8");
-    assert.ok(script.includes('export O3_HERDR_RESUME_ARGV="[\\"oc\\",\\"$profile\\"]"'));
+    const config = await readFile(new URL("../cli.json", import.meta.url), "utf8");
+    assert.match(config, /"\.\/herdr"/);
+    const script = await readFile(new URL("../../home/.bash_aliases", import.meta.url), "utf8");
+    assert.match(script, /OPENCODE_HERDR_RESUME_ARGV=.*oc-gp/);
+    assert.match(script, /OPENCODE_HERDR_RESUME_ARGV=.*oc-ds/);
+  });
+
+  test("bash восстанавливает функции обоих профилей с аргументами сессии", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "herdr-bash-"));
+    try {
+      await writeFile(path.join(dir, ".bashrc"),
+        'oc-gp() { printf "%s\\n" gp "$@"; }\noc-ds() { printf "%s\\n" ds "$@"; }\n');
+      for (const profile of ["gp", "ds"]) {
+        const result = spawnSync("bash", ["-ic", `oc-${profile} "$@"`, "--", "--session", "ses_test"], {
+          env: { ...process.env, HOME: dir }, encoding: "utf8",
+        });
+        assert.equal(result.status, 0, result.stderr);
+        assert.equal(result.stdout, `${profile}\n--session\nses_test\n`);
+      }
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });

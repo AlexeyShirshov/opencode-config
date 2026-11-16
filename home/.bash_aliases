@@ -136,6 +136,7 @@ filter-package() {
 unalias oc-gp 2>/dev/null || true
 oc-gp() {
   OPENCODE_CONFIG="$HOME/.config/opencode/profiles/gp.jsonc" \
+    OPENCODE_HERDR_RESUME_ARGV='["bash","-ic","oc-gp \"$@\"","--"]' \
     opencode --standalone "$@"
 }
 
@@ -157,6 +158,7 @@ oc-gp() {
 unalias oc-ds 2>/dev/null || true
 oc-ds() {
   OPENCODE_CONFIG="$HOME/.config/opencode/profiles/deepseek.jsonc" \
+    OPENCODE_HERDR_RESUME_ARGV='["bash","-ic","oc-ds \"$@\"","--"]' \
     ZEN_FAILOVER_RULES='opencode-go=openai/gpt-6-luna;openai=opencode/<id>' \
     ZEN_FAILOVER_RESET_OPENCODE_GO=14d \
     opencode "$@"
