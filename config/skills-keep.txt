@@ -33,6 +33,15 @@
 
 # routing / meta
 dotnet-advisor
+using-dotnet
+dotnet-csharp
+dotnet-api
+dotnet-debugging
+dotnet-devops
+dotnet-library-docs
+dotnet-testing
+dotnet-tooling
+dotnet-ui
 find-skills
 
 # C# language core
