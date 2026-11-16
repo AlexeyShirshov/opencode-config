@@ -8,8 +8,8 @@
 ## Source of truth: never edit the live host config
 
 - `~/.config/opencode/**` is a **deploy target**, not a source. Do not edit skills, plugins, agents, profiles or this file there — not even "to try it quickly". Verify in a sandbox or a separate `OPENCODE_CONFIG` instead.
-- Skills and plugins are edited **only** in the skills repo (`github.com/AlexeyShirshov/skills`, local clone `/home/alex/sources/skills`, `../skills` from `opencode-config`), then tested, committed and pushed there. They reach the config snapshot (`config/skills`, `config/plugins`) only via `bun config/tools/vendor-skills.mjs --fix` (it refuses a dirty or unpushed source), and the host only through an explicit deploy.
-- Always the same direction: `skills` → `opencode-config` → host. Nothing rolls out to the host automatically, and an edit found in the host is never "legalised" by copying it back. Full workflow: `AGENTS.md` in the `opencode-config` repo.
+- Our own skills and plugins are edited **only** in the skills repo (`github.com/AlexeyShirshov/skills`, local clone `/home/alex/sources/skills`, `../skills` from `opencode-config`), then tested, committed and pushed there. They reach the config snapshot (`config/skills`, `config/plugins`) only via `bun config/tools/vendor-skills.mjs --fix` (it refuses a dirty or unpushed source).
+- Third-party skills outside the vendor manifest are maintained in the appropriate profile directory in `opencode-config` (for example, `config/skills-deepseek/`). Both categories reach the host only through an explicit deploy; an edit found in the host is never "legalised" by copying it back. Full workflow: `AGENTS.md` in the `opencode-config` repo.
 
 ## C# symbols: Roslyn only
 
