@@ -141,18 +141,14 @@ const BOOTSTRAP_PAIRS = [
       // Guard: skip if first user message already contains bootstrap.`,
   ],
   [
-    `        if (firstUser?.content.some(p => p.type === 'text' && p.text && p.text.includes('EXTREMELY_IMPORTANT'))) return;
+    /^([ \t]*)if \(typeof ctx\.session\.get === 'function' && await isChildSession\(/m,
+    (_match, indent) => `${indent}// Skip the controller bootstrap for pure-orchestrator agents.
+${indent}if (shouldSkipBootstrap(await fetchSessionAgent(
+${indent}  (id) => ctx.session.get({ sessionID: id }),
+${indent}  event.sessionID,
+${indent}))) return;
 
-        // #2160: the context event carries the sessionID directly. Skip the`,
-    `        if (firstUser?.content.some(p => p.type === 'text' && p.text && p.text.includes('EXTREMELY_IMPORTANT'))) return;
-
-        // Skip the controller bootstrap for pure-orchestrator agents.
-        if (shouldSkipBootstrap(await fetchSessionAgent(
-          (id) => ctx.session.get({ sessionID: id }),
-          event.sessionID,
-        ))) return;
-
-        // #2160: the context event carries the sessionID directly. Skip the`,
+${indent}if (typeof ctx.session.get === 'function' && await isChildSession(`,
   ],
 ];
 
@@ -227,8 +223,9 @@ for (const file of targets) {
       continue;
     }
     for (const [from, to] of pairs) {
-      if (!src.includes(from)) {
-        console.error(`${file}: ${label}: anchor not found:\n${from.slice(0, 60)}...`);
+      const found = from instanceof RegExp ? from.test(src) : src.includes(from);
+      if (!found) {
+        console.error(`${file}: ${label}: anchor not found:\n${String(from).slice(0, 60)}...`);
         ok = false;
         break;
       }
