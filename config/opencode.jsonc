@@ -11,7 +11,10 @@
   "plugins": [
     "superpowers@git+https://github.com/obra/superpowers.git",
     "wsl-notify",
-    "opencode-roslyn"
+    "opencode-roslyn",
+    // Снимаем Codex-лимит 272k/500k для ChatGPT OAuth; больше контекста
+    // расходует лимит подписки быстрее.
+    "-opencode.provider.openai-context-caps"
   ],
   "agents": {
     // `plan` (встроенный primary) — как `architect`: default-deny.
