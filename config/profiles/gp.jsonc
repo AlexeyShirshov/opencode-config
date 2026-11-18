@@ -24,7 +24,7 @@
   // Проект может переопределить роль своим `.opencode/opencode.jsonc`
   // (проектный конфиг мержится после профиля).
   "agent": {
-    "architect": { "model": "openai/gpt-6-astra" },
+    "architect": { "model": "openai/gpt-6.2-astra" },
     "coder": { "model": "openai/gpt-6-luna", "variant": "max" },
     "scout": { "model": "openai/gpt-6-luna" }
   },

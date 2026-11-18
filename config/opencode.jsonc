@@ -16,6 +16,48 @@
     // расходует лимит подписки быстрее.
     "-opencode.provider.openai-context-caps"
   ],
+  // ChatGPT OAuth: явные модели обходят устаревший fallbackModels в OpenCode 2.3.0.
+  // Доступ подписки проверен запросами; лимиты и effort — из models.dev.
+  "providers": {
+    "openai": {
+      "models": {
+        "gpt-6.2-sol": {
+          "name": "GPT-6.2 Sol",
+          "family": "gpt-sol",
+          "releaseDate": "2026-11-17",
+          "capabilities": {
+            "tools": true,
+            "freeform": ["text", "lark", "regex"],
+            "input": ["text", "image", "pdf"],
+            "output": ["text"],
+            "temperature": false,
+            "reasoning": {
+              "supported": true,
+              "effort": ["low", "medium", "high", "xhigh", "max"]
+            }
+          },
+          "limit": { "context": 1050000, "input": 922000, "output": 128000 }
+        },
+        "gpt-6.2-astra": {
+          "name": "GPT-6.2 Astra",
+          "family": "gpt-astra",
+          "releaseDate": "2026-11-17",
+          "capabilities": {
+            "tools": true,
+            "freeform": ["text", "lark", "regex"],
+            "input": ["text", "image", "pdf"],
+            "output": ["text"],
+            "temperature": false,
+            "reasoning": {
+              "supported": true,
+              "effort": ["low", "medium", "high", "xhigh", "max"]
+            }
+          },
+          "limit": { "context": 1050000, "input": 922000, "output": 128000 }
+        }
+      }
+    }
+  },
   "agents": {
     // `plan` (встроенный primary) — как `architect`: default-deny.
     // `*` запрещает всё, включая любой MCP (`<server>_<tool>`) и

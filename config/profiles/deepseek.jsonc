@@ -26,7 +26,7 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // PLAN и escalation идут через Console, CHECK и cheap-роли — через ChatGPT.
+  // PLAN и исполнение идут через ChatGPT, CHECK — через Go, escalation — через Console.
   // Beam ограничен дневной квотой; цель fallback зависит от правил zen-failover.
   // При квотной ошибке openai zen-failover может переключить на платный Console;
   // истечение токена (401) само по себе такого переключения не гарантирует.
@@ -36,15 +36,14 @@
   // (`bun config/tools/sync-profiles.mjs --fix`): правка только в installed-копии
   // теряется при следующем sync.
   "agent": {
-    "pdca-planner": { "model": "opencode/gemini-4-argon" },
-    // CHECK — Sol high: окно 1,05M покрывает реальные проверки (пик по базе — 800k контекста).
-    "pdca-check": { "model": "openai/gpt-6.1-sol", "variant": "high" },
-    "pdca-escalate": { "model": "opencode/claude-sonnet-5-5" },
-    "pdca-executor": { "model": "openai/gpt-6-luna", "variant": "max" },
-    "architect": { "model": "openai/gpt-6-astra" },
+    "pdca-planner": { "model": "openai/gpt-6.2-sol", "variant": "max" },
+    "pdca-check": { "model": "opencode-go/gemini-4-argon" },
+    "pdca-escalate": { "model": "opencode/claude-opus-5-5" },
+    "pdca-executor": { "model": "openai/gpt-6.2-sol", "variant": "low" },
+    "architect": { "model": "openai/gpt-6.2-astra" },
     "coder": { "model": "openai/gpt-6-luna", "variant": "max" },
     "scout": { "model": "openai/gpt-6-luna" },
-    "pdca-orchestrator": { "model": "openai/gpt-6-luna" }
+    "pdca-orchestrator": { "model": "openai/gpt-6-luna", "variant": "max" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
