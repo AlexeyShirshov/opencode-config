@@ -1,5 +1,11 @@
 # Global rules
 
+## Diagnose before declaring a blocker
+
+1. When an error, failed check, or missing information blocks progress, inspect the exact symptom and the closest available evidence. Identify the most likely cause and run the smallest permitted check that could confirm or rule it out.
+2. If the first check is inconclusive, try a materially different check or a permitted route to the same evidence. Continue any independent work within scope. Respect permissions, approval gates, and workflow stop rules.
+3. End the investigation when evidence establishes the cause, or when no remaining permitted check is likely to change the conclusion. If a fix is in scope, apply it and verify the original symptom. If blocked, state what you checked and found, what remains unknown, and the smallest concrete action or input needed to proceed. Label unverified causes as hypotheses.
+
 ## Git: never commit/push to other repos without explicit request
 
 - Commit/push only in the current workspace repo, and only when the user explicitly asks.
