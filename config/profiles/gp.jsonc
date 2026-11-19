@@ -46,5 +46,41 @@
         "chunkTimeout": 300000
       }
     }
+  },
+  "mcp": {
+    "servers": {
+      "memory": {
+        "type": "local",
+        "disabled": false,
+        "command": [
+          "/home/alex/.bun/bin/bun",
+          "x",
+          "@modelcontextprotocol/server-memory"
+        ],
+        "environment": {
+          "MEMORY_FILE_PATH": "/home/alex/.local/share/opencode/memory.json"
+        }
+      },
+      "context7": {
+        "type": "remote",
+        "disabled": false,
+        "url": "https://mcp.context7.com/mcp"
+      },
+      "mslearn": {
+        "type": "remote",
+        "disabled": false,
+        "url": "https://learn.microsoft.com/api/mcp"
+      },
+      "deepwiki": {
+        "type": "remote",
+        "disabled": false,
+        "url": "https://mcp.deepwiki.com/mcp"
+      },
+      "gitmcp": {
+        "type": "remote",
+        "disabled": false,
+        "url": "https://gitmcp.io/docs"
+      }
+    }
   }
 }
