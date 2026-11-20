@@ -1,33 +1,33 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "3cb6a963c16c77a8fb9b0f466d1516fa66ad882b",
-  "vendoredAt": "2026-11-20T11:24:36.385Z",
+  "commit": "b08cc3914892711c45cb773b8d806dc3f71632ac",
+  "vendoredAt": "2026-11-20T18:08:50.732Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "ebdb4d6f30027a1829d584b0af8984e8a0d773bacf92031d46c6d65837e0e348"
+      "hash": "05d69b1418fd6ba551e765042bf610d7268c5602c2c0b2355d9b5465e808e262"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "e0663ea0750d4e3546601c0fb7cb2525aecbfacf110ccf76e87c38daeadc9a09"
+      "hash": "3163bf6106475e31a33a5061bfce45b0abdd18a6d9df6072ebc4569e0ec4a2cf"
     },
     "skill/pdca-collection": {
       "source": "skills/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "fe9b7090536c19921c07961384abade24bc33d13c7221f38335b1468502668ae"
+      "hash": "7172d218cd1fc036d656aa71e095f32a4c427e5ffc3e0fe08d38dbd75a09b88d"
     },
     "skill/pdca-dotnet": {
       "source": "skills/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "b36a8b194f6122c83e7a8e49e3713f189da7037384a0481cd6bc6bd1572969a3"
+      "hash": "0fd47d309e8caca9095475b7d08af5142f94b1fe4af5d4d28ad661b3b6d2fb9e"
     },
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "008949dd1f31b4cd66fc3c7f6e3a391cd5fd37a1c65d34690c78b8b1906229d9"
+      "hash": "f2b955a8bd71718a410038e07f33e14d72b518f4cb17bd5b67aa8d560428cf31"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",

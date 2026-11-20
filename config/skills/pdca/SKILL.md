@@ -222,6 +222,9 @@ durable reason; in normal mode, report to the user.
 - **Autonomous mode** — no intermediate approvals or questions: the driver invokes the required
   agents, manages state and advances on the planner's decisions and CHECK results. All permissions,
   contracts, verification requirements and stop conditions stay in force.
+  When delegating the controller, request completion-only notifications if the host offers them
+  (OpenCode: `notify: "completion"`). Keep routine handoffs in status. If the host wakes the
+  primary while work continues, report only a new result, blocker or decision needed from the user.
 
 ### State machine and counters
 
@@ -419,8 +422,8 @@ detour: the originating outcome is recorded per `references/act.md`, including t
 independent CHECK for an established result.
 
 Product work found during closure is not ACT's: it goes back to DO and a final CHECK. Every closure
-runs through ACT, never beside it; each runs a retrospective via `pdca-check` (`retrospective` mode),
-recorded in `## Lessons learned`.
+runs through ACT, never beside it. Record the `pdca-check` retrospective in `## Lessons learned`;
+for a user-withdrawn campaign step with no result, use `pdca-incremental` §Scope withdrawal.
 
 ### Evidence over assertion
 
@@ -455,7 +458,7 @@ The cycle's **persistent PDCA state and evidence** live under one fixed project-
 .pdca/
 ├─ scripts/            # runtime copies of helper scripts used by the cycle
 ├─ status/             # durable cycle/campaign status files
-└─ <task>/rv<k>/       # evidence: frozen manifest, logs, per-row artifacts
+└─ <task>/rv<k>/       # primary evidence for the criteria, such as run logs
 ```
 
 - **Status path.** The driver passes an explicit `status_path` locating the current cycle's record;
@@ -464,7 +467,7 @@ The cycle's **persistent PDCA state and evidence** live under one fixed project-
 - **Evidence root.** The driver passes an explicit `evidence_root` in every DO dispatch — the initial
   one, a follow-up and a CHECK-directed re-gather alike — with the contract default
   `.pdca/<task>/rv<k>/` and attempts under `attempts/`. Evidence artefacts handed to CHECK are
-  **persisted** there: full logs, manifests, per-row artifacts. Temporary scratch files may live
+  **persisted** there: full logs and other primary results for the criteria. Temporary scratch files may live
   outside `.pdca/` (a `TMPDIR`), but they are never the only source: the full log or artefact behind
   a result is written under `evidence_root` before DO returns, so CHECK can read the proof within its
   evidence scope. The product files themselves stay wherever the task puts them — evidence never
