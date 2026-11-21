@@ -1,13 +1,13 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "96b5f27d3d63003c6a76af2f84a9098115a34c35",
-  "vendoredAt": "2026-11-21T16:00:18.732Z",
+  "commit": "b79c232fb898e2ea8e95068e6cfd645497b5d42c",
+  "vendoredAt": "2026-11-21T16:56:22.995Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "bebaf6da163e9173e87d45f5f0939fbc6cda19ac107efff0d4031c7fbd963b15"
+      "hash": "140f80653a74c47113cf4bdd51d819cd09ef8d8607ebb9fe20ce26f3835fc5ce"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
@@ -27,7 +27,7 @@
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "e822399dbfff88791899fae378013994ccb3acc2cca3e9b6c30d640b065baed1"
+      "hash": "04e4b65de53189eeabdae393b4089ebf9a9c60afbd798436567eeb68ffcf2a46"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -47,7 +47,7 @@
     "plugin/pdca-handoff": {
       "source": "opencode/plugins/pdca-handoff",
       "target": "config/plugins/pdca-handoff",
-      "hash": "15e5a20741306d1a74e9f633a8d35a7bbaeb42affe70ce23fa29d81ef7247ebf"
+      "hash": "5e191d6f07381c1fe3d774a774b8cd836b62fbce1e47a6a33a34d4e90140aa64"
     }
   }
 }
