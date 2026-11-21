@@ -60,6 +60,7 @@ const ITEMS = [
   { kind: "plugin", name: "git-status", source: "opencode/plugins/git-status", target: "config/plugins/git-status" },
   { kind: "plugin", name: "zen-failover", source: "opencode/plugins/zen-failover", target: "config/plugins/zen-failover" },
   { kind: "plugin", name: "clear-session", source: "opencode/plugins/clear-session", target: "config/plugins/clear-session" },
+  { kind: "plugin", name: "pdca-handoff", source: "opencode/plugins/pdca-handoff", target: "config/plugins/pdca-handoff" },
 ]
 
 // Runtime noise that never belongs to a vendored tree. `bin`/`obj`/`TestResults`

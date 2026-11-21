@@ -1,13 +1,13 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "b08cc3914892711c45cb773b8d806dc3f71632ac",
-  "vendoredAt": "2026-11-20T18:08:50.732Z",
+  "commit": "96b5f27d3d63003c6a76af2f84a9098115a34c35",
+  "vendoredAt": "2026-11-21T16:00:18.732Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "05d69b1418fd6ba551e765042bf610d7268c5602c2c0b2355d9b5465e808e262"
+      "hash": "bebaf6da163e9173e87d45f5f0939fbc6cda19ac107efff0d4031c7fbd963b15"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
@@ -27,7 +27,7 @@
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "f2b955a8bd71718a410038e07f33e14d72b518f4cb17bd5b67aa8d560428cf31"
+      "hash": "e822399dbfff88791899fae378013994ccb3acc2cca3e9b6c30d640b065baed1"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -43,6 +43,11 @@
       "source": "opencode/plugins/clear-session",
       "target": "config/plugins/clear-session",
       "hash": "cb3fb38f12a9416bb7083728a602e05e77f6a57cf4a8f076c8452bfeca7b958a"
+    },
+    "plugin/pdca-handoff": {
+      "source": "opencode/plugins/pdca-handoff",
+      "target": "config/plugins/pdca-handoff",
+      "hash": "15e5a20741306d1a74e9f633a8d35a7bbaeb42affe70ce23fa29d81ef7247ebf"
     }
   }
 }
