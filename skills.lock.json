@@ -1,8 +1,8 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "b79c232fb898e2ea8e95068e6cfd645497b5d42c",
-  "vendoredAt": "2026-11-21T16:56:22.995Z",
+  "commit": "f23edf413788084790210fb6fcfad78689336a42",
+  "vendoredAt": "2026-11-22T14:19:48.833Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
@@ -47,7 +47,7 @@
     "plugin/pdca-handoff": {
       "source": "opencode/plugins/pdca-handoff",
       "target": "config/plugins/pdca-handoff",
-      "hash": "5e191d6f07381c1fe3d774a774b8cd836b62fbce1e47a6a33a34d4e90140aa64"
+      "hash": "a46bcbc88ead048691f0ec34bef4f8e49417136055dd323b35490f0b85734a7c"
     }
   }
 }
