@@ -37,7 +37,7 @@
   // теряется при следующем sync.
   "agent": {
     "pdca-planner": { "model": "openai/gpt-6.2-sol", "variant": "max" },
-    "pdca-check": { "model": "opencode-go/gemini-4-argon" },
+    "pdca-check": { "model": "openai/gpt-6.2-astra" },
     "pdca-escalate": { "model": "opencode/claude-opus-5-5" },
     "pdca-executor": { "model": "openai/gpt-6.2-sol", "variant": "low" },
     "architect": { "model": "openai/gpt-6.2-astra" },
