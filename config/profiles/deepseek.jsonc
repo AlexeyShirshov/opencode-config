@@ -44,7 +44,7 @@
     "coder": { "model": "openai/gpt-6.2-sol", "variant": "low" },
 
     "scout": { "model": "openai/gpt-6-luna" },
-    "pdca-orchestrator": { "model": "openai/gpt-6-luna", "variant": "max" }
+    "pdca-orchestrator": { "model": "openai/gpt-6.1-terra", "variant": "xhigh" }
   },
 
   // `pdca-dotnet` лежит в общем `~/.config/opencode/skills/` (built-in discovery, виден
