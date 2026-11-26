@@ -25,7 +25,8 @@
   // (проектный конфиг мержится после профиля).
   "agent": {
     "architect": { "model": "openai/gpt-6.2-astra" },
-    "coder": { "model": "openai/gpt-6-luna", "variant": "max" },
+    "coder": { "model": "openai/gpt-6.2-sol", "variant": "low" },
+
     "scout": { "model": "openai/gpt-6-luna" }
   },
   "skills": {

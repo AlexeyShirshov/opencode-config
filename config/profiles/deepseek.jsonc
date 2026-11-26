@@ -41,7 +41,8 @@
     "pdca-escalate": { "model": "opencode/claude-opus-5-5" },
     "pdca-executor": { "model": "openai/gpt-6.2-sol", "variant": "low" },
     "architect": { "model": "openai/gpt-6.2-astra" },
-    "coder": { "model": "openai/gpt-6-luna", "variant": "max" },
+    "coder": { "model": "openai/gpt-6.2-sol", "variant": "low" },
+
     "scout": { "model": "openai/gpt-6-luna" },
     "pdca-orchestrator": { "model": "openai/gpt-6-luna", "variant": "max" }
   },
