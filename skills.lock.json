@@ -1,33 +1,33 @@
 {
   "source": "github.com/AlexeyShirshov/skills",
   "branch": "main",
-  "commit": "d6b5f5aae16170dae58e46893bf6e7da25ff98cf",
-  "vendoredAt": "2026-11-26T09:02:52.759Z",
+  "commit": "a44f812d3cb3c78cd457aae5ecd5f4afd1315e08",
+  "vendoredAt": "2026-11-26T11:09:21.896Z",
   "items": {
     "skill/pdca": {
       "source": "skills/pdca",
       "target": "config/skills/pdca",
-      "hash": "676089ad910bf9aeb99a31f1c47e5f06ba38b0ce91223cec71582f47598eb6b3"
+      "hash": "723bcb2c0bfde34f2b6c620a077e57b0139f96248cf45418c9c34e7145197b90"
     },
     "skill/pdca-coder": {
       "source": "skills/pdca-coder",
       "target": "config/skills/pdca-coder",
-      "hash": "88561465db7a665aaf75c43eb769ce6e2715793b1830cdddf4946d7f6888c9a6"
+      "hash": "83c95ccb3e68759514685641720f93bb37eac2b24bc2c1640e297d1cb33548dc"
     },
     "skill/pdca-collection": {
       "source": "skills/pdca-collection",
       "target": "config/skills/pdca-collection",
-      "hash": "bd9f6b07f0c62385324bdb951fcd6e11f412422245c9464ac1ecb6ce10daf5dd"
+      "hash": "59c42575ed347e06e278ca48260d98b3fa401153ee52c69be1b6175f26450fd5"
     },
     "skill/pdca-dotnet": {
       "source": "skills/pdca-dotnet",
       "target": "config/skills/pdca-dotnet",
-      "hash": "0fd47d309e8caca9095475b7d08af5142f94b1fe4af5d4d28ad661b3b6d2fb9e"
+      "hash": "393ff20fe5227e7596b19b4d9b3bcbbfe9116f54c71d8dc3450cb3726f8a02c1"
     },
     "skill/pdca-incremental": {
       "source": "skills/pdca-incremental",
       "target": "config/skills/pdca-incremental",
-      "hash": "04e4b65de53189eeabdae393b4089ebf9a9c60afbd798436567eeb68ffcf2a46"
+      "hash": "0cd73a6b713cef2eeb7ec9c181420209ca3f225b3eb04ed1848c5fb6afb3f2e3"
     },
     "plugin/git-status": {
       "source": "opencode/plugins/git-status",
@@ -47,7 +47,7 @@
     "plugin/pdca-handoff": {
       "source": "opencode/plugins/pdca-handoff",
       "target": "config/plugins/pdca-handoff",
-      "hash": "b85a49163185ab126a11abdbd68ea45988b25f0cbf31a79d2e3073ecdd8a9b3d"
+      "hash": "d8a389d1a7c41f5a21b265222e9b5983f7ec7376b77deb1ec8517388cb1bb9d9"
     }
   }
 }

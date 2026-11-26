@@ -26,7 +26,7 @@
   "default_agent": "build",
 
   // ── Привязка ролей к моделям (сами роли — в общих `agents/*.md`: только prompt/permission) ──
-  // PLAN и исполнение идут через ChatGPT, CHECK — через Go, escalation — через Console.
+  // PLAN, CHECK, исполнение и эскалация идут через ChatGPT.
   // Beam ограничен дневной квотой; цель fallback зависит от правил zen-failover.
   // При квотной ошибке openai zen-failover может переключить на платный Console;
   // истечение токена (401) само по себе такого переключения не гарантирует.
@@ -38,7 +38,7 @@
   "agent": {
     "pdca-planner": { "model": "openai/gpt-6.2-sol", "variant": "max" },
     "pdca-check": { "model": "openai/gpt-6.2-astra" },
-    "pdca-escalate": { "model": "opencode/claude-opus-5-5" },
+    "pdca-escalate": { "model": "openai/gpt-6.2-astra", "variant": "xhigh" },
     "pdca-executor": { "model": "openai/gpt-6.2-sol", "variant": "low" },
     "architect": { "model": "openai/gpt-6.2-astra" },
     "coder": { "model": "openai/gpt-6.2-sol", "variant": "low" },
